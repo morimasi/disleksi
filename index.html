@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-g">
+  <title>Öğrenme Köprüsü</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.cdnfonts.com/css/opendyslexic" rel="stylesheet">
+<script type="importmap">
+{
+  "imports": {
+    "rxjs": "https://aistudiocdn.com/rxjs@^7.8.2?conditions=es2015",
+    "rxjs/operators": "https://aistudiocdn.com/rxjs@^7.8.2/operators?conditions=es2015",
+    "rxjs/ajax": "https://aistudiocdn.com/rxjs@^7.8.2/ajax?conditions=es2015",
+    "rxjs/webSocket": "https://aistudiocdn.com/rxjs@^7.8.2/webSocket?conditions=es2015",
+    "rxjs/testing": "https://aistudiocdn.com/rxjs@^7.8.2/testing?conditions=es2015",
+    "rxjs/fetch": "https://aistudiocdn.com/rxjs@^7.8.2/fetch?conditions=es2015",
+    "@google/genai": "https://next.esm.sh/@google/genai@^1.22.0?external=rxjs",
+    "@angular/core": "https://next.esm.sh/@angular/core@^20.3.3?external=rxjs",
+    "@angular/compiler": "https://next.esm.sh/@angular/compiler@^20.3.3?external=rxjs",
+    "@angular/platform-browser": "https://next.esm.sh/@angular/platform-browser@^20.3.3?external=rxjs",
+    "@angular/common/http": "https://next.esm.sh/@angular/common@^20.3.3/http?external=rxjs",
+    "@angular/common": "https://next.esm.sh/@angular/common@^20.3.3?external=rxjs"
+  }
+}
+</script>
+<style>
+  body.font-dyslexic {
+    font-family: 'OpenDyslexic', sans-serif;
+  }
+  /* Font size control */
+  body.font-size-sm { font-size: 14px; }
+  body.font-size-base { font-size: 16px; } /* Default */
+  body.font-size-lg { font-size: 19px; }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+  }
+  @keyframes fadeInOut {
+    0% { opacity: 0; transform: translateY(-10px); }
+    15% { opacity: 1; transform: translateY(0); }
+    85% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(10px); }
+  }
+  .animate-fade-in-out {
+    animation: fadeInOut 7s ease-in-out forwards;
+  }
+  
+  /* Print Preview Styles */
+  body.preview-active {
+    background-color: #525659 !important;
+  }
+
+  .printable-area.print-preview {
+    width: 21cm;
+    min-height: 29.7cm;
+    padding: 1.5cm;
+    margin: 2rem auto;
+    box-shadow: 0 0 0.5cm rgba(0,0,0,0.5) !important;
+    border: 1px solid #ddd !important;
+    background-color: white !important;
+  }
+  
+  .print-preview .no-print {
+    display: none !important;
+  }
+  .print-preview input[type="text"] {
+    border-bottom: 1px solid #000 !important;
+    border-top: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-radius: 0 !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+  }
+  .print-preview textarea {
+    border: 1px solid #ccc !important;
+    min-height: 100px;
+    box-shadow: none !important;
+  }
+  .print-preview .question-card {
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+    background-color: transparent !important;
+    animation: none !important; /* Disable fade-in for printing */
+  }
+  .print-preview .question-number {
+    background-color: #eee !important;
+    color: #333 !important;
+  }
+  .print-preview .question-text {
+    font-weight: bold;
+  }
+
+  @media print {
+    body * {
+      visibility: hidden;
+    }
+    .printable-area, .printable-area * {
+      visibility: visible;
+    }
+    .printable-area {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      box-shadow: none !important;
+      border: none !important;
+      background-color: transparent !important;
+      margin: 0;
+      padding: 0;
+    }
+    .no-print {
+      display: none !important;
+    }
+     .printable-area input[type="text"] {
+        border-bottom: 1px solid #000 !important;
+        border-top: none !important;
+        border-left: none !important;
+        border-right: none !important;
+        border-radius: 0 !important;
+        background-color: transparent !important;
+        box-shadow: none !important;
+      }
+      .printable-area textarea {
+        border: 1px solid #ccc !important;
+        min-height: 100px;
+        box-shadow: none !important;
+      }
+      .printable-area .question-card {
+        box-shadow: none !important;
+        border: 1px solid #ddd !important;
+        background-color: transparent !important;
+        animation: none !important; /* Disable fade-in for printing */
+      }
+      .printable-area .question-number {
+        background-color: #eee !important;
+        color: #333 !important;
+      }
+      .printable-area .question-text {
+        font-weight: bold;
+      }
+  }
+</style>
+</head>
+<body class="bg-blue-50 font-sans">
+  <app-root></app-root>
+</body>
+</html>
