@@ -57,52 +57,6 @@
     animation: fadeInOut 7s ease-in-out forwards;
   }
   
-  /* Print Preview Styles */
-  body.preview-active {
-    background-color: #525659 !important;
-  }
-
-  .printable-area.print-preview {
-    width: 21cm;
-    min-height: 29.7cm;
-    padding: 1.5cm;
-    margin: 2rem auto;
-    box-shadow: 0 0 0.5cm rgba(0,0,0,0.5) !important;
-    border: 1px solid #ddd !important;
-    background-color: white !important;
-  }
-  
-  .print-preview .no-print {
-    display: none !important;
-  }
-  .print-preview input[type="text"] {
-    border-bottom: 1px solid #000 !important;
-    border-top: none !important;
-    border-left: none !important;
-    border-right: none !important;
-    border-radius: 0 !important;
-    background-color: transparent !important;
-    box-shadow: none !important;
-  }
-  .print-preview textarea {
-    border: 1px solid #ccc !important;
-    min-height: 100px;
-    box-shadow: none !important;
-  }
-  .print-preview .question-card {
-    box-shadow: none !important;
-    border: 1px solid #ddd !important;
-    background-color: transparent !important;
-    animation: none !important; /* Disable fade-in for printing */
-  }
-  .print-preview .question-number {
-    background-color: #eee !important;
-    color: #333 !important;
-  }
-  .print-preview .question-text {
-    font-weight: bold;
-  }
-
   @media print {
     body * {
       visibility: hidden;
@@ -151,6 +105,27 @@
       .printable-area .question-text {
         font-weight: bold;
       }
+  }
+
+  @keyframes confetti-fall {
+    0% {
+      transform: translateY(-20vh) rotateZ(0deg) rotateX(0deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(120vh) rotateZ(720deg) rotateX(360deg);
+      opacity: 0;
+    }
+  }
+  .confetti {
+    position: absolute;
+    top: 0;
+    width: 10px;
+    height: 20px;
+    opacity: 0;
+    animation-name: confetti-fall;
+    animation-timing-function: linear;
+    animation-iteration-count: 1;
   }
 </style>
 </head>

@@ -46,15 +46,17 @@ export class ActivityDisplayComponent implements OnDestroy {
   answerStatuses: WritableSignal<AnswerStatus[]> = signal([]);
   showFeedback = signal(false);
   score = signal<string | null>(null);
-  isPreviewing = signal(false);
   private feedbackTimeoutId: any = null;
   
   // Drag and Drop State
   draggedOverIndex = signal<number | null>(null);
 
-  // New signals for success modal
+  // New signals for success modal and animation
   showSuccessModal = signal(false);
   successSticker = signal<string>('');
+  showConfetti = signal(false);
+  showSuccessActions = signal(false);
+  confettiPieces = signal<{left: string, animDelay: string, animDuration: string, color: string}[]>([]);
   
   // Stickers collection
   private stickers = ['🌟', '🏆', '🎉', '👍', '🚀', '🧠', '💡', '✅', '🎯', '🥇'];
@@ -141,8 +143,6 @@ export class ActivityDisplayComponent implements OnDestroy {
   });
 
   ngOnDestroy(): void {
-    // Ensure styles are cleaned up if component is destroyed
-    document.body.classList.remove('preview-active');
     clearTimeout(this.hintTimeoutId);
     clearTimeout(this.feedbackTimeoutId);
   }
@@ -322,14 +322,45 @@ export class ActivityDisplayComponent implements OnDestroy {
     }
   }
 
+  private generateConfetti(): void {
+    const pieces = [];
+    const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50', '#8bc34a', '#cddc39', '#ffeb3b', '#ffc107', '#ff9800', '#ff5722'];
+    for (let i = 0; i < 100; i++) {
+        pieces.push({
+            left: `${Math.random() * 100}%`,
+            animDelay: `${Math.random() * 5}s`,
+            animDuration: `${3 + Math.random() * 2}s`,
+            color: colors[i % colors.length]
+        });
+    }
+    this.confettiPieces.set(pieces);
+  }
+
   private triggerSuccessModal(): void {
     const randomIndex = Math.floor(Math.random() * this.stickers.length);
     this.successSticker.set(this.stickers[randomIndex]);
     this.showSuccessModal.set(true);
+    this.showSuccessActions.set(false);
+
+    // Generate confetti and show it
+    this.generateConfetti();
+    this.showConfetti.set(true);
+
+    // After a short delay, show the action buttons
+    setTimeout(() => {
+        this.showSuccessActions.set(true);
+    }, 1500);
+
+    // Stop confetti after a few seconds
+    setTimeout(() => {
+        this.showConfetti.set(false);
+    }, 5000);
   }
 
   closeSuccessModal(): void {
     this.showSuccessModal.set(false);
+    this.showConfetti.set(false);
+    this.confettiPieces.set([]); // Clear confetti data
   }
 
   requestNextActivity(): void {
@@ -347,15 +378,6 @@ export class ActivityDisplayComponent implements OnDestroy {
     window.print();
   }
 
-  togglePreview(state: boolean): void {
-    this.isPreviewing.set(state);
-    if (state) {
-      document.body.classList.add('preview-active');
-    } else {
-      document.body.classList.remove('preview-active');
-    }
-  }
-  
   getPromptParts(problem: DragDropMatchActivity['data']['problems'][0]): string[] {
     return problem.prompt.split('__');
   }

@@ -1,313 +1,311 @@
-@if(isPreviewing()) {
-  <div class="fixed top-0 left-0 w-full p-4 bg-gray-800 text-white z-50 flex justify-center items-center gap-6 no-print shadow-lg">
-    <h3 class="font-bold text-lg hidden sm:block">Baskı Önizleme Modu</h3>
-    <button (click)="printActivity()" class="flex items-center bg-green-500 hover:bg-green-600 font-bold py-2 px-4 rounded-full transition-transform transform hover:scale-105">
+<div class="bg-slate-50 p-4 sm:p-6 rounded-lg shadow-inner border border-slate-200">
+  <div class="printable-area">
+    <div class="text-center mb-8 border-b border-slate-200 pb-4">
+      <h3 class="text-xl sm:text-2xl font-bold text-slate-800">{{ activity().title }}</h3>
+      <div class="flex items-center justify-center gap-2 mt-2">
+        <p class="text-slate-600">{{ activity().instructions }}</p>
+        <button (click)="speakText(activity().instructions)" title="Metni Oku" class="text-slate-500 hover:text-indigo-600 transition-colors no-print p-1 rounded-full hover:bg-slate-200">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>
+        </button>
+      </div>
+    </div>
+
+    @if (activity().hint && showHint()) {
+      <div class="mb-6 p-4 bg-yellow-100 border-l-4 border-yellow-400 text-yellow-800 rounded-r-lg flex items-start gap-3 animate-fade-in-out no-print">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+        </svg>
+        <div>
+          <p class="font-semibold">Biliyor muydun?</p>
+          <p>{{ activity().hint }}</p>
+        </div>
+      </div>
+    }
+
+    <div class="mb-6 no-print">
+      <div class="flex justify-between items-center mb-1 text-sm font-medium text-slate-600">
+        <span>İlerleme</span>
+        <span>{{ progress().completed }} / {{ progress().total }} Tamamlandı</span>
+      </div>
+      <div class="w-full bg-slate-200 rounded-full h-2.5">
+        <div [class]="'h-2.5 rounded-full transition-all duration-500 ' + topicColors().progress" [style.width.%]="progress().percentage"></div>
+      </div>
+    </div>
+
+    <div class="space-y-6">
+      @switch (activity().activityType) {
+        @case ('word-scramble') {
+          @for (word of activity().data.words; track $index) {
+            <div class="bg-white p-4 sm:p-5 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 border-t-4 question-card animate-fade-in" [class]="topicColors().border" [style.animation-delay]="$index * 100 + 'ms'">
+              <div class="flex items-center">
+                <span [class]="'question-number font-bold rounded-full h-8 w-8 flex items-center justify-center mr-4 flex-shrink-0 ' + topicColors().questionNumberBg + ' ' + topicColors().questionNumberText">{{ $index + 1 }}</span>
+                <div class="flex-grow flex items-center gap-2 sm:gap-4">
+                  <div class="flex items-center gap-1 w-28 sm:w-32 justify-end">
+                    <span class="text-lg sm:text-xl font-mono question-text" [class]="topicColors().accentText">{{ word.scrambled }}</span>
+                    <button (click)="speakText(word.scrambled)" title="Kelimeyi Oku" [class]="'text-slate-400 transition-colors no-print p-1 rounded-full hover:bg-slate-100 ' + topicColors().hoverAccentText">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>
+                      </button>
+                  </div>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-400 no-print flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                  <div class="flex-grow">
+                    <input type="text"
+                          [value]="userAnswers()[$index]"
+                          (input)="updateAnswer($index, $event)"
+                          [class]="'w-full p-2 border-2 rounded-md shadow-sm transition-colors text-lg ' + statusClasses(answerStatuses()[$index])"
+                          placeholder="Doğru kelime?">
+                    @if (showFeedback() && answerStatuses()[$index] === 'incorrect') {
+                      <div class="text-sm text-green-700 font-medium mt-1 animate-fade-in">
+                        Doğru Cevap: <span class="font-bold">{{ word.correct }}</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        }
+        @case ('simple-math') {
+          @for (problem of activity().data.problems; track $index) {
+            <div class="bg-white p-4 sm:p-5 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 border-t-4 question-card animate-fade-in" [class]="topicColors().border" [style.animation-delay]="$index * 100 + 'ms'">
+              <div class="flex items-center">
+                <span [class]="'question-number font-bold rounded-full h-8 w-8 flex items-center justify-center mr-4 flex-shrink-0 ' + topicColors().questionNumberBg + ' ' + topicColors().questionNumberText">{{ $index + 1 }}</span>
+                <div class="flex-grow flex items-center gap-2 sm:gap-4">
+                  <div class="flex items-center gap-1 w-28 sm:w-32 justify-end">
+                      <span class="text-lg sm:text-xl font-mono question-text" [class]="topicColors().accentText">{{ problem.question }}</span>
+                      <button (click)="speakText(problem.question)" title="Soruyu Oku" [class]="'text-slate-400 transition-colors no-print p-1 rounded-full hover:bg-slate-100 ' + topicColors().hoverAccentText">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>
+                      </button>
+                  </div>
+                  <div class="flex-grow">
+                    <input type="text"
+                          [value]="userAnswers()[$index]"
+                          (input)="updateAnswer($index, $event)"
+                          [class]="'w-full p-2 border-2 rounded-md shadow-sm transition-colors text-lg ' + statusClasses(answerStatuses()[$index])"
+                          placeholder="Cevap?">
+                    @if (showFeedback() && answerStatuses()[$index] === 'incorrect') {
+                      <div class="text-sm text-green-700 font-medium mt-1 animate-fade-in">
+                        Doğru Cevap: <span class="font-bold">{{ problem.answer }}</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        }
+        @case ('sentence-completion') {
+          @for (prompt of activity().data.prompts; track $index) {
+            <div class="bg-white p-4 sm:p-5 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 border-t-4 question-card animate-fade-in" [class]="topicColors().border" [style.animation-delay]="$index * 100 + 'ms'">
+              <div class="flex items-start">
+                <span [class]="'question-number font-bold rounded-full h-8 w-8 flex-shrink-0 flex items-center justify-center mr-4 mt-1 ' + topicColors().questionNumberBg + ' ' + topicColors().questionNumberText">{{ $index + 1 }}</span>
+                <div class="flex-grow">
+                  <div class="flex items-center gap-2 mb-2">
+                      <label class="block text-lg font-semibold text-gray-700 question-text">{{ prompt }}</label>
+                      <button (click)="speakText(prompt)" title="Cümleyi Oku" [class]="'text-slate-400 transition-colors no-print p-1 rounded-full hover:bg-slate-100 ' + topicColors().hoverAccentText">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>
+                      </button>
+                  </div>
+                  <textarea class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            rows="4"
+                            [value]="userAnswers()[$index]"
+                            (input)="updateAnswer($index, $event)"
+                            placeholder="Hikayeni buraya yaz..."></textarea>
+                </div>
+              </div>
+            </div>
+          }
+        }
+        @case ('visual-match') {
+          @for (problem of activity().data.problems; track $index) {
+            <div class="bg-white p-4 sm:p-5 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 border-t-4 question-card animate-fade-in" [class]="topicColors().border" [style.animation-delay]="$index * 100 + 'ms'">
+              <div class="flex items-start">
+                <span [class]="'question-number font-bold rounded-full h-8 w-8 flex-shrink-0 flex items-center justify-center mr-4 mt-1 ' + topicColors().questionNumberBg + ' ' + topicColors().questionNumberText">{{ $index + 1 }}</span>
+                <div class="flex-grow">
+                  <div class="mb-4">
+                    <span class="text-gray-600 font-medium">Hedef Kelime:</span>
+                    <div class="flex items-center gap-2">
+                      <strong class="text-2xl font-bold tracking-wider question-text" [class]="topicColors().accentText">{{ problem.targetWord }}</strong>
+                      <button (click)="speakText(problem.targetWord)" title="Hedef Kelimeyi Oku" [class]="'text-slate-400 transition-colors no-print p-1 rounded-full hover:bg-slate-100 ' + topicColors().hoverAccentText">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-2 gap-3">
+                    @for (option of problem.options; track option) {
+                      <button (click)="selectAnswer($index, option)"
+                              [class.bg-indigo-100]="userAnswers()[$index] === option && !showFeedback()"
+                              [class.ring-2]="userAnswers()[$index] === option"
+                              [class.ring-indigo-400]="userAnswers()[$index] === option"
+                              [class.cursor-not-allowed]="showFeedback()"
+                              [class.bg-green-200]="showFeedback() && option === problem.targetWord"
+                              [class.border-green-500]="showFeedback() && option === problem.targetWord"
+                              [class.bg-red-200]="showFeedback() && userAnswers()[$index] === option && option !== problem.targetWord"
+                              [class.border-red-500]="showFeedback() && userAnswers()[$index] === option && option !== problem.targetWord"
+                              class="text-left p-3 border rounded-lg text-lg font-medium text-gray-800 hover:bg-gray-100 transition-all duration-200">
+                        {{ option }}
+                      </button>
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        }
+        @case ('ordering') {
+          @for (problem of activity().data.problems; track $index) {
+              <div class="bg-white p-4 sm:p-5 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 border-t-4 question-card animate-fade-in" [class]="topicColors().border" [style.animation-delay]="$index * 100 + 'ms'">
+                  <div class="flex items-start">
+                      <span [class]="'question-number font-bold rounded-full h-8 w-8 flex-shrink-0 flex items-center justify-center mr-4 mt-1 ' + topicColors().questionNumberBg + ' ' + topicColors().questionNumberText">{{ $index + 1 }}</span>
+                      <div class="flex-grow">
+                          <div class="flex items-center gap-2 mb-3">
+                              <label class="block text-lg font-semibold text-gray-700 question-text">{{ problem.question }}</label>
+                              <button (click)="speakText(problem.question)" title="Soruyu Oku" [class]="'text-slate-400 transition-colors no-print p-1 rounded-full hover:bg-slate-100 ' + topicColors().hoverAccentText">
+                                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>
+                              </button>
+                          </div>
+
+                          <!-- User's Answer Area -->
+                          <div class="min-h-[60px] bg-gray-100 rounded-lg p-2 flex flex-wrap items-center gap-2 mb-4 border-2"
+                              [class]="showFeedback() ? statusClasses(answerStatuses()[$index]) : 'border-gray-200'">
+                              @if (getUserAnswerAsArray($index).length === 0) {
+                                  <span class="text-gray-400 italic px-2">Sıralamak için aşağıdaki ögelere tıkla</span>
+                              } @else {
+                                  @for (item of getUserAnswerAsArray($index); let itemIndex = $index; track itemIndex) {
+                                      <div class="bg-indigo-500 text-white font-semibold py-1 px-3 rounded-full flex items-center gap-2 animate-fade-in">
+                                          <span>{{ item }}</span>
+                                          @if(!showFeedback()) {
+                                          <button (click)="removeOrderItem($index, itemIndex)" class="text-indigo-200 hover:text-white">
+                                              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                                          </button>
+                                          }
+                                      </div>
+                                  }
+                              }
+                          </div>
+
+                          <!-- Available Items -->
+                          <div class="flex flex-wrap items-center gap-3">
+                              @for (item of problem.items; track item) {
+                                  <button (click)="selectOrderItem($index, item)"
+                                          [disabled]="isItemSelected($index, item) || showFeedback()"
+                                          class="px-4 py-2 border rounded-lg text-lg font-medium transition-all duration-200"
+                                          [class.bg-gray-200]="isItemSelected($index, item)"
+                                          [class.text-gray-400]="isItemSelected($index, item)"
+                                          [class.cursor-not-allowed]="isItemSelected($index, item) || showFeedback()"
+                                          [class.hover:bg-gray-100]="!isItemSelected($index, item)">
+                                      {{ item }}
+                                  </button>
+                              }
+                          </div>
+
+                          <!-- Feedback -->
+                          @if (showFeedback() && answerStatuses()[$index] === 'incorrect') {
+                              <div class="text-sm text-green-700 font-medium mt-3 animate-fade-in">
+                                  Doğru Sıralama: <span class="font-bold">{{ problem.correctOrder.join(', ') }}</span>
+                              </div>
+                          }
+                      </div>
+                  </div>
+              </div>
+          }
+        }
+        @case ('drag-drop-match') {
+          @for (problem of activity().data.problems; track $index) {
+            <div class="bg-white p-4 sm:p-5 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 border-t-4 question-card animate-fade-in" [class]="topicColors().border" [style.animation-delay]="$index * 100 + 'ms'">
+              <div class="flex items-start">
+                  <span [class]="'question-number font-bold rounded-full h-8 w-8 flex-shrink-0 flex items-center justify-center mr-4 mt-1 ' + topicColors().questionNumberBg + ' ' + topicColors().questionNumberText">{{ $index + 1 }}</span>
+                  <div class="flex-grow">
+                    <!-- Prompt and Drop Zone -->
+                    <div class="flex items-center gap-2 mb-4 text-xl sm:text-2xl font-mono text-gray-700 question-text flex-wrap">
+                      <span>{{ getPromptParts(problem)[0] }}</span>
+                      <div 
+                        (dragover)="onDragOver($event)" 
+                        (drop)="onDrop($event, $index)"
+                        (dragenter)="draggedOverIndex.set($index)"
+                        (dragleave)="draggedOverIndex.set(null)"
+                        class="inline-block w-20 h-12 rounded-lg border-2 border-dashed flex items-center justify-center transition-colors"
+                        [class]="draggedOverIndex() === $index ? 'bg-indigo-100 border-indigo-400' : (showFeedback() ? statusClasses(answerStatuses()[$index]) : 'border-gray-400')"
+                        >
+                        @if (userAnswers()[$index]) {
+                            <span class="font-bold" [class]="topicColors().accentText">{{ userAnswers()[$index] }}</span>
+                        }
+                      </div>
+                      <span>{{ getPromptParts(problem)[1] }}</span>
+                      <button (click)="speakText(problem.prompt.replace('__', ' boşluk '))" title="Soruyu Oku" [class]="'text-slate-400 transition-colors no-print p-1 rounded-full hover:bg-slate-100 ' + topicColors().hoverAccentText">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>
+                      </button>
+                    </div>
+                    
+                    <!-- Draggable Options -->
+                    <div class="flex flex-wrap items-center gap-3 pt-2 border-t border-gray-200">
+                      <span class="text-gray-500 font-medium text-sm">Seçenekler:</span>
+                      @for (option of problem.options; track option) {
+                        <div 
+                          [draggable]="!showFeedback()" 
+                          (dragstart)="onDragStart($event, option)"
+                          class="px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-lg font-medium text-gray-800 transition-all duration-200"
+                          [class.cursor-grab]="!showFeedback()"
+                          [class.cursor-not-allowed]="showFeedback()"
+                          [class.opacity-50]="showFeedback()">
+                          {{ option }}
+                        </div>
+                      }
+                    </div>
+                    
+                    <!-- Feedback -->
+                    @if (showFeedback() && answerStatuses()[$index] === 'incorrect') {
+                        <div class="text-sm text-green-700 font-medium mt-3 animate-fade-in">
+                            Doğru Cevap: <span class="font-bold">{{ problem.correctAnswer }}</span>
+                        </div>
+                    }
+                  </div>
+              </div>
+            </div>
+          }
+        }
+      }
+    </div>
+
+    <div class="mt-10 pt-6 border-t border-slate-200 flex flex-wrap justify-center items-center gap-4 no-print">
+      @if (activity().activityType !== 'sentence-completion') {
+        <button (click)="checkAnswers()" class="flex items-center bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-6 rounded-full transition-transform transform hover:scale-105">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Cevapları Kontrol Et
+        </button>
+      }
+      <button (click)="printActivity()" class="flex items-center bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-full transition-colors">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
       </svg>
       Yazdır
-    </button>
-    <button (click)="togglePreview(false)" class="flex items-center bg-red-500 hover:bg-red-600 font-bold py-2 px-4 rounded-full transition-transform transform hover:scale-105">
-       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-       </svg>
-      Önizlemeden Çık
-    </button>
-  </div>
-}
-
-<div class="bg-slate-50 p-4 sm:p-6 rounded-lg shadow-inner border border-slate-200 printable-area" [class.print-preview]="isPreviewing()">
-  <div class="text-center mb-8 border-b border-slate-200 pb-4">
-    <h3 class="text-xl sm:text-2xl font-bold text-slate-800">{{ activity().title }}</h3>
-    <div class="flex items-center justify-center gap-2 mt-2">
-      <p class="text-slate-600">{{ activity().instructions }}</p>
-      <button (click)="speakText(activity().instructions)" title="Metni Oku" class="text-slate-500 hover:text-indigo-600 transition-colors no-print p-1 rounded-full hover:bg-slate-200">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>
       </button>
+      @if(score()) {
+          <div class="bg-blue-100 text-blue-800 text-lg font-semibold px-4 py-2 rounded-full animate-fade-in">
+              {{ score() }}
+          </div>
+      }
     </div>
-  </div>
-
-  @if (activity().hint && showHint()) {
-    <div class="mb-6 p-4 bg-yellow-100 border-l-4 border-yellow-400 text-yellow-800 rounded-r-lg flex items-start gap-3 animate-fade-in-out no-print">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-      </svg>
-      <div>
-        <p class="font-semibold">Biliyor muydun?</p>
-        <p>{{ activity().hint }}</p>
-      </div>
-    </div>
-  }
-
-  <div class="mb-6 no-print">
-    <div class="flex justify-between items-center mb-1 text-sm font-medium text-slate-600">
-      <span>İlerleme</span>
-      <span>{{ progress().completed }} / {{ progress().total }} Tamamlandı</span>
-    </div>
-    <div class="w-full bg-slate-200 rounded-full h-2.5">
-      <div [class]="'h-2.5 rounded-full transition-all duration-500 ' + topicColors().progress" [style.width.%]="progress().percentage"></div>
-    </div>
-  </div>
-
-  <div class="space-y-6">
-    @switch (activity().activityType) {
-      @case ('word-scramble') {
-        @for (word of activity().data.words; track $index) {
-          <div class="bg-white p-4 sm:p-5 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 border-t-4 question-card animate-fade-in" [class]="topicColors().border" [style.animation-delay]="$index * 100 + 'ms'">
-            <div class="flex items-center">
-              <span [class]="'question-number font-bold rounded-full h-8 w-8 flex items-center justify-center mr-4 flex-shrink-0 ' + topicColors().questionNumberBg + ' ' + topicColors().questionNumberText">{{ $index + 1 }}</span>
-              <div class="flex-grow flex items-center gap-2 sm:gap-4">
-                <div class="flex items-center gap-1 w-28 sm:w-32 justify-end">
-                  <span class="text-lg sm:text-xl font-mono question-text" [class]="topicColors().accentText">{{ word.scrambled }}</span>
-                   <button (click)="speakText(word.scrambled)" title="Kelimeyi Oku" [class]="'text-slate-400 transition-colors no-print p-1 rounded-full hover:bg-slate-100 ' + topicColors().hoverAccentText">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>
-                    </button>
-                </div>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-400 no-print flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-                <div class="flex-grow">
-                  <input type="text"
-                        [value]="userAnswers()[$index]"
-                        (input)="updateAnswer($index, $event)"
-                        [class]="'w-full p-2 border-2 rounded-md shadow-sm transition-colors text-lg ' + statusClasses(answerStatuses()[$index])"
-                        placeholder="Doğru kelime?">
-                  @if (showFeedback() && answerStatuses()[$index] === 'incorrect') {
-                    <div class="text-sm text-green-700 font-medium mt-1 animate-fade-in">
-                      Doğru Cevap: <span class="font-bold">{{ word.correct }}</span>
-                    </div>
-                  }
-                </div>
-              </div>
-            </div>
-          </div>
-        }
-      }
-      @case ('simple-math') {
-        @for (problem of activity().data.problems; track $index) {
-           <div class="bg-white p-4 sm:p-5 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 border-t-4 question-card animate-fade-in" [class]="topicColors().border" [style.animation-delay]="$index * 100 + 'ms'">
-            <div class="flex items-center">
-               <span [class]="'question-number font-bold rounded-full h-8 w-8 flex items-center justify-center mr-4 flex-shrink-0 ' + topicColors().questionNumberBg + ' ' + topicColors().questionNumberText">{{ $index + 1 }}</span>
-              <div class="flex-grow flex items-center gap-2 sm:gap-4">
-                <div class="flex items-center gap-1 w-28 sm:w-32 justify-end">
-                    <span class="text-lg sm:text-xl font-mono question-text" [class]="topicColors().accentText">{{ problem.question }}</span>
-                     <button (click)="speakText(problem.question)" title="Soruyu Oku" [class]="'text-slate-400 transition-colors no-print p-1 rounded-full hover:bg-slate-100 ' + topicColors().hoverAccentText">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>
-                    </button>
-                </div>
-                <div class="flex-grow">
-                  <input type="text"
-                        [value]="userAnswers()[$index]"
-                        (input)="updateAnswer($index, $event)"
-                        [class]="'w-full p-2 border-2 rounded-md shadow-sm transition-colors text-lg ' + statusClasses(answerStatuses()[$index])"
-                        placeholder="Cevap?">
-                  @if (showFeedback() && answerStatuses()[$index] === 'incorrect') {
-                    <div class="text-sm text-green-700 font-medium mt-1 animate-fade-in">
-                      Doğru Cevap: <span class="font-bold">{{ problem.answer }}</span>
-                    </div>
-                  }
-                </div>
-              </div>
-            </div>
-          </div>
-        }
-      }
-      @case ('sentence-completion') {
-        @for (prompt of activity().data.prompts; track $index) {
-          <div class="bg-white p-4 sm:p-5 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 border-t-4 question-card animate-fade-in" [class]="topicColors().border" [style.animation-delay]="$index * 100 + 'ms'">
-            <div class="flex items-start">
-               <span [class]="'question-number font-bold rounded-full h-8 w-8 flex-shrink-0 flex items-center justify-center mr-4 mt-1 ' + topicColors().questionNumberBg + ' ' + topicColors().questionNumberText">{{ $index + 1 }}</span>
-               <div class="flex-grow">
-                 <div class="flex items-center gap-2 mb-2">
-                    <label class="block text-lg font-semibold text-gray-700 question-text">{{ prompt }}</label>
-                    <button (click)="speakText(prompt)" title="Cümleyi Oku" [class]="'text-slate-400 transition-colors no-print p-1 rounded-full hover:bg-slate-100 ' + topicColors().hoverAccentText">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>
-                    </button>
-                 </div>
-                 <textarea class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                          rows="4"
-                          [value]="userAnswers()[$index]"
-                          (input)="updateAnswer($index, $event)"
-                          placeholder="Hikayeni buraya yaz..."></textarea>
-               </div>
-            </div>
-          </div>
-        }
-      }
-      @case ('visual-match') {
-        @for (problem of activity().data.problems; track $index) {
-          <div class="bg-white p-4 sm:p-5 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 border-t-4 question-card animate-fade-in" [class]="topicColors().border" [style.animation-delay]="$index * 100 + 'ms'">
-            <div class="flex items-start">
-               <span [class]="'question-number font-bold rounded-full h-8 w-8 flex-shrink-0 flex items-center justify-center mr-4 mt-1 ' + topicColors().questionNumberBg + ' ' + topicColors().questionNumberText">{{ $index + 1 }}</span>
-              <div class="flex-grow">
-                <div class="mb-4">
-                  <span class="text-gray-600 font-medium">Hedef Kelime:</span>
-                  <div class="flex items-center gap-2">
-                    <strong class="text-2xl font-bold tracking-wider question-text" [class]="topicColors().accentText">{{ problem.targetWord }}</strong>
-                    <button (click)="speakText(problem.targetWord)" title="Hedef Kelimeyi Oku" [class]="'text-slate-400 transition-colors no-print p-1 rounded-full hover:bg-slate-100 ' + topicColors().hoverAccentText">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>
-                    </button>
-                  </div>
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                  @for (option of problem.options; track option) {
-                    <button (click)="selectAnswer($index, option)"
-                            [class.bg-indigo-100]="userAnswers()[$index] === option && !showFeedback()"
-                            [class.ring-2]="userAnswers()[$index] === option"
-                            [class.ring-indigo-400]="userAnswers()[$index] === option"
-                            [class.cursor-not-allowed]="showFeedback()"
-                            [class.bg-green-200]="showFeedback() && option === problem.targetWord"
-                            [class.border-green-500]="showFeedback() && option === problem.targetWord"
-                            [class.bg-red-200]="showFeedback() && userAnswers()[$index] === option && option !== problem.targetWord"
-                            [class.border-red-500]="showFeedback() && userAnswers()[$index] === option && option !== problem.targetWord"
-                            class="text-left p-3 border rounded-lg text-lg font-medium text-gray-800 hover:bg-gray-100 transition-all duration-200">
-                      {{ option }}
-                    </button>
-                  }
-                </div>
-              </div>
-            </div>
-          </div>
-        }
-      }
-       @case ('ordering') {
-        @for (problem of activity().data.problems; track $index) {
-            <div class="bg-white p-4 sm:p-5 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 border-t-4 question-card animate-fade-in" [class]="topicColors().border" [style.animation-delay]="$index * 100 + 'ms'">
-                <div class="flex items-start">
-                    <span [class]="'question-number font-bold rounded-full h-8 w-8 flex-shrink-0 flex items-center justify-center mr-4 mt-1 ' + topicColors().questionNumberBg + ' ' + topicColors().questionNumberText">{{ $index + 1 }}</span>
-                    <div class="flex-grow">
-                        <div class="flex items-center gap-2 mb-3">
-                            <label class="block text-lg font-semibold text-gray-700 question-text">{{ problem.question }}</label>
-                             <button (click)="speakText(problem.question)" title="Soruyu Oku" [class]="'text-slate-400 transition-colors no-print p-1 rounded-full hover:bg-slate-100 ' + topicColors().hoverAccentText">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>
-                            </button>
-                        </div>
-
-                        <!-- User's Answer Area -->
-                        <div class="min-h-[60px] bg-gray-100 rounded-lg p-2 flex flex-wrap items-center gap-2 mb-4 border-2"
-                             [class]="showFeedback() ? statusClasses(answerStatuses()[$index]) : 'border-gray-200'">
-                            @if (getUserAnswerAsArray($index).length === 0) {
-                                <span class="text-gray-400 italic px-2">Sıralamak için aşağıdaki ögelere tıkla</span>
-                            } @else {
-                                @for (item of getUserAnswerAsArray($index); let itemIndex = $index; track itemIndex) {
-                                    <div class="bg-indigo-500 text-white font-semibold py-1 px-3 rounded-full flex items-center gap-2 animate-fade-in">
-                                        <span>{{ item }}</span>
-                                        @if(!showFeedback()) {
-                                        <button (click)="removeOrderItem($index, itemIndex)" class="text-indigo-200 hover:text-white">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                                        </button>
-                                        }
-                                    </div>
-                                }
-                            }
-                        </div>
-
-                        <!-- Available Items -->
-                        <div class="flex flex-wrap items-center gap-3">
-                            @for (item of problem.items; track item) {
-                                <button (click)="selectOrderItem($index, item)"
-                                        [disabled]="isItemSelected($index, item) || showFeedback()"
-                                        class="px-4 py-2 border rounded-lg text-lg font-medium transition-all duration-200"
-                                        [class.bg-gray-200]="isItemSelected($index, item)"
-                                        [class.text-gray-400]="isItemSelected($index, item)"
-                                        [class.cursor-not-allowed]="isItemSelected($index, item) || showFeedback()"
-                                        [class.hover:bg-gray-100]="!isItemSelected($index, item)">
-                                    {{ item }}
-                                </button>
-                            }
-                        </div>
-
-                        <!-- Feedback -->
-                        @if (showFeedback() && answerStatuses()[$index] === 'incorrect') {
-                            <div class="text-sm text-green-700 font-medium mt-3 animate-fade-in">
-                                Doğru Sıralama: <span class="font-bold">{{ problem.correctOrder.join(', ') }}</span>
-                            </div>
-                        }
-                    </div>
-                </div>
-            </div>
-        }
-      }
-      @case ('drag-drop-match') {
-         @for (problem of activity().data.problems; track $index) {
-          <div class="bg-white p-4 sm:p-5 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 border-t-4 question-card animate-fade-in" [class]="topicColors().border" [style.animation-delay]="$index * 100 + 'ms'">
-            <div class="flex items-start">
-                 <span [class]="'question-number font-bold rounded-full h-8 w-8 flex-shrink-0 flex items-center justify-center mr-4 mt-1 ' + topicColors().questionNumberBg + ' ' + topicColors().questionNumberText">{{ $index + 1 }}</span>
-                <div class="flex-grow">
-                  <!-- Prompt and Drop Zone -->
-                  <div class="flex items-center gap-2 mb-4 text-xl sm:text-2xl font-mono text-gray-700 question-text flex-wrap">
-                    <span>{{ getPromptParts(problem)[0] }}</span>
-                    <div 
-                      (dragover)="onDragOver($event)" 
-                      (drop)="onDrop($event, $index)"
-                      (dragenter)="draggedOverIndex.set($index)"
-                      (dragleave)="draggedOverIndex.set(null)"
-                      class="inline-block w-20 h-12 rounded-lg border-2 border-dashed flex items-center justify-center transition-colors"
-                      [class]="draggedOverIndex() === $index ? 'bg-indigo-100 border-indigo-400' : (showFeedback() ? statusClasses(answerStatuses()[$index]) : 'border-gray-400')"
-                      >
-                       @if (userAnswers()[$index]) {
-                          <span class="font-bold" [class]="topicColors().accentText">{{ userAnswers()[$index] }}</span>
-                       }
-                    </div>
-                    <span>{{ getPromptParts(problem)[1] }}</span>
-                     <button (click)="speakText(problem.prompt.replace('__', ' boşluk '))" title="Soruyu Oku" [class]="'text-slate-400 transition-colors no-print p-1 rounded-full hover:bg-slate-100 ' + topicColors().hoverAccentText">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /></svg>
-                    </button>
-                  </div>
-                  
-                  <!-- Draggable Options -->
-                  <div class="flex flex-wrap items-center gap-3 pt-2 border-t border-gray-200">
-                    <span class="text-gray-500 font-medium text-sm">Seçenekler:</span>
-                     @for (option of problem.options; track option) {
-                       <div 
-                         [draggable]="!showFeedback()" 
-                         (dragstart)="onDragStart($event, option)"
-                         class="px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-lg font-medium text-gray-800 transition-all duration-200"
-                         [class.cursor-grab]="!showFeedback()"
-                         [class.cursor-not-allowed]="showFeedback()"
-                         [class.opacity-50]="showFeedback()">
-                         {{ option }}
-                       </div>
-                     }
-                  </div>
-                  
-                   <!-- Feedback -->
-                  @if (showFeedback() && answerStatuses()[$index] === 'incorrect') {
-                      <div class="text-sm text-green-700 font-medium mt-3 animate-fade-in">
-                          Doğru Cevap: <span class="font-bold">{{ problem.correctAnswer }}</span>
-                      </div>
-                  }
-                </div>
-            </div>
-          </div>
-        }
-      }
-    }
-  </div>
-
-  <div class="mt-10 pt-6 border-t border-slate-200 flex flex-wrap justify-center items-center gap-4 no-print" [class.hidden]="isPreviewing()">
-    @if (activity().activityType !== 'sentence-completion') {
-      <button (click)="checkAnswers()" class="flex items-center bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-6 rounded-full transition-transform transform hover:scale-105">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        Cevapları Kontrol Et
-      </button>
-    }
-     <button (click)="togglePreview(true)" class="flex items-center bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-full transition-colors">
-     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-     </svg>
-    Baskı Önizleme
-    </button>
-    @if(score()) {
-        <div class="bg-blue-100 text-blue-800 text-lg font-semibold px-4 py-2 rounded-full animate-fade-in">
-            {{ score() }}
-        </div>
-    }
   </div>
 </div>
 
 @if (showSuccessModal()) {
   <div class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center animate-fade-in no-print" (click)="closeSuccessModal()">
+    
+    <!-- Confetti Animation -->
+    @if(showConfetti()) {
+      <div class="absolute inset-0 pointer-events-none overflow-hidden">
+        @for(piece of confettiPieces(); track $index) {
+          <div class="confetti" 
+               [style.left]="piece.left" 
+               [style.animation-delay]="piece.animDelay"
+               [style.animation-duration]="piece.animDuration"
+               [style.background-color]="piece.color"></div>
+        }
+      </div>
+    }
+
     <div class="bg-white rounded-2xl shadow-2xl p-8 text-center max-w-sm m-4 transform transition-all scale-95" [class.scale-100]="showSuccessModal()" (click)="$event.stopPropagation()">
       <h2 class="text-3xl font-bold text-green-600 mb-2">Tebrikler!</h2>
       <p class="text-lg text-gray-700 mb-4">Etkinliği başarıyla tamamladın.</p>
@@ -317,17 +315,21 @@
       <div class="bg-blue-100 text-blue-800 text-xl font-semibold px-6 py-3 rounded-full mb-6">
         {{ score() }}
       </div>
-       <div class="space-y-3">
-         <button (click)="requestNextActivity()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-full transition-transform transform hover:scale-105 flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-            Sonraki Etkinlik
-        </button>
-        <button (click)="closeSuccessModal()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-full transition-transform transform hover:scale-105">
-          Kapat
-        </button>
-      </div>
+      @if(showSuccessActions()) {
+        <div class="space-y-3 animate-fade-in">
+          <button (click)="requestNextActivity()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-full transition-transform transform hover:scale-105 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              Sonraki Etkinlik
+          </button>
+          <button (click)="closeSuccessModal()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-full transition-transform transform hover:scale-105">
+            Kapat
+          </button>
+        </div>
+      } @else {
+        <div class="h-[100px]"></div> <!-- Placeholder to prevent layout shift -->
+      }
     </div>
   </div>
 }

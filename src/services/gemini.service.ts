@@ -21,6 +21,30 @@ export class GeminiService {
     }
   }
 
+  async generateDashboardFeedback(progressData: string): Promise<string> {
+    if (!this.ai) {
+      throw new Error('Gemini AI client is not initialized. Check API Key.');
+    }
+    
+    const prompt = `İşte bir öğrencinin ilerleme raporu:\n${progressData}\nBu verilere dayanarak, öğrenciye yönelik sıcak, cesaret verici ve kişiselleştirilmiş bir geri bildirim mesajı oluştur. Mesajın bir parçası olarak, en çok ilerleme kaydettiği bir alanı öv ve ardından 0 veya 1 yıldıza sahip olduğu bir konuyu bir sonraki adım olarak öner. Cevabın sadece 2-3 cümlelik, arkadaş canlısı bir metin olsun.`;
+
+    try {
+        const response = await this.ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+            config: {
+              systemInstruction: "You are a friendly and encouraging educational assistant for a child with learning difficulties. Your name is 'Bilge Baykuş'. Always speak in a warm, motivating, and simple tone in Turkish. Never sound like a robot. Start your response by greeting the student warmly.",
+            }
+        });
+
+        return response.text.trim();
+    } catch (error) {
+        console.error('Error generating dashboard feedback:', error);
+        throw new Error('Failed to generate dashboard feedback.');
+    }
+  }
+
+
   async generateActivity(topic: Topic, subTopic: SubTopic, gradeLevel: GradeLevel): Promise<Activity> {
     if (!this.ai) {
         throw new Error('Gemini AI client is not initialized. Check API Key.');
