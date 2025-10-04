@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal, WritableSignal, OnDestroy } from '@angular/core';
-import { Activity, isSentenceCompletion, isSimpleMath, isWordScramble, isVisualMatch, Topic, isOrdering, isDragDropMatch, DragDropMatchActivity } from '../../models/activity.model';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal, WritableSignal, OnDestroy, effect } from '@angular/core';
+import { Activity, isSentenceCompletion, isSimpleMath, isWordScramble, isMultipleChoice, Topic, isOrdering, isDragDropMatch, DragDropMatchActivity, isFillInTheBlanks, isTrueFalse, FillInTheBlanksActivity, isVisualMatch } from '../../models/activity.model';
 import { TtsService } from '../../services/tts.service';
 import { FeedbackSettings } from '../../app.component';
 
@@ -15,9 +15,17 @@ export class ActivityDisplayComponent implements OnDestroy {
   private hintTimeoutId: any = null;
   private ttsService = inject(TtsService);
 
-  activity = input.required<Activity>({
-    alias: 'activity',
-    transform: (value: Activity) => {
+  // FIX: The `transform` function on inputs should be pure and is not intended for side-effects.
+  // The logic has been moved to an `effect` in the constructor, which is the correct pattern
+  // for reacting to input changes. This also resolves the original TypeScript error.
+  activity = input.required<Activity>();
+  topic = input.required<Topic>();
+  initialAnswers = input<any[] | null>(null);
+  feedbackSettings = input.required<FeedbackSettings>();
+  
+  constructor() {
+    effect(() => {
+      const value = this.activity();
       this.initializeState(value);
       
       // Handle the hint display
@@ -30,14 +38,9 @@ export class ActivityDisplayComponent implements OnDestroy {
       } else {
         this.showHint.set(false);
       }
+    });
+  }
 
-      return value;
-    }
-  });
-  topic = input.required<Topic>();
-  initialAnswers = input<any[] | null>(null);
-  feedbackSettings = input.required<FeedbackSettings>();
-  
   answersChanged = output<any[]>();
   nextActivity = output<void>();
   activitySuccess = output<number>();
@@ -58,6 +61,17 @@ export class ActivityDisplayComponent implements OnDestroy {
   showSuccessActions = signal(false);
   confettiPieces = signal<{left: string, animDelay: string, animDuration: string, color: string}[]>([]);
   
+  // --- Undo/Redo State ---
+  history: WritableSignal<Record<number, string[]>> = signal({});
+  historyIndex: WritableSignal<Record<number, number>> = signal({});
+
+  canUndo = computed(() => (index: number) => (this.historyIndex()[index] ?? 0) > 0);
+  canRedo = computed(() => (index: number) => {
+    const hist = this.history()[index];
+    const idx = this.historyIndex()[index];
+    return hist != null && idx < hist.length - 1;
+  });
+
   // Stickers collection
   private stickers = ['🌟', '🏆', '🎉', '👍', '🚀', '🧠', '💡', '✅', '🎯', '🥇'];
 
@@ -65,9 +79,12 @@ export class ActivityDisplayComponent implements OnDestroy {
   isWordScramble = isWordScramble;
   isSimpleMath = isSimpleMath;
   isSentenceCompletion = isSentenceCompletion;
-  isVisualMatch = isVisualMatch;
+  isMultipleChoice = isMultipleChoice;
   isOrdering = isOrdering;
   isDragDropMatch = isDragDropMatch;
+  isFillInTheBlanks = isFillInTheBlanks;
+  isTrueFalse = isTrueFalse;
+  isVisualMatch = isVisualMatch;
 
   topicColors = computed(() => {
     switch (this.topic()) {
@@ -124,14 +141,10 @@ export class ActivityDisplayComponent implements OnDestroy {
 
     if (this.isWordScramble(currentActivity)) {
       totalCount = currentActivity.data.words.length;
-    } else if (this.isSimpleMath(currentActivity) || this.isDragDropMatch(currentActivity)) {
+    } else if (this.isSimpleMath(currentActivity) || this.isDragDropMatch(currentActivity) || this.isMultipleChoice(currentActivity) || this.isOrdering(currentActivity) || this.isFillInTheBlanks(currentActivity) || this.isTrueFalse(currentActivity) || this.isVisualMatch(currentActivity)) {
       totalCount = currentActivity.data.problems.length;
     } else if (this.isSentenceCompletion(currentActivity)) {
       totalCount = currentActivity.data.prompts.length;
-    } else if (this.isVisualMatch(currentActivity)) {
-      totalCount = currentActivity.data.problems.length;
-    } else if (this.isOrdering(currentActivity)) {
-      totalCount = currentActivity.data.problems.length;
     }
 
     if (totalCount === 0) {
@@ -151,14 +164,10 @@ export class ActivityDisplayComponent implements OnDestroy {
     let size = 0;
     if (isWordScramble(activity)) {
       size = activity.data.words.length;
-    } else if (isSimpleMath(activity) || isDragDropMatch(activity)) {
+    } else if (isSimpleMath(activity) || isDragDropMatch(activity) || isMultipleChoice(activity) || isOrdering(activity) || isFillInTheBlanks(activity) || isTrueFalse(activity) || isVisualMatch(activity)) {
       size = activity.data.problems.length;
     } else if (isSentenceCompletion(activity)) {
       size = activity.data.prompts.length;
-    } else if (isVisualMatch(activity)) {
-      size = activity.data.problems.length;
-    } else if (isOrdering(activity)) {
-      size = activity.data.problems.length;
     }
     
     const initialUserAnswers = this.initialAnswers();
@@ -173,6 +182,16 @@ export class ActivityDisplayComponent implements OnDestroy {
     this.answerStatuses.set(Array(size).fill('unchecked'));
     this.showFeedback.set(false);
     this.score.set(null);
+
+    // Initialize history for undo/redo
+    const initialHistory: Record<number, string[]> = {};
+    const initialHistoryIndex: Record<number, number> = {};
+    this.userAnswers().forEach((answer, index) => {
+        initialHistory[index] = [answer as string];
+        initialHistoryIndex[index] = 0;
+    });
+    this.history.set(initialHistory);
+    this.historyIndex.set(initialHistoryIndex);
   }
 
   // For text inputs/textareas
@@ -183,10 +202,53 @@ export class ActivityDisplayComponent implements OnDestroy {
       newAnswers[index] = value;
       return newAnswers;
     });
+    
+    // History management
+    this.history.update(h => {
+        const currentHistory = h[index] ? h[index].slice(0, (this.historyIndex()[index] ?? -1) + 1) : [];
+        const newHistoryForIndex = [...currentHistory, value];
+        return {
+            ...h,
+            [index]: newHistoryForIndex
+        };
+    });
+    this.historyIndex.update(i => ({
+        ...i,
+        [index]: (this.history()[index]?.length || 1) - 1
+    }));
+    
+    this.answersChanged.emit(this.userAnswers());
+  }
+
+  undo(index: number): void {
+    if (!this.canUndo()(index)) return;
+
+    this.historyIndex.update(i => ({ ...i, [index]: i[index] - 1 }));
+    const previousValue = this.history()[index][this.historyIndex()[index]];
+
+    this.userAnswers.update(answers => {
+        const newAnswers = [...answers];
+        newAnswers[index] = previousValue;
+        return newAnswers;
+    });
+    this.answersChanged.emit(this.userAnswers());
+  }
+
+  redo(index: number): void {
+    if (!this.canRedo()(index)) return;
+
+    this.historyIndex.update(i => ({ ...i, [index]: i[index] + 1 }));
+    const nextValue = this.history()[index][this.historyIndex()[index]];
+
+    this.userAnswers.update(answers => {
+        const newAnswers = [...answers];
+        newAnswers[index] = nextValue;
+        return newAnswers;
+    });
     this.answersChanged.emit(this.userAnswers());
   }
   
-  // For clickable options (visual-match)
+  // For clickable options (multiple-choice, true-false)
   selectAnswer(index: number, option: string): void {
     if (this.showFeedback()) return;
     this.userAnswers.update(answers => {
@@ -282,10 +344,10 @@ export class ActivityDisplayComponent implements OnDestroy {
         if (isCorrect) correctCount++;
         return isCorrect ? 'correct' : 'incorrect';
       });
-    } else if (isVisualMatch(currentActivity)) {
+    } else if (isMultipleChoice(currentActivity) || isVisualMatch(currentActivity)) {
       totalCount = currentActivity.data.problems.length;
       newStatuses = answers.map((answer, index) => {
-        const isCorrect = answer === currentActivity.data.problems[index].targetWord;
+        const isCorrect = answer === currentActivity.data.problems[index].correctAnswer;
         if (isCorrect) correctCount++;
         return isCorrect ? 'correct' : 'incorrect';
       });
@@ -296,7 +358,23 @@ export class ActivityDisplayComponent implements OnDestroy {
         if (isCorrect) correctCount++;
         return isCorrect ? 'correct' : 'incorrect';
       });
+    } else if (isFillInTheBlanks(currentActivity)) {
+        totalCount = currentActivity.data.problems.length;
+        newStatuses = answers.map((answer, index) => {
+            const isCorrect = (answer as string).trim().toLowerCase() === currentActivity.data.problems[index].correctAnswer.toLowerCase();
+            if (isCorrect) correctCount++;
+            return isCorrect ? 'correct' : 'incorrect';
+        });
+    } else if (isTrueFalse(currentActivity)) {
+        totalCount = currentActivity.data.problems.length;
+        newStatuses = answers.map((answer, index) => {
+            const correctAnswer = currentActivity.data.problems[index].isCorrect ? 'Doğru' : 'Yanlış';
+            const isCorrect = answer === correctAnswer;
+            if (isCorrect) correctCount++;
+            return isCorrect ? 'correct' : 'incorrect';
+        });
     }
+
 
     this.answerStatuses.set(newStatuses);
     this.score.set(`Sonuç: ${correctCount} / ${totalCount}`);
@@ -363,6 +441,8 @@ export class ActivityDisplayComponent implements OnDestroy {
     this.confettiPieces.set([]); // Clear confetti data
   }
 
+
+
   requestNextActivity(): void {
     this.closeSuccessModal();
     this.nextActivity.emit();
@@ -378,7 +458,7 @@ export class ActivityDisplayComponent implements OnDestroy {
     window.print();
   }
 
-  getPromptParts(problem: DragDropMatchActivity['data']['problems'][0]): string[] {
+  getPromptParts(problem: DragDropMatchActivity['data']['problems'][0] | FillInTheBlanksActivity['data']['problems'][0]): string[] {
     return problem.prompt.split('__');
   }
 

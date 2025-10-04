@@ -2,9 +2,9 @@ export type Topic = 'disleksi' | 'diskalkuli' | 'disgrafi';
 export type GradeLevel = 'ilkokul' | 'ortaokul';
 
 export type SubTopicId =
-  | 'phonological-awareness' | 'letter-sound' | 'reading-fluency' | 'reading-comprehension' | 'visual-processing' // Dyslexia
-  | 'number-sense' | 'basic-arithmetic' | 'problem-solving' | 'math-symbols' | 'time-measurement' // Dyscalculia
-  | 'handwriting-legibility' | 'letter-formation' | 'writing-speed' | 'sentence-construction' | 'punctuation-grammar'; // Dysgraphia
+  | 'phonological-awareness' | 'letter-sound' | 'reading-fluency' | 'reading-comprehension' | 'visual-processing' | 'vocabulary-morphology' | 'spelling-patterns' | 'working-memory-sequencing' // Dyslexia
+  | 'number-sense' | 'basic-arithmetic' | 'problem-solving' | 'math-symbols' | 'time-measurement' | 'spatial-reasoning' | 'estimation-skills' | 'fractions-decimals' | 'visual-number-representation' // Dyscalculia
+  | 'handwriting-legibility' | 'letter-formation' | 'writing-speed' | 'sentence-construction' | 'punctuation-grammar' | 'fine-motor-skills' | 'writing-planning' | 'creative-writing-prompts' | 'keyboarding-skills'; // Dysgraphia
 
 export interface SubTopic {
     id: SubTopicId;
@@ -24,8 +24,8 @@ export interface SentenceCompletionData {
   prompts: string[];
 }
 
-export interface VisualMatchData {
-  problems: { targetWord: string; options: string[] }[];
+export interface MultipleChoiceData {
+  problems: { question: string; options: string[]; correctAnswer: string }[];
 }
 
 export interface OrderingData {
@@ -44,6 +44,28 @@ export interface DragDropMatchData {
   }[];
 }
 
+export interface FillInTheBlanksData {
+    problems: {
+        prompt: string; // The sentence with a placeholder like '__'
+        correctAnswer: string; // The word that fills the blank
+    }[];
+}
+
+export interface TrueFalseData {
+  problems: { 
+    statement: string; 
+    isCorrect: boolean; // true for 'Doğru', false for 'Yanlış'
+  }[];
+}
+
+export interface VisualMatchData {
+  problems: {
+    question: string; // The number or concept to match, e.g., "7"
+    options: string[]; // Array of strings, which will be emoji strings, e.g., ["🍎🍎🍎", "🍎🍎🍎🍎🍎", "🍎🍎🍎🍎🍎🍎🍎"]
+    correctAnswer: string; // The correct emoji string from the options
+  }[];
+}
+
 
 interface BaseActivity<T, U extends string> {
   title: string;
@@ -56,12 +78,15 @@ interface BaseActivity<T, U extends string> {
 export type WordScrambleActivity = BaseActivity<WordScrambleData, 'word-scramble'>;
 export type SimpleMathActivity = BaseActivity<SimpleMathData, 'simple-math'>;
 export type SentenceCompletionActivity = BaseActivity<SentenceCompletionData, 'sentence-completion'>;
-export type VisualMatchActivity = BaseActivity<VisualMatchData, 'visual-match'>;
+export type MultipleChoiceActivity = BaseActivity<MultipleChoiceData, 'multiple-choice'>;
 export type OrderingActivity = BaseActivity<OrderingData, 'ordering'>;
 export type DragDropMatchActivity = BaseActivity<DragDropMatchData, 'drag-drop-match'>;
+export type FillInTheBlanksActivity = BaseActivity<FillInTheBlanksData, 'fill-in-the-blanks'>;
+export type TrueFalseActivity = BaseActivity<TrueFalseData, 'true-false'>;
+export type VisualMatchActivity = BaseActivity<VisualMatchData, 'visual-match'>;
 
 
-export type Activity = WordScrambleActivity | SimpleMathActivity | SentenceCompletionActivity | VisualMatchActivity | OrderingActivity | DragDropMatchActivity;
+export type Activity = WordScrambleActivity | SimpleMathActivity | SentenceCompletionActivity | MultipleChoiceActivity | OrderingActivity | DragDropMatchActivity | FillInTheBlanksActivity | TrueFalseActivity | VisualMatchActivity;
 
 // Type guards to help TypeScript understand which activity type is being used.
 export function isWordScramble(activity: Activity): activity is WordScrambleActivity {
@@ -76,8 +101,8 @@ export function isSentenceCompletion(activity: Activity): activity is SentenceCo
     return activity.activityType === 'sentence-completion';
 }
 
-export function isVisualMatch(activity: Activity): activity is VisualMatchActivity {
-    return activity.activityType === 'visual-match';
+export function isMultipleChoice(activity: Activity): activity is MultipleChoiceActivity {
+    return activity.activityType === 'multiple-choice';
 }
 
 export function isOrdering(activity: Activity): activity is OrderingActivity {
@@ -86,4 +111,16 @@ export function isOrdering(activity: Activity): activity is OrderingActivity {
 
 export function isDragDropMatch(activity: Activity): activity is DragDropMatchActivity {
     return activity.activityType === 'drag-drop-match';
+}
+
+export function isFillInTheBlanks(activity: Activity): activity is FillInTheBlanksActivity {
+    return activity.activityType === 'fill-in-the-blanks';
+}
+
+export function isTrueFalse(activity: Activity): activity is TrueFalseActivity {
+    return activity.activityType === 'true-false';
+}
+
+export function isVisualMatch(activity: Activity): activity is VisualMatchActivity {
+    return activity.activityType === 'visual-match';
 }
