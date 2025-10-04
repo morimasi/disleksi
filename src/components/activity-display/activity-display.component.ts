@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal, WritableSignal, OnDestroy, effect } from '@angular/core';
-import { Activity, isSentenceCompletion, isSimpleMath, isWordScramble, isMultipleChoice, Topic, isOrdering, isDragDropMatch, DragDropMatchActivity, isFillInTheBlanks, isTrueFalse, FillInTheBlanksActivity, isVisualMatch } from '../../models/activity.model';
+import { Activity, isSentenceCompletion, isSimpleMath, isWordScramble, isMultipleChoice, Topic, isOrdering, isDragDropMatch, DragDropMatchActivity, isFillInTheBlanks, isTrueFalse, FillInTheBlanksActivity, isVisualMatch, isMatchingPairs, isSequencingEvents } from '../../models/activity.model';
 import { TtsService } from '../../services/tts.service';
+import { GeminiService } from '../../services/gemini.service';
 import { FeedbackSettings } from '../../app.component';
 
 type AnswerStatus = 'correct' | 'incorrect' | 'unchecked';
@@ -14,6 +15,7 @@ export class ActivityDisplayComponent implements OnDestroy {
   showHint = signal(false);
   private hintTimeoutId: any = null;
   private ttsService = inject(TtsService);
+  private geminiService = inject(GeminiService);
 
   // FIX: The `transform` function on inputs should be pure and is not intended for side-effects.
   // The logic has been moved to an `effect` in the constructor, which is the correct pattern
@@ -45,14 +47,22 @@ export class ActivityDisplayComponent implements OnDestroy {
   nextActivity = output<void>();
   activitySuccess = output<number>();
 
-  userAnswers: WritableSignal<(string | string[])[]> = signal([]);
+  userAnswers: WritableSignal<(string | string[] | null)[]> = signal([]);
   answerStatuses: WritableSignal<AnswerStatus[]> = signal([]);
   showFeedback = signal(false);
   score = signal<string | null>(null);
   private feedbackTimeoutId: any = null;
+
+  // New signals for dynamic hints
+  dynamicHints = signal<Record<number, string | null>>({});
+  isHintLoading = signal<Record<number, boolean>>({});
   
   // Drag and Drop State
   draggedOverIndex = signal<number | null>(null);
+
+  // Matching Pairs State
+  selectedItem1Index = signal<number | null>(null);
+  shuffledColumn2Items = signal<string[]>([]);
 
   // New signals for success modal and animation
   showSuccessModal = signal(false);
@@ -85,6 +95,8 @@ export class ActivityDisplayComponent implements OnDestroy {
   isFillInTheBlanks = isFillInTheBlanks;
   isTrueFalse = isTrueFalse;
   isVisualMatch = isVisualMatch;
+  isMatchingPairs = isMatchingPairs;
+  isSequencingEvents = isSequencingEvents;
 
   topicColors = computed(() => {
     switch (this.topic()) {
@@ -134,16 +146,18 @@ export class ActivityDisplayComponent implements OnDestroy {
       if (Array.isArray(answer)) {
         return answer.length > 0;
       }
-      return typeof answer === 'string' && answer.trim() !== '';
+      return answer !== null && typeof answer === 'string' && answer.trim() !== '';
     }).length;
 
     let totalCount = 0;
 
-    if (this.isWordScramble(currentActivity)) {
+    if (isWordScramble(currentActivity)) {
       totalCount = currentActivity.data.words.length;
-    } else if (this.isSimpleMath(currentActivity) || this.isDragDropMatch(currentActivity) || this.isMultipleChoice(currentActivity) || this.isOrdering(currentActivity) || this.isFillInTheBlanks(currentActivity) || this.isTrueFalse(currentActivity) || this.isVisualMatch(currentActivity)) {
+    } else if (isSimpleMath(currentActivity) || isDragDropMatch(currentActivity) || isMultipleChoice(currentActivity) || isOrdering(currentActivity) || isFillInTheBlanks(currentActivity) || isTrueFalse(currentActivity) || isVisualMatch(currentActivity) || isSequencingEvents(currentActivity)) {
       totalCount = currentActivity.data.problems.length;
-    } else if (this.isSentenceCompletion(currentActivity)) {
+    } else if (isMatchingPairs(currentActivity)) {
+        totalCount = currentActivity.data.pairs.length;
+    } else if (isSentenceCompletion(currentActivity)) {
       totalCount = currentActivity.data.prompts.length;
     }
 
@@ -164,16 +178,23 @@ export class ActivityDisplayComponent implements OnDestroy {
     let size = 0;
     if (isWordScramble(activity)) {
       size = activity.data.words.length;
-    } else if (isSimpleMath(activity) || isDragDropMatch(activity) || isMultipleChoice(activity) || isOrdering(activity) || isFillInTheBlanks(activity) || isTrueFalse(activity) || isVisualMatch(activity)) {
+    } else if (isSimpleMath(activity) || isDragDropMatch(activity) || isMultipleChoice(activity) || isOrdering(activity) || isFillInTheBlanks(activity) || isTrueFalse(activity) || isVisualMatch(activity) || isSequencingEvents(activity)) {
       size = activity.data.problems.length;
+    } else if (isMatchingPairs(activity)) {
+      size = activity.data.pairs.length;
     } else if (isSentenceCompletion(activity)) {
       size = activity.data.prompts.length;
     }
     
     const initialUserAnswers = this.initialAnswers();
-    if (isOrdering(activity)) {
+    if (isOrdering(activity) || isSequencingEvents(activity)) {
         const answers = (initialUserAnswers && initialUserAnswers.length === size) ? initialUserAnswers : Array(size).fill([]);
         this.userAnswers.set(answers as string[][]);
+    } else if (isMatchingPairs(activity)) {
+        this.userAnswers.set(Array(size).fill(null));
+        const column2 = activity.data.pairs.map(p => p.item2);
+        this.shuffledColumn2Items.set(column2.sort(() => Math.random() - 0.5));
+        this.selectedItem1Index.set(null);
     } else {
         const answers = (initialUserAnswers && initialUserAnswers.length === size) ? initialUserAnswers : Array(size).fill('');
         this.userAnswers.set(answers as string[]);
@@ -182,6 +203,8 @@ export class ActivityDisplayComponent implements OnDestroy {
     this.answerStatuses.set(Array(size).fill('unchecked'));
     this.showFeedback.set(false);
     this.score.set(null);
+    this.dynamicHints.set({});
+    this.isHintLoading.set({});
 
     // Initialize history for undo/redo
     const initialHistory: Record<number, string[]> = {};
@@ -284,7 +307,7 @@ export class ActivityDisplayComponent implements OnDestroy {
     this.answersChanged.emit(this.userAnswers());
   }
 
-  // --- Methods for Ordering Activity ---
+  // --- Methods for Ordering & Sequencing Activity ---
   selectOrderItem(problemIndex: number, item: string): void {
     if (this.showFeedback()) return;
     this.userAnswers.update(answers => {
@@ -310,7 +333,7 @@ export class ActivityDisplayComponent implements OnDestroy {
     this.answersChanged.emit(this.userAnswers());
   }
   
-  // --- Template Helpers for Ordering ---
+  // --- Template Helpers for Ordering & Sequencing ---
   getUserAnswerAsArray(index: number): string[] {
     const answer = this.userAnswers()[index];
     return Array.isArray(answer) ? answer : [];
@@ -319,6 +342,44 @@ export class ActivityDisplayComponent implements OnDestroy {
   isItemSelected(problemIndex: number, item: string): boolean {
     const currentOrder = this.getUserAnswerAsArray(problemIndex);
     return currentOrder.includes(item);
+  }
+
+  // --- Methods for Matching Pairs ---
+  handleItem1Click(index: number): void {
+    if (this.showFeedback()) return;
+    
+    if (this.userAnswers()[index] !== null) {
+      this.userAnswers.update(answers => {
+        const newAnswers = [...answers];
+        newAnswers[index] = null;
+        return newAnswers;
+      });
+      this.selectedItem1Index.set(null);
+      return;
+    }
+
+    if(this.selectedItem1Index() === index) {
+      this.selectedItem1Index.set(null); // Deselect if clicked again
+    } else {
+      this.selectedItem1Index.set(index);
+    }
+  }
+
+  handleItem2Click(item2Text: string): void {
+    if (this.showFeedback() || this.selectedItem1Index() === null) return;
+    if (this.isItem2Selected(item2Text)) return;
+
+    this.userAnswers.update(answers => {
+      const newAnswers = [...answers];
+      newAnswers[this.selectedItem1Index()!] = item2Text;
+      return newAnswers;
+    });
+    this.selectedItem1Index.set(null);
+    this.answersChanged.emit(this.userAnswers());
+  }
+  
+  isItem2Selected(item: string): boolean {
+    return (this.userAnswers() as (string | null)[])?.includes(item) ?? false;
   }
   
   // --- Methods for Drag and Drop ---
@@ -343,6 +404,25 @@ export class ActivityDisplayComponent implements OnDestroy {
       this.answersChanged.emit(this.userAnswers());
     }
     this.draggedOverIndex.set(null);
+  }
+
+  // --- Dynamic Hint Method ---
+  async requestDynamicHint(problemIndex: number): Promise<void> {
+    const currentActivity = this.activity();
+    if (!currentActivity || this.isHintLoading()[problemIndex] || this.dynamicHints()[problemIndex]) return;
+
+    this.isHintLoading.update(loading => ({ ...loading, [problemIndex]: true }));
+    
+    try {
+        const userAnswer = this.userAnswers()[problemIndex];
+        const hint = await this.geminiService.generateHintForQuestion(currentActivity, problemIndex, userAnswer);
+        this.dynamicHints.update(hints => ({...hints, [problemIndex]: hint}));
+    } catch (error) {
+        console.error('Failed to get dynamic hint', error);
+        this.dynamicHints.update(hints => ({...hints, [problemIndex]: 'Üzgünüm, şu anda bir ipucu oluşturulamadı.'}));
+    } finally {
+        this.isHintLoading.update(loading => ({ ...loading, [problemIndex]: false }));
+    }
   }
 
   // --- Check Answers Logic ---
@@ -376,13 +456,20 @@ export class ActivityDisplayComponent implements OnDestroy {
         if (isCorrect) correctCount++;
         return isCorrect ? 'correct' : 'incorrect';
       });
-    } else if (isOrdering(currentActivity)) {
+    } else if (isOrdering(currentActivity) || isSequencingEvents(currentActivity)) {
       totalCount = currentActivity.data.problems.length;
       newStatuses = answers.map((answer, index) => {
         const isCorrect = JSON.stringify(answer) === JSON.stringify(currentActivity.data.problems[index].correctOrder);
         if (isCorrect) correctCount++;
         return isCorrect ? 'correct' : 'incorrect';
       });
+    } else if (isMatchingPairs(currentActivity)) {
+        totalCount = currentActivity.data.pairs.length;
+        newStatuses = answers.map((answer, index) => {
+            const isCorrect = answer === currentActivity.data.pairs[index].item2;
+            if (isCorrect) correctCount++;
+            return isCorrect ? 'correct' : 'incorrect';
+        });
     } else if (isFillInTheBlanks(currentActivity)) {
         totalCount = currentActivity.data.problems.length;
         newStatuses = answers.map((answer, index) => {
@@ -487,15 +574,17 @@ export class ActivityDisplayComponent implements OnDestroy {
     return problem.prompt.split('__');
   }
 
-  statusClasses(status: AnswerStatus): string {
-    if (!this.showFeedback()) return 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500';
+  statusClasses = computed(() => (status: AnswerStatus): string => {
+    if (!this.showFeedback()) {
+      return 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500';
+    }
     switch (status) {
       case 'correct':
-        return 'border-green-500 bg-green-50 ring-green-500';
+        return 'border-green-500 bg-green-50 ring-green-500 animate-pop-in';
       case 'incorrect':
-        return 'border-red-500 bg-red-50 ring-red-500';
+        return 'border-red-500 bg-red-50 ring-red-500 animate-shake';
       default:
         return 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500';
     }
-  }
+  });
 }

@@ -66,6 +66,20 @@ export interface VisualMatchData {
   }[];
 }
 
+export interface MatchingPairsData {
+  column1Title: string;
+  column2Title: string;
+  pairs: { item1: string; item2: string }[];
+}
+
+export interface SequencingEventsData {
+  problems: {
+    scenario: string;
+    events: string[];
+    correctOrder: string[];
+  }[];
+}
+
 
 interface BaseActivity<T, U extends string> {
   title: string;
@@ -84,9 +98,11 @@ export type DragDropMatchActivity = BaseActivity<DragDropMatchData, 'drag-drop-m
 export type FillInTheBlanksActivity = BaseActivity<FillInTheBlanksData, 'fill-in-the-blanks'>;
 export type TrueFalseActivity = BaseActivity<TrueFalseData, 'true-false'>;
 export type VisualMatchActivity = BaseActivity<VisualMatchData, 'visual-match'>;
+export type MatchingPairsActivity = BaseActivity<MatchingPairsData, 'matching-pairs'>;
+export type SequencingEventsActivity = BaseActivity<SequencingEventsData, 'sequencing-events'>;
 
 
-export type Activity = WordScrambleActivity | SimpleMathActivity | SentenceCompletionActivity | MultipleChoiceActivity | OrderingActivity | DragDropMatchActivity | FillInTheBlanksActivity | TrueFalseActivity | VisualMatchActivity;
+export type Activity = WordScrambleActivity | SimpleMathActivity | SentenceCompletionActivity | MultipleChoiceActivity | OrderingActivity | DragDropMatchActivity | FillInTheBlanksActivity | TrueFalseActivity | VisualMatchActivity | MatchingPairsActivity | SequencingEventsActivity;
 
 // Type guards to help TypeScript understand which activity type is being used.
 export function isWordScramble(activity: Activity): activity is WordScrambleActivity {
@@ -123,4 +139,12 @@ export function isTrueFalse(activity: Activity): activity is TrueFalseActivity {
 
 export function isVisualMatch(activity: Activity): activity is VisualMatchActivity {
     return activity.activityType === 'visual-match';
+}
+
+export function isMatchingPairs(activity: Activity): activity is MatchingPairsActivity {
+    return activity.activityType === 'matching-pairs';
+}
+
+export function isSequencingEvents(activity: Activity): activity is SequencingEventsActivity {
+    return activity.activityType === 'sequencing-events';
 }

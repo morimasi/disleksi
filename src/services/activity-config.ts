@@ -3,6 +3,75 @@ import { Topic, SubTopicId } from '../models/activity.model';
 
 // --- Reusable Schemas ---
 
+const matchingPairsSchema = {
+    type: Type.OBJECT,
+    properties: {
+        title: { type: Type.STRING, description: 'A fun title for the activity in Turkish.' },
+        instructions: { type: Type.STRING, description: 'Simple instructions for the child in Turkish (e.g., "Doğru çiftleri eşleştir").' },
+        hint: { type: Type.STRING, description: 'A brief, encouraging tip in Turkish.' },
+        activityType: { type: Type.STRING, description: "Should be 'matching-pairs'." },
+        data: {
+            type: Type.OBJECT,
+            properties: {
+                column1Title: { type: Type.STRING, description: "The title for the first column (e.g., 'Kelime')." },
+                column2Title: { type: Type.STRING, description: "The title for the second column (e.g., 'Anlamı')." },
+                pairs: {
+                    type: Type.ARRAY,
+                    description: 'An array of 4 to 6 objects, each representing a correct pair.',
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            item1: { type: Type.STRING, description: 'The item for the first column.' },
+                            item2: { type: Type.STRING, description: 'The corresponding item for the second column.' }
+                        },
+                        required: ['item1', 'item2'],
+                    },
+                },
+            },
+            required: ['column1Title', 'column2Title', 'pairs'],
+        },
+    },
+    required: ['title', 'instructions', 'activityType', 'data'],
+};
+
+const sequencingEventsSchema = {
+    type: Type.OBJECT,
+    properties: {
+        title: { type: Type.STRING, description: 'A fun title for the activity in Turkish.' },
+        instructions: { type: Type.STRING, description: 'Simple instructions for the child in Turkish (e.g., "Olayları doğru sıraya diz").' },
+        hint: { type: Type.STRING, description: 'A brief, encouraging tip in Turkish.' },
+        activityType: { type: Type.STRING, description: "Should be 'sequencing-events'." },
+        data: {
+            type: Type.OBJECT,
+            properties: {
+                problems: {
+                    type: Type.ARRAY,
+                    description: 'An array of 1 to 2 sequencing problem objects.',
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            scenario: { type: Type.STRING, description: "The context or title for the sequence (e.g., 'Hikayeyi sırala')." },
+                            events: {
+                                type: Type.ARRAY,
+                                description: 'An array of 3-5 strings representing events in a jumbled order.',
+                                items: { type: Type.STRING }
+                            },
+                            correctOrder: {
+                                type: Type.ARRAY,
+                                description: 'The array of events in the correct chronological or logical order.',
+                                items: { type: Type.STRING }
+                            },
+                        },
+                        required: ['scenario', 'events', 'correctOrder'],
+                    },
+                },
+            },
+            required: ['problems'],
+        },
+    },
+    required: ['title', 'instructions', 'activityType', 'data'],
+};
+
 const orderingSchema = {
   type: Type.OBJECT,
   properties: {
@@ -306,16 +375,16 @@ export const ACTIVITY_CONFIGS: Record<Topic, { subtopics: Partial<Record<SubTopi
                 description: "a 'Reading Fluency' practice activity. The 'question' field should be 'Aşağıdaki cümlelerden hangisi doğrudur?'. For each item, provide a short, simple Turkish correct sentence (3-5 words) as the 'correctAnswer'. Then provide 3-4 'options' that include the correct sentence and distractors that are very similar but have one or two words changed or reordered. The goal is to encourage careful and quick reading."
             },
             'reading-comprehension': {
-                schema: fillInTheBlanksSchema,
-                description: "a 'Reading Comprehension' cloze test activity with 5 problems. For each problem, provide a simple Turkish sentence with one context-ually important word missing, represented by a double underscore '__'. The 'prompt' field must contain this sentence. The 'correctAnswer' must be the single missing word that makes sense in the sentence. For example, Prompt: 'Kedi süt __.', Correct Answer: 'içti'."
+                schema: sequencingEventsSchema,
+                description: "a 'Sequencing Events' activity. The scenario should be about a short, simple story. The events should be 3-5 key plot points from the story that need to be put in chronological order."
             },
             'visual-processing': {
                 schema: dragDropMatchSchema,
                 description: "a 'Visual Processing' drag-and-drop activity with 5 problems. For each problem, the 'prompt' must be a simple Turkish sentence with a word missing, represented by a double underscore '__'. The 'options' should be an array of 3-4 words including the correct word for the sentence ('correctAnswer') and visually similar distractors. Distractors should be created by transposing letters (e.g., 've' for 'ev'), or using visually similar letters (e.g., 'd' for 'b'). The 'correctAnswer' must be the correctly spelled word that fits the context of the sentence."
             },
             'vocabulary-morphology': {
-                schema: dragDropMatchSchema,
-                description: "a 'Vocabulary and Morphology' drag-and-drop activity with 5 problems. For each problem, the 'prompt' should be a Turkish root word with a placeholder for a prefix or suffix (e.g., 'göz__'). The 'options' should include the correct affix (e.g., 'lük') and some distractors. The 'correctAnswer' is the correct affix. The goal is to build new words."
+                schema: matchingPairsSchema,
+                description: "a 'Vocabulary and Morphology' matching pairs activity. Column 1 should contain 5 Turkish root words, and Column 2 should contain their corresponding suffixes or prefixes that form a new, common word (e.g., item1: 'göz', item2: '-lük')."
             },
             'spelling-patterns': {
                 schema: multipleChoiceSchema,
@@ -342,12 +411,12 @@ export const ACTIVITY_CONFIGS: Record<Topic, { subtopics: Partial<Record<SubTopi
                 description: "a set of 5 simple arithmetic problems (addition, subtraction, multiplication, division) appropriate for the grade level. Ensure a mix of operations if possible. Questions and answers must be in Turkish."
             },
             'problem-solving': {
-                schema: simpleMathSchema,
-                description: "a set of 3-4 simple, real-world word problems that require basic arithmetic. The problems should be relatable for a child. For example: 'Ayşe'nin 5 kalemi vardı, arkadaşı ona 3 kalem daha verdi. Ayşe'nin şimdi kaç kalemi var?'. The answer should be the numerical value. Problems and answers must be in Turkish."
+                schema: sequencingEventsSchema,
+                description: "a 'Sequencing Events' activity. The scenario is to sequence the steps to solve a simple math word problem. The events should be 3-4 steps like 'Read the problem', 'Find the numbers', 'Decide the operation (add/subtract)', and 'Solve'."
             },
             'math-symbols': {
-                schema: dragDropMatchSchema,
-                description: "a 'Math Symbols' drag-and-drop activity with 5 problems. For each problem, provide a simple mathematical equation with the operator or relation symbol missing, represented by a double underscore '__' (e.g., '10 __ 5 = 5' or '7 __ 9'). The 'prompt' field must contain this equation. Provide 3-4 symbol 'options' (e.g., '+', '-', '<', '>'). The 'correctAnswer' must be the correct symbol."
+                schema: matchingPairsSchema,
+                description: "a 'Math Symbols' matching pairs activity. Column 1 should have 5 math symbols (e.g., '+', '>', '=') and Column 2 should have their Turkish names (e.g., 'Artı', 'Büyüktür', 'Eşittir')."
             },
             'time-measurement': {
                 schema: multipleChoiceSchema,
@@ -382,8 +451,8 @@ export const ACTIVITY_CONFIGS: Record<Topic, { subtopics: Partial<Record<SubTopi
                 description: "a 'Punctuation and Grammar' true/false activity with 5 problems. For each problem, create a simple Turkish sentence as the 'statement'. Some statements should have correct punctuation and grammar, and some should have a common error (e.g., missing capital letter, missing period). The 'isCorrect' field must be a boolean representing whether the statement is grammatically correct. Example statement: 'ali okula gitti.' (isCorrect: false). Another example: 'Ayşe, topu Ali'ye attı.' (isCorrect: true)."
             },
             'writing-planning': {
-                schema: orderingSchema,
-                description: "a 'Writing Planning' ordering activity. Provide 3-4 simple Turkish sentences that, when ordered correctly, form a short, coherent story or paragraph. The 'items' should be the jumbled sentences, and 'correctOrder' should be the sentences in the correct sequence."
+                schema: sequencingEventsSchema,
+                description: "a 'Writing Planning' sequencing activity. Provide 3-4 simple Turkish sentences that, when ordered correctly, form a short, coherent story or paragraph. The 'events' should be the jumbled sentences, and 'correctOrder' should be the sentences in the correct sequence."
             },
             'fine-motor-skills': {
                  schema: sentenceCompletionSchema,

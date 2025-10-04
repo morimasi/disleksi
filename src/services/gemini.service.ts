@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { GoogleGenAI } from '@google/genai';
-import { Activity, GradeLevel, Topic, SubTopic, SentenceCompletionActivity } from '../models/activity.model';
+import { Activity, GradeLevel, Topic, SubTopic, SentenceCompletionActivity, isWordScramble, isSimpleMath, isMultipleChoice, isOrdering, isDragDropMatch, isFillInTheBlanks, isTrueFalse, isVisualMatch, isMatchingPairs, isSequencingEvents } from '../models/activity.model';
 import { ACTIVITY_CONFIGS } from './activity-config';
 
 @Injectable({
@@ -42,6 +42,60 @@ export class GeminiService {
     } catch (error) {
         console.error('Error generating dashboard feedback:', error);
         throw new Error('Failed to generate dashboard feedback.');
+    }
+  }
+
+  async generateHintForQuestion(activity: Activity, problemIndex: number, userAnswer?: string | string[] | null): Promise<string> {
+    if (!this.ai) {
+      throw new Error('Gemini AI client is not initialized. Check API Key.');
+    }
+
+    let problemContext = '';
+    let studentAnswer = userAnswer ? `Öğrencinin cevabı: "${Array.isArray(userAnswer) ? userAnswer.join(', ') : userAnswer}"` : "Öğrenci henüz cevap vermedi.";
+
+    if (isWordScramble(activity)) {
+      const problem = activity.data.words[problemIndex];
+      problemContext = `Soru Tipi: Karışık Kelime\nKarışık kelime: "${problem.scrambled}".`;
+    } else if (isSimpleMath(activity)) {
+      const problem = activity.data.problems[problemIndex];
+      problemContext = `Soru Tipi: Matematik Problemi\nSoru: "${problem.question}".`;
+    } else if (isMultipleChoice(activity) || isVisualMatch(activity)) {
+      const problem = activity.data.problems[problemIndex];
+      problemContext = `Soru Tipi: Çoktan Seçmeli\nSoru: "${problem.question}"\nSeçenekler: ${problem.options.join(', ')}.`;
+    } else if (isOrdering(activity)) {
+      const problem = activity.data.problems[problemIndex];
+      problemContext = `Soru Tipi: Sıralama\nSoru: "${problem.question}"\nSıralanacaklar: ${problem.items.join(', ')}.`;
+    } else if (isSequencingEvents(activity)) {
+        const problem = activity.data.problems[problemIndex];
+        problemContext = `Soru Tipi: Olay Sıralama\nSenaryo: "${problem.scenario}"\nSıralanacaklar: ${problem.events.join(', ')}.`;
+    } else if (isDragDropMatch(activity)) {
+      const problem = activity.data.problems[problemIndex];
+      problemContext = `Soru Tipi: Sürükle Bırak\nCümle: "${problem.prompt.replace('__', '___')}"\nSeçenekler: ${problem.options.join(', ')}.`;
+    } else if (isFillInTheBlanks(activity)) {
+      const problem = activity.data.problems[problemIndex];
+      problemContext = `Soru Tipi: Boşluk Doldurma\nCümle: "${problem.prompt.replace('__', '___')}".`;
+    } else if (isTrueFalse(activity)) {
+      const problem = activity.data.problems[problemIndex];
+      problemContext = `Soru Tipi: Doğru/Yanlış\nİfade: "${problem.statement}".`;
+    } else if (isMatchingPairs(activity)) {
+      const problem = activity.data.pairs[problemIndex];
+      problemContext = `Soru Tipi: Eşleştirme\nEşleştirilecek: "${problem.item1}". Eşleştirme seçenekleri: ${activity.data.pairs.map(p => p.item2).join(', ')}.`;
+    }
+
+    const prompt = `Bir öğrenme güçlüğü çeken ilkokul öğrencisi aşağıdaki soruda takıldı:\n\n${problemContext}\n${studentAnswer}\n\nDoğru cevabı doğrudan vermeden, öğrencinin doğru cevabı bulmasına yardımcı olacak tek cümlelik, çok basit, cesaret verici bir ipucu oluştur. İpucu Türkçe olmalıdır. Örnek: Karışık kelime "ealm" ise, ipucu "Kırmızı veya yeşil renkli bir meyvedir." olabilir. Matematik sorusu "5+3" ise, "5'in üzerine 3 daha saymayı dene." olabilir. Sadece ipucu cümlesini döndür.`;
+    
+    try {
+        const response = await this.ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+            config: {
+              systemInstruction: "You are a friendly and helpful teaching assistant for a child. Your language is Turkish. You are encouraging and simple in your explanations.",
+            }
+        });
+        return response.text.trim();
+    } catch (error) {
+        console.error('Error generating hint:', error);
+        throw new Error('Failed to generate hint.');
     }
   }
 
