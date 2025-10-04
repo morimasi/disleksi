@@ -17,9 +17,6 @@ export class ActivityDisplayComponent implements OnDestroy {
   private ttsService = inject(TtsService);
   private geminiService = inject(GeminiService);
 
-  // FIX: The `transform` function on inputs should be pure and is not intended for side-effects.
-  // The logic has been moved to an `effect` in the constructor, which is the correct pattern
-  // for reacting to input changes. This also resolves the original TypeScript error.
   activity = input.required<Activity>();
   topic = input.required<Topic>();
   initialAnswers = input<any[] | null>(null);
@@ -30,13 +27,12 @@ export class ActivityDisplayComponent implements OnDestroy {
       const value = this.activity();
       this.initializeState(value);
       
-      // Handle the hint display
-      clearTimeout(this.hintTimeoutId); // Clear any existing timeout
+      clearTimeout(this.hintTimeoutId);
       if (value.hint) {
         this.showHint.set(true);
         this.hintTimeoutId = setTimeout(() => {
           this.showHint.set(false);
-        }, 7000); // 7 seconds
+        }, 7000);
       } else {
         this.showHint.set(false);
       }
@@ -45,7 +41,7 @@ export class ActivityDisplayComponent implements OnDestroy {
 
   answersChanged = output<any[]>();
   nextActivity = output<void>();
-  activitySuccess = output<number>();
+  activitySuccess = output<{ successRate: number, correctAnswers: number, totalQuestions: number }>();
 
   userAnswers: WritableSignal<(string | string[] | null)[]> = signal([]);
   answerStatuses: WritableSignal<AnswerStatus[]> = signal([]);
@@ -53,25 +49,20 @@ export class ActivityDisplayComponent implements OnDestroy {
   score = signal<string | null>(null);
   private feedbackTimeoutId: any = null;
 
-  // New signals for dynamic hints
   dynamicHints = signal<Record<number, string | null>>({});
   isHintLoading = signal<Record<number, boolean>>({});
   
-  // Drag and Drop State
   draggedOverIndex = signal<number | null>(null);
 
-  // Matching Pairs State
   selectedItem1Index = signal<number | null>(null);
   shuffledColumn2Items = signal<string[]>([]);
 
-  // New signals for success modal and animation
   showSuccessModal = signal(false);
   successSticker = signal<string>('');
   showConfetti = signal(false);
   showSuccessActions = signal(false);
   confettiPieces = signal<{left: string, animDelay: string, animDuration: string, color: string}[]>([]);
   
-  // --- Undo/Redo State ---
   history: WritableSignal<Record<number, string[]>> = signal({});
   historyIndex: WritableSignal<Record<number, number>> = signal({});
 
@@ -82,10 +73,8 @@ export class ActivityDisplayComponent implements OnDestroy {
     return hist != null && idx < hist.length - 1;
   });
 
-  // Stickers collection
   private stickers = ['🌟', '🏆', '🎉', '👍', '🚀', '🧠', '💡', '✅', '🎯', '🥇'];
 
-  // Type guards for use in the template
   isWordScramble = isWordScramble;
   isSimpleMath = isSimpleMath;
   isSentenceCompletion = isSentenceCompletion;
@@ -206,7 +195,6 @@ export class ActivityDisplayComponent implements OnDestroy {
     this.dynamicHints.set({});
     this.isHintLoading.set({});
 
-    // Initialize history for undo/redo
     const initialHistory: Record<number, string[]> = {};
     const initialHistoryIndex: Record<number, number> = {};
     this.userAnswers().forEach((answer, index) => {
@@ -217,7 +205,6 @@ export class ActivityDisplayComponent implements OnDestroy {
     this.historyIndex.set(initialHistoryIndex);
   }
 
-  // For text inputs/textareas
   updateAnswer(index: number, event: Event): void {
     const value = (event.target as HTMLInputElement | HTMLTextAreaElement).value;
     this.userAnswers.update(answers => {
@@ -226,7 +213,6 @@ export class ActivityDisplayComponent implements OnDestroy {
       return newAnswers;
     });
     
-    // History management
     this.history.update(h => {
         const currentHistory = h[index] ? h[index].slice(0, (this.historyIndex()[index] ?? -1) + 1) : [];
         const newHistoryForIndex = [...currentHistory, value];
@@ -279,7 +265,6 @@ export class ActivityDisplayComponent implements OnDestroy {
       return newAnswers;
     });
 
-    // History management
     this.history.update(h => {
         const currentHistory = h[index] ? h[index].slice(0, (this.historyIndex()[index] ?? -1) + 1) : [];
         const newHistoryForIndex = [...currentHistory, clearedValue];
@@ -296,7 +281,6 @@ export class ActivityDisplayComponent implements OnDestroy {
     this.answersChanged.emit(this.userAnswers());
   }
   
-  // For clickable options (multiple-choice, true-false)
   selectAnswer(index: number, option: string): void {
     if (this.showFeedback()) return;
     this.userAnswers.update(answers => {
@@ -307,7 +291,6 @@ export class ActivityDisplayComponent implements OnDestroy {
     this.answersChanged.emit(this.userAnswers());
   }
 
-  // --- Methods for Ordering & Sequencing Activity ---
   selectOrderItem(problemIndex: number, item: string): void {
     if (this.showFeedback()) return;
     this.userAnswers.update(answers => {
@@ -333,7 +316,6 @@ export class ActivityDisplayComponent implements OnDestroy {
     this.answersChanged.emit(this.userAnswers());
   }
   
-  // --- Template Helpers for Ordering & Sequencing ---
   getUserAnswerAsArray(index: number): string[] {
     const answer = this.userAnswers()[index];
     return Array.isArray(answer) ? answer : [];
@@ -344,7 +326,6 @@ export class ActivityDisplayComponent implements OnDestroy {
     return currentOrder.includes(item);
   }
 
-  // --- Methods for Matching Pairs ---
   handleItem1Click(index: number): void {
     if (this.showFeedback()) return;
     
@@ -359,7 +340,7 @@ export class ActivityDisplayComponent implements OnDestroy {
     }
 
     if(this.selectedItem1Index() === index) {
-      this.selectedItem1Index.set(null); // Deselect if clicked again
+      this.selectedItem1Index.set(null);
     } else {
       this.selectedItem1Index.set(index);
     }
@@ -382,13 +363,12 @@ export class ActivityDisplayComponent implements OnDestroy {
     return (this.userAnswers() as (string | null)[])?.includes(item) ?? false;
   }
   
-  // --- Methods for Drag and Drop ---
   onDragStart(event: DragEvent, option: string): void {
     event.dataTransfer?.setData('text/plain', option);
   }
   
   onDragOver(event: DragEvent): void {
-    event.preventDefault(); // This is necessary to allow dropping
+    event.preventDefault();
   }
   
   onDrop(event: DragEvent, problemIndex: number): void {
@@ -406,7 +386,6 @@ export class ActivityDisplayComponent implements OnDestroy {
     this.draggedOverIndex.set(null);
   }
 
-  // --- Dynamic Hint Method ---
   async requestDynamicHint(problemIndex: number): Promise<void> {
     const currentActivity = this.activity();
     if (!currentActivity || this.isHintLoading()[problemIndex] || this.dynamicHints()[problemIndex]) return;
@@ -425,9 +404,8 @@ export class ActivityDisplayComponent implements OnDestroy {
     }
   }
 
-  // --- Check Answers Logic ---
   checkAnswers(): void {
-    clearTimeout(this.feedbackTimeoutId); // Clear previous timeout if any
+    clearTimeout(this.feedbackTimeoutId);
     const currentActivity = this.activity();
     let newStatuses: AnswerStatus[] = [];
     let correctCount = 0;
@@ -487,11 +465,9 @@ export class ActivityDisplayComponent implements OnDestroy {
         });
     }
 
-
     this.answerStatuses.set(newStatuses);
     this.score.set(`Sonuç: ${correctCount} / ${totalCount}`);
 
-    // Handle feedback display based on settings
     const settings = this.feedbackSettings();
     if (settings.enabled) {
       this.showFeedback.set(true);
@@ -502,11 +478,10 @@ export class ActivityDisplayComponent implements OnDestroy {
       }
     }
 
-    // Check for success, emit event, and show modal
     if (totalCount > 0) {
       const successRate = correctCount / totalCount;
       if (successRate >= 0.8) {
-        this.activitySuccess.emit(successRate);
+        this.activitySuccess.emit({ successRate, correctAnswers: correctCount, totalQuestions: totalCount });
         this.triggerSuccessModal();
       }
     }
@@ -532,16 +507,13 @@ export class ActivityDisplayComponent implements OnDestroy {
     this.showSuccessModal.set(true);
     this.showSuccessActions.set(false);
 
-    // Generate confetti and show it
     this.generateConfetti();
     this.showConfetti.set(true);
 
-    // After a short delay, show the action buttons
     setTimeout(() => {
         this.showSuccessActions.set(true);
     }, 1500);
 
-    // Stop confetti after a few seconds
     setTimeout(() => {
         this.showConfetti.set(false);
     }, 5000);
@@ -550,10 +522,8 @@ export class ActivityDisplayComponent implements OnDestroy {
   closeSuccessModal(): void {
     this.showSuccessModal.set(false);
     this.showConfetti.set(false);
-    this.confettiPieces.set([]); // Clear confetti data
+    this.confettiPieces.set([]);
   }
-
-
 
   requestNextActivity(): void {
     this.closeSuccessModal();

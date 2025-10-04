@@ -19,7 +19,7 @@ export class ActivityGeneratorComponent {
   customPrompts = input<string[] | undefined>();
   
   backToSubtopics = output<void>();
-  activityCompleted = output<{ subTopicId: SubTopicId; successRate: number }>();
+  activityCompleted = output<{ subTopicId: SubTopicId; successRate: number, correctAnswers: number, totalQuestions: number }>();
 
   private geminiService = inject(GeminiService);
 
@@ -39,8 +39,13 @@ export class ActivityGeneratorComponent {
     }
   });
   
-  onActivitySuccess(successRate: number): void {
-    this.activityCompleted.emit({ subTopicId: this.subTopic().id, successRate });
+  onActivitySuccess(event: { successRate: number, correctAnswers: number, totalQuestions: number }): void {
+    this.activityCompleted.emit({ 
+      subTopicId: this.subTopic().id, 
+      successRate: event.successRate,
+      correctAnswers: event.correctAnswers,
+      totalQuestions: event.totalQuestions
+    });
   }
 
   async generateActivity(): Promise<void> {

@@ -4,6 +4,7 @@ import { ActivityGeneratorComponent } from './components/activity-generator/acti
 import { TOPICS_DATA } from './topics.data';
 import { SafeHtmlPipe } from './pipes/safe-html.pipe';
 import { GeminiService } from './services/gemini.service';
+import { GamificationService } from './services/gamification.service';
 
 type FontSize = 'sm' | 'base' | 'lg';
 const fontSizes: FontSize[] = ['sm', 'base', 'lg'];
@@ -37,6 +38,7 @@ interface SearchResult {
 })
 export class AppComponent {
   private geminiService = inject(GeminiService);
+  gamificationService = inject(GamificationService);
   selectedTopic = signal<Topic | null>(null);
   selectedSubTopic = signal<SubTopic | null>(null);
   
@@ -63,7 +65,7 @@ export class AppComponent {
   newPrompt = signal('');
 
   // --- Notification System ---
-  notification = signal<{ message: string; type: 'success' | 'error' } | null>(null);
+  notification = signal<{ message: string; type: 'success' | 'error' | 'achievement' } | null>(null);
   private notificationTimeout: any;
 
   // --- Search Functionality ---
@@ -108,24 +110,19 @@ export class AppComponent {
   });
 
   // --- Progress Tracking ---
-  // FIX: Changed type to Partial<Record<...>> to allow an empty object as a valid initial state.
   progressData = signal<Partial<Record<SubTopicId, number>>>({});
   private readonly progressStorageKey = 'ogrenmeKoprusuProgressData';
 
-  studentStats = computed(() => {
+  strengths = computed(() => {
     const progress = this.progressData();
     const allSubTopics = this.topicKeys().flatMap(key => this.topicsDataSignal()[key].subTopics);
-    const maxStars = allSubTopics.length * 3;
+    return allSubTopics.filter(st => progress[st.id] === 3);
+  });
 
-    // FIX: Values from localStorage can be strings. Convert to numbers before reducing to prevent type errors.
-    const totalStars = Object.values(progress)
-      .map(stars => Number(stars || 0))
-      .reduce((sum, stars) => sum + stars, 0);
-
-    const totalScore = totalStars * 10; // Each star is 10 points
-    const overallPercentage = maxStars > 0 ? Math.round((totalStars / maxStars) * 100) : 0;
-
-    return { totalStars, totalScore, maxStars, overallPercentage };
+  areasForImprovement = computed(() => {
+    const progress = this.progressData();
+    const allSubTopics = this.topicKeys().flatMap(key => this.topicsDataSignal()[key].subTopics);
+    return allSubTopics.filter(st => (progress[st.id] || 0) < 3).sort((a,b) => (progress[a.id] || 0) - (progress[b.id] || 0));
   });
 
   topicProgress = computed(() => (topicKey: Topic) => {
@@ -136,7 +133,6 @@ export class AppComponent {
     const maxStars = subTopicIds.length * 3;
     const currentProgress = this.progressData();
     
-    // FIX: Coerce progress value to a number as it may be a string from localStorage to prevent string concatenation.
     const stars = subTopicIds.reduce((acc: number, id: SubTopicId) => acc + Number(currentProgress[id] || 0), 0);
 
     const percentage = maxStars > 0 ? Math.round((stars / maxStars) * 100) : 0;
@@ -144,13 +140,15 @@ export class AppComponent {
     return { stars, maxStars, percentage };
   });
 
-  updateProgress(event: { subTopicId: SubTopicId; successRate: number }): void {
-    // FIX: Ensure currentStars is a number to prevent string concatenation (e.g., '1' + 1 results in '11').
+  updateProgress(event: { subTopicId: SubTopicId; successRate: number, correctAnswers: number, totalQuestions: number }): void {
     const currentStars = Number(this.progressData()[event.subTopicId] || 0);
+    let newStars = currentStars;
+
     if (event.successRate >= 0.8 && currentStars < 3) {
+      newStars = currentStars + 1;
       this.progressData.update(data => ({
         ...data,
-        [event.subTopicId]: currentStars + 1
+        [event.subTopicId]: newStars
       }));
       try {
         localStorage.setItem(this.progressStorageKey, JSON.stringify(this.progressData()));
@@ -158,6 +156,21 @@ export class AppComponent {
         console.error('Could not save progress data to localStorage.', e);
       }
     }
+    
+    // Add points
+    const pointsToAdd = event.correctAnswers * 10;
+    const activityBonus = event.successRate >= 0.8 ? 50 : 0;
+    const { newLevel, newItems, newBadges } = this.gamificationService.addPoints(pointsToAdd + activityBonus);
+
+    // Check for contextual badges
+    const isPerfect = event.correctAnswers === event.totalQuestions;
+    const contextualBadges = this.gamificationService.checkContextualBadges(event.subTopicId, this.progressData(), this.topicsDataSignal(), isPerfect);
+
+    // Show notifications
+    if (newLevel) this.showNotification(`Tebrikler! Seviye ${newLevel} oldun!`, 'achievement');
+    [...newItems, ...newBadges, ...contextualBadges].forEach(unlockable => {
+       this.showNotification(`Yeni Ödül: ${unlockable.name} ${unlockable.icon}`, 'achievement');
+    });
   }
 
   // --- Accessibility Features ---
@@ -178,9 +191,7 @@ export class AppComponent {
   }));
 
   constructor() {
-    // Initialize dynamic topics data
     this.topicsDataSignal = signal(this.loadTopicsData());
-
     this.loadAllPreferences();
     
     effect(() => {
@@ -193,7 +204,6 @@ export class AppComponent {
     });
   }
 
-  // --- Admin & Login Methods ---
   handleLoginInput(field: 'username' | 'password', event: Event): void {
     const value = (event.target as HTMLInputElement).value;
     this.loginCredentials.update(creds => ({ ...creds, [field]: value }));
@@ -220,37 +230,11 @@ export class AppComponent {
     this.showLogin.set(true);
   }
 
-  // --- Student Dashboard Methods ---
   async openStudentDashboard(): Promise<void> {
     this.showStudentDashboard.set(true);
-    this.isGeneratingFeedback.set(true);
-    this.aiFeedback.set(null);
-
-    try {
-        const progress = this.progressData();
-        const topicsData = this.topicsDataSignal();
-        let progressString = '';
-
-        this.topicKeys().forEach(topicKey => {
-            const topic = topicsData[topicKey];
-            progressString += `${topic.title} Alanı:\n`;
-            topic.subTopics.forEach((subTopic: SubTopic) => {
-                const stars = progress[subTopic.id] || 0;
-                progressString += `- ${subTopic.title}: ${stars}/3 yıldız\n`;
-            });
-        });
-        
-        const feedback = await this.geminiService.generateDashboardFeedback(progressString);
-        this.aiFeedback.set(feedback);
-    } catch (error) {
-        console.error('Failed to generate AI feedback:', error);
-        this.aiFeedback.set('Üzgünüm, şu anda bir geri bildirim oluşturamadım. Lütfen daha sonra tekrar dene.');
-    } finally {
-        this.isGeneratingFeedback.set(false);
-    }
+    // AI feedback generation can now be optional or triggered separately
   }
 
-  // --- Content Management Methods ---
   private loadTopicsData(): Record<Topic, any> {
     try {
       const savedData = localStorage.getItem(this.topicsStorageKey);
@@ -291,7 +275,7 @@ export class AppComponent {
     if (!editedContent) return;
 
     this.topicsDataSignal.update(data => {
-      const newData = JSON.parse(JSON.stringify(data)); // Deep copy to avoid issues
+      const newData = JSON.parse(JSON.stringify(data));
       if (isSubTopic && topicId) {
         const topic = newData[topicId];
         topic.subTopics = topic.subTopics.map((sub: SubTopic) => 
@@ -317,7 +301,6 @@ export class AppComponent {
     });
   }
 
-  // --- Custom Prompt Methods ---
   addCustomPrompt(subTopicId: SubTopicId): void {
     const prompt = this.newPrompt().trim();
     if (!prompt) return;
@@ -347,12 +330,12 @@ export class AppComponent {
     }
   }
   
-  private showNotification(message: string, type: 'success' | 'error'): void {
+  private showNotification(message: string, type: 'success' | 'error' | 'achievement'): void {
     this.notification.set({ message, type });
     clearTimeout(this.notificationTimeout);
     this.notificationTimeout = setTimeout(() => {
       this.notification.set(null);
-    }, 3000);
+    }, 4000);
   }
   
   private loadAllPreferences(): void {
@@ -468,5 +451,9 @@ export class AppComponent {
 
   resetToSubTopics(): void {
     this.selectedSubTopic.set(null);
+  }
+
+  printReport(): void {
+    window.print();
   }
 }
