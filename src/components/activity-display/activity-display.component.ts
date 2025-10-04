@@ -247,6 +247,31 @@ export class ActivityDisplayComponent implements OnDestroy {
     });
     this.answersChanged.emit(this.userAnswers());
   }
+
+  clearAnswer(index: number): void {
+    const clearedValue = '';
+    this.userAnswers.update(answers => {
+      const newAnswers = [...answers];
+      newAnswers[index] = clearedValue;
+      return newAnswers;
+    });
+
+    // History management
+    this.history.update(h => {
+        const currentHistory = h[index] ? h[index].slice(0, (this.historyIndex()[index] ?? -1) + 1) : [];
+        const newHistoryForIndex = [...currentHistory, clearedValue];
+        return {
+            ...h,
+            [index]: newHistoryForIndex
+        };
+    });
+    this.historyIndex.update(i => ({
+        ...i,
+        [index]: (this.history()[index]?.length || 1) - 1
+    }));
+
+    this.answersChanged.emit(this.userAnswers());
+  }
   
   // For clickable options (multiple-choice, true-false)
   selectAnswer(index: number, option: string): void {
