@@ -10,6 +10,7 @@ import html2canvas from 'html2canvas';
 import { ActivityDisplayComponent } from './components/activity-display/activity-display.component';
 import { AvatarCustomizerComponent } from './components/avatar-customizer/avatar-customizer.component';
 import { ALL_AVATAR_ITEMS } from './gamification.data';
+import { FiveWOneHComponent } from './components/five-w-one-h/five-w-one-h.component';
 
 type FontSize = 'sm' | 'base' | 'lg';
 const fontSizes: FontSize[] = ['sm', 'base', 'lg'];
@@ -44,7 +45,7 @@ export const themes: { id: Theme, name: string, color: string }[] = [
   selector: 'app-root',
   templateUrl: './app.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ActivityGeneratorComponent, ActivityDisplayComponent, SafeHtmlPipe, AvatarCustomizerComponent],
+  imports: [ActivityGeneratorComponent, ActivityDisplayComponent, SafeHtmlPipe, AvatarCustomizerComponent, FiveWOneHComponent],
   host: {
     '(document:click)': 'onDocumentClick($event)',
   },
@@ -63,7 +64,7 @@ export class AppComponent {
   loginError = signal<string | null>(null);
 
   // --- Student Dashboard State ---
-  showStudentDashboard = signal(false);
+  currentView = signal<'activities' | 'profile' | '5n1k'>('activities');
   isGeneratingPdf = signal(false);
   showAvatarCustomizer = signal(false);
 
@@ -142,7 +143,7 @@ export class AppComponent {
     return allSubTopics.filter(st => (progress[st.id] || 0) < 3).sort((a,b) => (progress[a.id] || 0) - (progress[b.id] || 0));
   });
 
-  topicProgress = computed(() => (topicKey: Topic) => {
+  getTopicProgress(topicKey: Topic) {
     const topicData = this.topicsDataSignal()[topicKey];
     if (!topicData) return { stars: 0, maxStars: 0, percentage: 0 };
     
@@ -155,7 +156,7 @@ export class AppComponent {
     const percentage = maxStars > 0 ? Math.round((stars / maxStars) * 100) : 0;
     
     return { stars, maxStars, percentage };
-  });
+  }
 
   updateProgress(event: { subTopicId: SubTopicId | 'review'; successRate: number, correctAnswers: number, totalQuestions: number }): void {
     // FIX: Using a direct check on the property ensures TypeScript can correctly narrow the type
@@ -293,13 +294,13 @@ export class AppComponent {
     this.showLogin.set(true);
   }
 
-  async openStudentDashboard(): Promise<void> {
-    this.showStudentDashboard.set(true);
+  setView(view: 'activities' | 'profile' | '5n1k'): void {
+    this.currentView.set(view);
   }
 
   async startTopicReview(topicKey: Topic): Promise<void> {
     this.isGeneratingReview.set(true);
-    this.showStudentDashboard.set(false); // Go back to the main screen to show the activity
+    this.currentView.set('activities'); // Go back to the main screen to show the activity
 
     try {
         const allWeakSubTopics = this.areasForImprovement();
@@ -309,7 +310,7 @@ export class AppComponent {
 
         if (weakSubTopicsForTopic.length === 0) {
             this.showNotification('Bu konuda geliştirilecek bir alan bulunamadı. Harika!', 'success');
-            this.showStudentDashboard.set(true); // Re-open dashboard
+            this.currentView.set('profile'); // Re-open dashboard
             return;
         }
 

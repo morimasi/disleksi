@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal, WritableSignal, OnDestroy, effect } from '@angular/core';
 // FIX: Import SubTopicId to be used in the output event type.
-import { Activity, isSentenceCompletion, isSimpleMath, isWordScramble, isMultipleChoice, Topic, isOrdering, isDragDropMatch, DragDropMatchActivity, isFillInTheBlanks, isTrueFalse, FillInTheBlanksActivity, isVisualMatch, isMatchingPairs, isSequencingEvents, isInteractiveStory, InteractiveStoryActivity, InteractiveStoryChoice, isAuditoryDictation, isVisualArithmetic, SubTopicId } from '../../models/activity.model';
+import { Activity, isSentenceCompletion, isSimpleMath, isWordScramble, isMultipleChoice, Topic, isOrdering, isDragDropMatch, DragDropMatchActivity, isFillInTheBlanks, isTrueFalse, FillInTheBlanksActivity, isVisualMatch, isMatchingPairs, isSequencingEvents, isInteractiveStory, InteractiveStoryActivity, InteractiveStoryChoice, isAuditoryDictation, isVisualArithmetic, SubTopicId, isFiveWOneHStory } from '../../models/activity.model';
 import { TtsService } from '../../services/tts.service';
 import { GeminiService } from '../../services/gemini.service';
 import { FeedbackSettings } from '../../app.component';
+import { SpeechRecognitionService } from '../../services/speech-recognition.service';
 
 type AnswerStatus = 'correct' | 'incorrect' | 'unchecked';
 
@@ -17,12 +18,15 @@ export class ActivityDisplayComponent implements OnDestroy {
   private hintTimeoutId: any = null;
   private ttsService = inject(TtsService);
   private geminiService = inject(GeminiService);
+  speechService = inject(SpeechRecognitionService);
 
   activity = input.required<Activity>();
   topic = input.required<Topic>();
   initialAnswers = input<any[] | null>(null);
   feedbackSettings = input.required<FeedbackSettings>();
   
+  sttTargetIndex = signal<number | null>(null);
+
   constructor() {
     effect(() => {
       const value = this.activity();
@@ -36,6 +40,20 @@ export class ActivityDisplayComponent implements OnDestroy {
         }, 7000);
       } else {
         this.showHint.set(false);
+      }
+    });
+
+    effect(() => {
+      const transcript = this.speechService.transcript();
+      const targetIndex = this.sttTargetIndex();
+      if (transcript && targetIndex !== null) {
+        this.userAnswers.update(answers => {
+          const newAnswers = [...answers];
+          newAnswers[targetIndex] = transcript;
+          return newAnswers;
+        });
+         this.answersChanged.emit(this.userAnswers());
+        this.sttTargetIndex.set(null); // Reset after use
       }
     });
   }
@@ -77,6 +95,11 @@ export class ActivityDisplayComponent implements OnDestroy {
   isMicroActivitySolved = signal(false);
   microActivityAnswer = signal<string | string[] | null>(null);
   microActivityStatus = signal<AnswerStatus>('unchecked');
+  
+  // --- 5N1K Story State ---
+  currentStep = signal(0); // 0 for story, 1+ for questions
+  allQuestions = signal<{ question: string }[]>([]);
+  totalSteps = signal(0);
 
   currentScene = computed(() => {
     const activity = this.activity();
@@ -87,13 +110,15 @@ export class ActivityDisplayComponent implements OnDestroy {
     return null;
   });
 
-
-  canUndo = computed(() => (index: number) => (this.historyIndex()[index] ?? 0) > 0);
-  canRedo = computed(() => (index: number) => {
+  canUndo(index: number): boolean {
+    return (this.historyIndex()[index] ?? 0) > 0;
+  }
+  
+  canRedo(index: number): boolean {
     const hist = this.history()[index];
     const idx = this.historyIndex()[index];
     return hist != null && idx < hist.length - 1;
-  });
+  }
 
   private stickers = ['🌟', '🏆', '🎉', '👍', '🚀', '🧠', '💡', '✅', '🎯', '🥇'];
 
@@ -111,6 +136,7 @@ export class ActivityDisplayComponent implements OnDestroy {
   isInteractiveStory = isInteractiveStory;
   isAuditoryDictation = isAuditoryDictation;
   isVisualArithmetic = isVisualArithmetic;
+  isFiveWOneHStory = isFiveWOneHStory;
 
   topicColors = computed(() => {
     const topicName = this.topic();
@@ -149,6 +175,14 @@ export class ActivityDisplayComponent implements OnDestroy {
         return { percentage: 100, completed: 1, total: 1 };
     }
     
+    if(isFiveWOneHStory(currentActivity)) {
+        const step = this.currentStep();
+        const total = this.totalSteps();
+        if (total === 0) return { percentage: 0, completed: 0, total: 0 };
+        const percentage = Math.round((step / total) * 100);
+        return { percentage, completed: step, total };
+    }
+
     const answers = this.userAnswers();
     if (!currentActivity || !answers) {
       return { percentage: 0, completed: 0, total: 0 };
@@ -184,6 +218,7 @@ export class ActivityDisplayComponent implements OnDestroy {
   ngOnDestroy(): void {
     clearTimeout(this.hintTimeoutId);
     clearTimeout(this.feedbackTimeoutId);
+    this.speechService.stop();
   }
 
   private initializeState(activity: Activity): void {
@@ -200,11 +235,29 @@ export class ActivityDisplayComponent implements OnDestroy {
     this.microActivityAnswer.set(null);
     this.microActivityStatus.set('unchecked');
     this.isMicroActivitySolved.set(false);
+    
+    // Reset 5N1K state
+    this.currentStep.set(0);
+    this.allQuestions.set([]);
+    this.totalSteps.set(0);
 
     if (isInteractiveStory(activity)) {
         this.currentSceneId.set(activity.data.startSceneId);
         this.userAnswers.set([]); // Not used for stories in the same way
         this.answerStatuses.set([]);
+        return;
+    }
+    
+    if (isFiveWOneHStory(activity)) {
+        const questions = [
+            ...activity.data.comprehensionQuestions,
+            ...activity.data.inferenceQuestions
+        ];
+        this.allQuestions.set(questions);
+        this.totalSteps.set(questions.length + 1); // +1 for the story itself
+        this.userAnswers.set(Array(questions.length).fill(''));
+        this.answerStatuses.set(Array(questions.length).fill('unchecked'));
+        this.currentStep.set(0);
         return;
     }
 
@@ -245,6 +298,11 @@ export class ActivityDisplayComponent implements OnDestroy {
     this.historyIndex.set(initialHistoryIndex);
   }
 
+  startSpeechRecognition(index: number): void {
+    this.sttTargetIndex.set(index);
+    this.speechService.start();
+  }
+
   updateAnswer(index: number, event: Event): void {
     if (this.showFeedback()) return;
     const value = (event.target as HTMLInputElement | HTMLTextAreaElement).value;
@@ -271,7 +329,7 @@ export class ActivityDisplayComponent implements OnDestroy {
   }
 
   undo(index: number): void {
-    if (!this.canUndo()(index)) return;
+    if (!this.canUndo(index)) return;
 
     this.historyIndex.update(i => ({ ...i, [index]: i[index] - 1 }));
     const previousValue = this.history()[index][this.historyIndex()[index]];
@@ -285,7 +343,7 @@ export class ActivityDisplayComponent implements OnDestroy {
   }
 
   redo(index: number): void {
-    if (!this.canRedo()(index)) return;
+    if (!this.canRedo(index)) return;
 
     this.historyIndex.update(i => ({ ...i, [index]: i[index] + 1 }));
     const nextValue = this.history()[index][this.historyIndex()[index]];
@@ -604,6 +662,24 @@ export class ActivityDisplayComponent implements OnDestroy {
     }
   }
 
+  // --- 5N1K STORY METHODS ---
+  goToStep(step: number): void {
+    if (step >= 0 && step <= this.totalSteps()) {
+      this.currentStep.set(step);
+    }
+  }
+  
+  finish5W1HActivity(): void {
+    const questionsCount = this.allQuestions().length;
+    this.activitySuccess.emit({ 
+      subTopicId: 'review', // This is a special activity type
+      successRate: 1, 
+      correctAnswers: questionsCount, 
+      totalQuestions: questionsCount 
+    });
+    this.triggerSuccessModal();
+  }
+
 
   private generateConfetti(): void {
     const pieces = [];
@@ -662,7 +738,7 @@ export class ActivityDisplayComponent implements OnDestroy {
     return problem.prompt.split('__');
   }
 
-  statusClasses = computed(() => (status: AnswerStatus): string => {
+  getStatusClasses(status: AnswerStatus): string {
     if (!this.showFeedback()) {
       return 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500';
     }
@@ -674,5 +750,5 @@ export class ActivityDisplayComponent implements OnDestroy {
       default:
         return 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500';
     }
-  });
+  }
 }

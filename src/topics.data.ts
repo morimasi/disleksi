@@ -29,6 +29,7 @@ export const TOPICS_DATA: Record<Topic, TopicData> = {
         { id: 'letter-sound', title: 'Harf-Ses İlişkisi (Fonetik)', description: 'Alfabedeki harfler ile temsil ettikleri sesler arasında otomatik ve güçlü bir bağ kurarak kodlama (yazma) ve dekodaj (okuma) becerilerini geliştirir.' },
         { id: 'reading-fluency', title: 'Akıcı Okuma', description: 'Kelimeleri doğru, hızlı ve uygun tonlama ile okuma becerisini geliştirir. Bu, okuduğunu anlamak için zihinsel kaynakları serbest bırakır.' },
         { id: 'reading-comprehension', title: 'Okuduğunu Anlama Stratejileri', description: 'Metindeki ana fikirleri, detayları ve örtük anlamları çıkarma, metni analiz etme ve çıkarım yapma gibi üst düzey anlama becerilerini hedefler.' },
+        { id: 'word-explorer', title: 'Kelime Kâşifi', description: 'Yeni bir kelime öğren, anlamını, cümledeki kullanımını ve resmini keşfet.' },
         { id: 'visual-processing', title: 'Görsel İşlemleme ve Ayırt Etme', description: 'Görsel olarak benzer harfleri (b/d) ve kelimeleri (ev/ve) doğru ayırt etme, görsel hafızayı ve sıralama becerilerini güçlendirerek okuma hatalarını azaltır.' },
         { id: 'vocabulary-morphology', title: 'Kelime Bilgisi ve Morfoloji', description: 'Kelime dağarcığını, kelimelerin yapı taşları olan kökler ve ekler (morfoloji) aracılığıyla anlamlarını çözümleyerek stratejik olarak genişletir.' },
         { id: 'spelling-patterns', title: 'Yazım Kuralları ve Paternler', description: 'Türkçedeki ses-harf uyumu kurallarına (ünlü/ünsüz uyumu) ve sık karşılaşılan yazım kalıplarına odaklanarak imla becerilerini otomatikleştirir.' },
@@ -72,6 +73,7 @@ export const TOPICS_DATA: Record<Topic, TopicData> = {
     subTopics: [
         { id: 'fine-motor-skills', title: 'İnce Motor Becerileri', description: 'Kalemin doğru kavranması, el-göz koordinasyonu ve harfleri oluşturmak için gereken kontrollü, hassas el hareketlerinin geliştirilmesini hedefler.' },
         { id: 'letter-formation', title: 'Harf Şekillendirme ve Otomatiklik', description: 'Her harfin doğru hareket dizilimi ile (formation) yazılmasını öğreterek harf yazımını otomatik, akıcı ve daha az yorucu hale getirir.' },
+        { id: 'letter-form-recognition', title: 'Harf Formu Tanıma', description: 'Doğru yazılmış harfleri tanıyarak el-göz koordinasyonu ve harf yazım hafızasını geliştirir.' },
         { id: 'handwriting-legibility', title: 'Okunaklılık ve Yazı Düzeni', description: 'Harf boyutu tutarlılığı, kelime ve harf arası boşlukların uygunluğu ve satıra düzgün yerleşim gibi okunaklılığı artıran unsurlara odaklanır.' },
         { id: 'writing-speed', title: 'Yazma Hızı ve Akıcılığı', description: 'Yazı yazma işlemini otomatikleştirerek, düşünme hızı ile yazma hızı arasındaki farkı azaltmayı ve not alma gibi becerilerde akıcılığı artırmayı amaçlar.' },
         { id: 'sentence-construction', title: 'Cümle Kurma ve Yapılandırma', description: 'Basit, birleşik ve karmaşık cümle yapılarını kullanarak düşünceleri açık ve dilbilgisi açısından doğru bir şekilde ifade etme becerisini geliştirir.' },

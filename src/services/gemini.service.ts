@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
-import { GoogleGenAI } from '@google/genai';
-import { Activity, GradeLevel, Topic, SubTopic, isWordScramble, isSimpleMath, isMultipleChoice, isOrdering, isDragDropMatch, isFillInTheBlanks, isTrueFalse, isVisualMatch, isMatchingPairs, isSequencingEvents, isInteractiveStory, isSentenceCompletion, isAuditoryDictation, isVisualArithmetic } from '../models/activity.model';
+import { GoogleGenAI, Type } from '@google/genai';
+import { Activity, GradeLevel, Topic, SubTopic, isWordScramble, isSimpleMath, isMultipleChoice, isOrdering, isDragDropMatch, isFillInTheBlanks, isTrueFalse, isVisualMatch, isMatchingPairs, isSequencingEvents, isInteractiveStory, isSentenceCompletion, isAuditoryDictation, isVisualArithmetic, MultipleChoiceProblem } from '../models/activity.model';
 import { ACTIVITY_CONFIGS } from './activity-config';
+
 
 @Injectable({
   providedIn: 'root',
@@ -174,6 +175,70 @@ export class GeminiService {
         throw new Error('Failed to generate hint.');
     }
   }
+  
+  async generate5W1HActivity(gradeLevel: GradeLevel): Promise<Activity> {
+    if (!this.ai) {
+      throw new Error('Gemini AI client is not initialized.');
+    }
+
+    const prompt = `Generate a complete 'five-w-one-h-story' activity in Turkish for a '${gradeLevel}' student. The activity needs a title, instructions, and a data object containing a short story (3-4 paragraphs), exactly 6 comprehension questions (one for each 5N1K category with concise answers from the text), and exactly 2 inference/reasoning questions. Respond ONLY with a valid JSON object that conforms to the provided schema. All content must be in Turkish.`;
+
+    const responseSchema = {
+      type: Type.OBJECT,
+      properties: {
+        title: { type: Type.STRING, description: 'A fun title for the activity in Turkish (e.g., "Kayıp Uçurtmanın Gizemi").' },
+        instructions: { type: Type.STRING, description: 'Simple instructions for the child in Turkish (e.g., "Hikayeyi oku ve soruları cevapla!").' },
+        activityType: { type: Type.STRING, description: "Must be 'five-w-one-h-story'." },
+        data: {
+          type: Type.OBJECT,
+          properties: {
+            story: { type: Type.STRING, description: 'The generated short story in Turkish.' },
+            comprehensionQuestions: {
+              type: Type.ARRAY,
+              description: 'An array of exactly 6 questions based on the story, one for each 5N1K category.',
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  question: { type: Type.STRING, description: 'The 5N1K question in Turkish (e.g., "Hikayedeki ana karakter kimdi?").' },
+                  answer: { type: Type.STRING, description: 'The concise answer to the question, based on the story.' }
+                },
+                required: ['question', 'answer']
+              }
+            },
+            inferenceQuestions: {
+                type: Type.ARRAY,
+                description: 'An array of 2 questions that require inference or reasoning.',
+                items: {
+                    type: Type.OBJECT,
+                    properties: {
+                        question: { type: Type.STRING, description: 'The inference question in Turkish (e.g., "Sence karakter neden böyle davrandı?").' }
+                    },
+                    required: ['question']
+                }
+            }
+          },
+          required: ['story', 'comprehensionQuestions', 'inferenceQuestions']
+        }
+      },
+      required: ['title', 'instructions', 'activityType', 'data']
+    };
+
+    try {
+      const response = await this.ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: responseSchema,
+        },
+      });
+      const jsonStr = response.text.trim();
+      return JSON.parse(jsonStr) as Activity;
+    } catch (error) {
+      console.error('Error generating 5N1K story activity:', error);
+      throw new Error('Hikaye etkinliği oluşturulamadı. Lütfen tekrar deneyin.');
+    }
+  }
 
 
   async generateActivity(topic: Topic, subTopic: SubTopic, gradeLevel: GradeLevel, options: { customPrompt?: string; difficulty?: 'easy' | 'medium' | 'hard'; problemCount?: number } = {}): Promise<Activity> {
@@ -243,5 +308,80 @@ export class GeminiService {
         console.error('Error generating activity:', error);
         throw new Error('Failed to generate activity. Please check your API key and network connection.');
     }
+  }
+
+  // --- Word Explorer Methods ---
+  async getWordDefinition(word: string): Promise<string> {
+    if (!this.ai) throw new Error('AI client not initialized.');
+    const prompt = `Explain the meaning of the Turkish word '${word}' in a very simple, single sentence suitable for a 7-year-old child. Speak like a friendly owl character.`;
+    const response = await this.ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
+    return response.text.trim();
+  }
+
+  async getExampleSentences(word: string): Promise<string[]> {
+    if (!this.ai) throw new Error('AI client not initialized.');
+    const prompt = `Create 2 simple, different example sentences in Turkish using the word '${word}'. Respond with a JSON object.`;
+    const response = await this.ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+            responseMimeType: 'application/json',
+            responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                    sentences: {
+                        type: Type.ARRAY,
+                        items: { type: Type.STRING }
+                    }
+                }
+            }
+        }
+    });
+    const result = JSON.parse(response.text.trim());
+    return result.sentences;
+  }
+  
+  async getWordSynonym(word: string): Promise<string> {
+    if (!this.ai) throw new Error('AI client not initialized.');
+    const prompt = `What is a common Turkish synonym for the word '${word}'? If there isn't a good one, respond with 'Uygun bir eş anlamlısı bulunamadı.'. Respond with ONLY the synonym or the message.`;
+    const response = await this.ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
+    return response.text.trim();
+  }
+
+  async generateImageForWord(word: string): Promise<string> {
+    if (!this.ai) throw new Error('AI client not initialized.');
+    const prompt = `A colorful, simple, and clear illustration for a children's book, representing the meaning of the Turkish word: '${word}'. Style: vibrant, cartoon, friendly, centered object on a clean background.`;
+    const response = await this.ai.models.generateImages({
+        model: 'imagen-3.0-generate-002',
+        prompt: prompt,
+        config: {
+          numberOfImages: 1,
+          outputMimeType: 'image/jpeg',
+          aspectRatio: '1:1',
+        },
+    });
+    return response.generatedImages[0].image.imageBytes;
+  }
+
+  async generateComprehensionQuestion(word: string, definition: string): Promise<MultipleChoiceProblem> {
+    if (!this.ai) throw new Error('AI client not initialized.');
+    const prompt = `Create a multiple-choice question in Turkish to check if a child understood the word '${word}', which means '${definition}'. The question should be 'Aşağıdaki cümlelerin hangisinde "${word}" kelimesi doğru kullanılmıştır?'. Provide one correct sentence and two incorrect but plausible-looking sentences as options. The incorrect sentences should use the word in a wrong context. Return a valid JSON object.`;
+    const response = await this.ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+            responseMimeType: 'application/json',
+            responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                    question: { type: Type.STRING },
+                    options: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    correctAnswer: { type: Type.STRING }
+                },
+                 required: ['question', 'options', 'correctAnswer'],
+            }
+        }
+    });
+    return JSON.parse(response.text.trim());
   }
 }

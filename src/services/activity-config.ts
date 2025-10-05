@@ -3,6 +3,24 @@ import { Topic, SubTopicId } from '../models/activity.model';
 
 // --- Reusable Schemas ---
 
+const wordExplorerSchema = {
+    type: Type.OBJECT,
+    properties: {
+        title: { type: Type.STRING, description: 'The title for the activity in Turkish, should be "Kelime Kâşifi".' },
+        instructions: { type: Type.STRING, description: 'Simple instructions for the child in Turkish (e.g., "Hadi yeni bir kelime keşfedelim!").' },
+        hint: { type: Type.STRING, description: 'A brief, encouraging tip in Turkish related to learning new words.' },
+        activityType: { type: Type.STRING, description: "Should be 'word-explorer'." },
+        data: {
+            type: Type.OBJECT,
+            properties: {
+                word: { type: Type.STRING, description: 'A single, interesting, and grade-appropriate Turkish noun or verb.' },
+            },
+            required: ['word'],
+        },
+    },
+    required: ['title', 'instructions', 'activityType', 'data'],
+};
+
 const visualArithmeticSchema = {
     type: Type.OBJECT,
     properties: {
@@ -483,6 +501,10 @@ export const ACTIVITY_CONFIGS: Record<Topic, { subtopics: Partial<Record<SubTopi
                 schema: interactiveStorySchema,
                 description: "an 'Interactive Story' activity. This should be a branching narrative with 3-5 scenes. At least one scene must contain a 'microActivity' to proceed. The micro-activity must be a simple, one-question activity object of type 'word-scramble' or 'fill-in-the-blanks' relevant to the story's context."
             },
+             'word-explorer': {
+                schema: wordExplorerSchema,
+                description: "a 'Word Explorer' activity. Generate a single, interesting, and grade-appropriate Turkish noun or verb as the 'word' field in the data object."
+            },
         },
         fallback: {
             schema: wordScrambleSchema,
@@ -542,6 +564,10 @@ export const ACTIVITY_CONFIGS: Record<Topic, { subtopics: Partial<Record<SubTopi
             'punctuation-grammar': {
                 schema: trueFalseSchema,
                 description: "a 'Punctuation and Grammar' true/false activity with 5 problems. For each problem, create a simple Turkish sentence as the 'statement'. Some statements should have correct punctuation and grammar, and some should have a common error (e.g., missing capital letter, missing period). The 'isCorrect' field must be a boolean representing whether the statement is grammatically correct. Example statement: 'ali okula gitti.' (isCorrect: false). Another example: 'Ayşe, topu Ali'ye attı.' (isCorrect: true)."
+            },
+            'letter-form-recognition': {
+                schema: visualMatchSchema,
+                description: "a 'Visual Match' activity for letter form recognition. For each problem, the 'question' should be a single Turkish letter (e.g., 'b'). The 'options' should be an array of 3-4 strings, where one is the correct letter ('correctAnswer'), and the others are visually similar but incorrectly formed versions (e.g., reversed, distorted, incomplete). The goal is to help the user distinguish correctly formed letters."
             },
             'writing-planning': {
                 schema: sequencingEventsSchema,

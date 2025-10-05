@@ -4,10 +4,11 @@ export type GradeLevel = 'ilkokul' | 'ortaokul';
 export type SubTopicId =
   | 'phonological-awareness' | 'letter-sound' | 'reading-fluency' | 'reading-comprehension' | 'visual-processing' | 'vocabulary-morphology' | 'spelling-patterns' | 'working-memory-sequencing' // Dyslexia
   | 'number-sense' | 'basic-arithmetic' | 'problem-solving' | 'math-symbols' | 'time-measurement' | 'spatial-reasoning' | 'estimation-skills' | 'fractions-decimals' | 'visual-number-representation' // Dyscalculia
-  | 'handwriting-legibility' | 'letter-formation' | 'writing-speed' | 'sentence-construction' | 'punctuation-grammar' | 'fine-motor-skills' | 'writing-planning' | 'creative-writing-prompts' | 'keyboarding-skills' // Dysgraphia
+  | 'handwriting-legibility' | 'letter-formation' | 'writing-speed' | 'sentence-construction' | 'punctuation-grammar' | 'fine-motor-skills' | 'writing-planning' | 'creative-writing-prompts' | 'keyboarding-skills' | 'letter-form-recognition' // Dysgraphia
   | 'interactive-story' // New dynamic activity type
   | 'auditory-dictation' // New for Dyslexia
-  | 'visual-arithmetic'; // New for Dyscalculia
+  | 'visual-arithmetic' // New for Dyscalculia
+  | 'word-explorer'; // New for Dyslexia
 
 export interface SubTopic {
     id: SubTopicId | 'review'; // 'review' is a virtual ID for review sessions
@@ -27,8 +28,9 @@ export interface SentenceCompletionData {
   prompts: string[];
 }
 
+export interface MultipleChoiceProblem { question: string; options: string[]; correctAnswer: string; }
 export interface MultipleChoiceData {
-  problems: { question: string; options: string[]; correctAnswer: string }[];
+  problems: MultipleChoiceProblem[];
 }
 
 export interface OrderingData {
@@ -118,6 +120,18 @@ export interface InteractiveStoryData {
     scenes: Record<string, InteractiveStoryScene>; // A map of scene IDs to scene objects
 }
 
+// --- Word Explorer Model ---
+export interface WordExplorerData {
+  word: string;
+}
+
+// --- 5N1K Story Model ---
+export interface FiveWOneHStoryData {
+  story: string;
+  comprehensionQuestions: { question: string; answer: string }[];
+  inferenceQuestions: { question: string }[];
+}
+
 
 interface BaseActivity<T, U extends string> {
   title: string;
@@ -141,9 +155,11 @@ export type SequencingEventsActivity = BaseActivity<SequencingEventsData, 'seque
 export type InteractiveStoryActivity = BaseActivity<InteractiveStoryData, 'interactive-story'>;
 export type AuditoryDictationActivity = BaseActivity<AuditoryDictationData, 'auditory-dictation'>;
 export type VisualArithmeticActivity = BaseActivity<VisualArithmeticData, 'visual-arithmetic'>;
+export type WordExplorerActivity = BaseActivity<WordExplorerData, 'word-explorer'>;
+export type FiveWOneHStoryActivity = BaseActivity<FiveWOneHStoryData, 'five-w-one-h-story'>;
 
 
-export type Activity = WordScrambleActivity | SimpleMathActivity | SentenceCompletionActivity | MultipleChoiceActivity | OrderingActivity | DragDropMatchActivity | FillInTheBlanksActivity | TrueFalseActivity | VisualMatchActivity | MatchingPairsActivity | SequencingEventsActivity | InteractiveStoryActivity | AuditoryDictationActivity | VisualArithmeticActivity;
+export type Activity = WordScrambleActivity | SimpleMathActivity | SentenceCompletionActivity | MultipleChoiceActivity | OrderingActivity | DragDropMatchActivity | FillInTheBlanksActivity | TrueFalseActivity | VisualMatchActivity | MatchingPairsActivity | SequencingEventsActivity | InteractiveStoryActivity | AuditoryDictationActivity | VisualArithmeticActivity | WordExplorerActivity | FiveWOneHStoryActivity;
 
 // Type guards to help TypeScript understand which activity type is being used.
 export function isWordScramble(activity: Activity): activity is WordScrambleActivity {
@@ -200,4 +216,12 @@ export function isAuditoryDictation(activity: Activity): activity is AuditoryDic
 
 export function isVisualArithmetic(activity: Activity): activity is VisualArithmeticActivity {
     return activity.activityType === 'visual-arithmetic';
+}
+
+export function isWordExplorer(activity: Activity): activity is WordExplorerActivity {
+    return activity.activityType === 'word-explorer';
+}
+
+export function isFiveWOneHStory(activity: Activity): activity is FiveWOneHStoryActivity {
+    return activity.activityType === 'five-w-one-h-story';
 }
