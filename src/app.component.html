@@ -15,6 +15,15 @@
   </div>
 }
 
+@if(showAvatarCustomizer()) {
+  <app-avatar-customizer 
+    [unlockedItemIds]="gamificationService.studentProfile().unlockedAvatarItemIds"
+    [equippedItemIds]="gamificationService.studentProfile().equippedItemIds"
+    (close)="showAvatarCustomizer.set(false)"
+    (save)="handleSaveAvatar($event)"
+  ></app-avatar-customizer>
+}
+
 @if(showLogin()) {
   <div class="min-h-screen bg-gray-100 flex flex-col justify-center items-center p-4">
     <div class="w-full max-w-md">
@@ -53,12 +62,9 @@
               <span class="px-3 bg-white text-gray-500 font-medium">veya</span>
             </div>
           </div>
-           <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+           <div class="mt-4">
              <button (click)="continueAsStudent()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                 Öğrenci Olarak Devam Et
-             </button>
-             <button (click)="continueAsStudent()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                Misafir Modu
              </button>
           </div>
         </div>
@@ -190,7 +196,7 @@
     </div>
   </div>
 } @else if (showStudentDashboard()) {
-  <div class="relative min-h-screen bg-gradient-to-br from-purple-50 via-indigo-50 to-cyan-50 p-4 sm:p-6 lg:p-8 animate-fade-in font-sans">
+  <div class="relative min-h-screen bg-gradient-to-br from-[rgb(var(--c-dashboard-bg-from))] via-[rgb(var(--c-dashboard-bg-via))] to-[rgb(var(--c-dashboard-bg-to))] p-4 sm:p-6 lg:p-8 animate-fade-in font-sans">
     <div class="max-w-6xl mx-auto printable-area">
       <header class="flex items-center justify-between mb-8 no-print">
         <button (click)="showStudentDashboard.set(false)" class="flex items-center bg-white/60 hover:bg-white/90 backdrop-blur-sm text-slate-700 font-semibold py-2 px-4 rounded-full transition-all duration-300 shadow-md">
@@ -199,36 +205,61 @@
           </svg>
           Ana Menü
         </button>
-        <h1 class="text-3xl sm:text-4xl font-bold text-slate-800 tracking-tight">
+        <h1 class="text-3xl sm:text-4xl font-bold text-[rgb(var(--c-text-primary))] tracking-tight">
           Başarı Raporu
         </h1>
-        <button (click)="printReport()" class="flex items-center bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-full transition-all duration-300 shadow-md">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
-            Raporu Yazdır
+        <button (click)="downloadPdfReport()" [disabled]="isGeneratingPdf()" class="flex items-center bg-[rgb(var(--c-accent-500))] hover:bg-[rgb(var(--c-accent-600))] text-white font-semibold py-2 px-4 rounded-full transition-all duration-300 shadow-md disabled:bg-opacity-70 disabled:cursor-wait">
+            @if (isGeneratingPdf()) {
+              <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span>Oluşturuluyor...</span>
+            } @else {
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+              <span>Raporu İndir (PDF)</span>
+            }
         </button>
       </header>
       <div class="print-header hidden"><h1>Başarı Raporu</h1></div>
 
       <main class="mt-8 space-y-8">
         <!-- Gamification Header -->
-        <section class="bg-white/60 backdrop-blur-md rounded-2xl shadow-lg p-6 border border-white/50">
+        <section class="bg-[rgba(var(--c-card-bg),0.6)] backdrop-blur-md rounded-2xl shadow-lg p-6 border border-white/50">
           @let levelInfo = gamificationService.currentLevelInfo();
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
             <!-- Level & Avatar -->
             <div class="flex items-center gap-4">
-              <div class="relative">
-                <div class="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-4xl shadow-lg">
-                    <span>🦉</span>
+              <button (click)="showAvatarCustomizer.set(true)" class="relative group">
+                <div class="w-20 h-20 rounded-full bg-gradient-to-br from-[rgb(var(--c-accent-500))] to-[rgb(var(--c-accent-600))] flex items-center justify-center text-4xl shadow-lg transition-transform transform group-hover:scale-110">
+                    <div class="relative w-12 h-12 flex items-center justify-center">
+                      <span class="text-5xl leading-none">🦉</span>
+                      @for(item of equippedAvatarItems(); track item.id) {
+                        <span class="absolute text-2xl"
+                              [class.top-[-10px]]="item.category === 'head'"
+                              [class.top-[10px]]="item.category === 'eyes'"
+                              [class.bottom-[-5px]]="item.category === 'neck'"
+                              [class.bottom-[-8px]]="item.category === 'accessory'"
+                              [class.right-[-8px]]="item.id === 'avatar_accessory_rocket'"
+                              [style.transform]="item.id === 'avatar_hat_wizard' ? 'translateX(-4px) translateY(-2px) rotate(-15deg)' : ''"
+                              [style.fontSize]="item.id === 'avatar_hat_wizard' ? '30px' : ''">
+                          {{ item.icon }}
+                        </span>
+                      }
+                    </div>
                 </div>
-              </div>
+                <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs font-semibold px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                    Özelleştir
+                </div>
+              </button>
               <div>
-                <span class="text-indigo-600 font-bold">SEVİYE {{ levelInfo.level }}</span>
-                <p class="text-2xl font-bold text-slate-800">{{ levelInfo.points }} Puan</p>
+                <span class="font-bold text-[rgb(var(--c-accent-600))]">SEVİYE {{ levelInfo.level }}</span>
+                <p class="text-2xl font-bold text-[rgb(var(--c-text-primary))]">{{ levelInfo.points }} Puan</p>
               </div>
             </div>
             <!-- XP Bar -->
             <div class="md:col-span-2">
-              <div class="flex justify-between text-sm font-semibold text-slate-600 mb-1">
+              <div class="flex justify-between text-sm font-semibold text-[rgb(var(--c-text-secondary))] mb-1">
                 <span>Seviye {{ levelInfo.level }}</span>
                 <span>Seviye {{ levelInfo.level + 1 }}</span>
               </div>
@@ -244,20 +275,30 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div class="lg:col-span-2 space-y-8">
             <!-- Topic Mastery Charts -->
-            <section class="bg-white/60 backdrop-blur-md rounded-2xl shadow-lg p-6 border border-white/50 print-section">
-              <h2 class="text-2xl font-bold text-slate-800 mb-4 print-section-title">Alan Ustalığı</h2>
+            <section class="bg-[rgba(var(--c-card-bg),0.6)] backdrop-blur-md rounded-2xl shadow-lg p-6 border border-white/50 print-section">
+              <h2 class="text-2xl font-bold text-[rgb(var(--c-text-primary))] mb-4 print-section-title">Alan Ustalığı</h2>
               <div class="space-y-4 print-bar-chart-container">
                 @for(topicKey of topicKeys(); track topicKey) {
                   @let topic = topicsDataSignal()[topicKey];
                   @let progress = topicProgress(topicKey);
-                  <div>
+                  <div class="p-3 rounded-lg hover:bg-slate-50/50">
                     <div class="flex justify-between items-center mb-1">
-                      <span class="font-semibold text-slate-700">{{ topic.title }}</span>
-                      <span class="text-sm font-bold" [class]="topic.colorClasses.border.replace('border', 'text')">{{ progress.percentage }}%</span>
+                      <span class="font-semibold text-[rgb(var(--c-text-secondary))]">{{ topic.title }}</span>
+                      <span class="text-sm font-bold" [class]="'text-[rgb(var(--c-topic-' + topicKey + '-500))]'">{{ progress.percentage }}%</span>
                     </div>
                     <div class="w-full bg-gray-200/70 rounded-full h-6 shadow-inner print-bar">
                       <div class="h-6 rounded-full text-center text-white font-bold text-sm flex items-center justify-center transition-all duration-500" [class]="topic.colorClasses.accent" [style.width.%]="progress.percentage">
                       </div>
+                    </div>
+                     <div class="mt-3 text-right no-print">
+                        <button (click)="startTopicReview(topicKey)" [disabled]="isGeneratingReview()"
+                                class="bg-white/80 hover:bg-white text-[rgb(var(--c-accent-700))] font-semibold py-2 px-4 rounded-full text-sm transition-all duration-300 shadow-sm border border-[rgb(var(--c-accent-500),0.3)] disabled:opacity-60 disabled:cursor-not-allowed">
+                          @if(isGeneratingReview()) {
+                             <span>Tekrar Oluşturuluyor...</span>
+                          } @else {
+                             <span>Konuları Tekrar Et</span>
+                          }
+                        </button>
                     </div>
                   </div>
                 }
@@ -267,8 +308,8 @@
             <section class="print-section">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-8 print-grid">
                 <!-- Strengths -->
-                <div class="bg-white/60 backdrop-blur-md rounded-2xl shadow-lg p-6 border-t-4 border-green-500">
-                   <h2 class="text-2xl font-bold text-slate-800 mb-4 print-section-title">🌟 Güçlü Yönlerin</h2>
+                <div class="bg-[rgba(var(--c-card-bg),0.6)] backdrop-blur-md rounded-2xl shadow-lg p-6 border-t-4 border-green-500">
+                   <h2 class="text-2xl font-bold text-[rgb(var(--c-text-primary))] mb-4 print-section-title">🌟 Güçlü Yönlerin</h2>
                    @if (strengths().length > 0) {
                      <ul class="space-y-2">
                        @for(sub of strengths(); track sub.id) {
@@ -276,12 +317,12 @@
                        }
                      </ul>
                    } @else {
-                     <p class="text-slate-500 italic">Henüz ustalaştığın bir konu yok. Devam et, başarabilirsin!</p>
+                     <p class="text-[rgb(var(--c-text-muted))] italic">Henüz ustalaştığın bir konu yok. Devam et, başarabilirsin!</p>
                    }
                 </div>
                 <!-- Areas for Improvement -->
-                <div class="bg-white/60 backdrop-blur-md rounded-2xl shadow-lg p-6 border-t-4 border-yellow-500">
-                   <h2 class="text-2xl font-bold text-slate-800 mb-4 print-section-title">🌱 Geliştirilecek Alanlar</h2>
+                <div class="bg-[rgba(var(--c-card-bg),0.6)] backdrop-blur-md rounded-2xl shadow-lg p-6 border-t-4 border-yellow-500">
+                   <h2 class="text-2xl font-bold text-[rgb(var(--c-text-primary))] mb-4 print-section-title">🌱 Geliştirilecek Alanlar</h2>
                     @if (areasForImprovement().length > 0) {
                      <ul class="space-y-2">
                        @for(sub of areasForImprovement().slice(0, 5); track sub.id) {
@@ -289,7 +330,7 @@
                        }
                      </ul>
                    } @else {
-                     <p class="text-slate-500 italic">Harika! Geliştirilecek bir alan bulunamadı.</p>
+                     <p class="text-[rgb(var(--c-text-muted))] italic">Harika! Geliştirilecek bir alan bulunamadı.</p>
                    }
                 </div>
               </div>
@@ -299,35 +340,35 @@
           <!-- Side Panel for Badges and Rewards -->
           <div class="space-y-8">
             <!-- Badges -->
-            <section class="bg-white/60 backdrop-blur-md rounded-2xl shadow-lg p-6 border border-white/50 print-section">
-              <h2 class="text-2xl font-bold text-slate-800 mb-4 print-section-title">🏅 Rozetlerin</h2>
+            <section class="bg-[rgba(var(--c-card-bg),0.6)] backdrop-blur-md rounded-2xl shadow-lg p-6 border border-white/50 print-section">
+              <h2 class="text-2xl font-bold text-[rgb(var(--c-text-primary))] mb-4 print-section-title">🏅 Rozetlerin</h2>
               @if (gamificationService.unlockedBadges().length > 0) {
                 <div class="flex flex-wrap gap-4">
                   @for(badge of gamificationService.unlockedBadges(); track badge.id) {
                     <div class="text-center" [title]="badge.name + ': ' + badge.description">
                       <span class="text-4xl drop-shadow-md">{{ badge.icon }}</span>
-                      <p class="text-xs font-semibold text-slate-600 mt-1">{{ badge.name }}</p>
+                      <p class="text-xs font-semibold text-[rgb(var(--c-text-secondary))] mt-1">{{ badge.name }}</p>
                     </div>
                   }
                 </div>
               } @else {
-                <p class="text-slate-500 italic">Etkinlikleri tamamlayarak yeni rozetler kazan!</p>
+                <p class="text-[rgb(var(--c-text-muted))] italic">Etkinlikleri tamamlayarak yeni rozetler kazan!</p>
               }
             </section>
             <!-- Rewards -->
-             <section class="bg-white/60 backdrop-blur-md rounded-2xl shadow-lg p-6 border border-white/50 print-section">
-              <h2 class="text-2xl font-bold text-slate-800 mb-4 print-section-title">🎁 Ödüllerin</h2>
+             <section class="bg-[rgba(var(--c-card-bg),0.6)] backdrop-blur-md rounded-2xl shadow-lg p-6 border border-white/50 print-section">
+              <h2 class="text-2xl font-bold text-[rgb(var(--c-text-primary))] mb-4 print-section-title">🎁 Ödüllerin</h2>
                @if (gamificationService.unlockedAvatarItems().length > 0) {
                   <div class="flex flex-wrap gap-4">
                     @for(item of gamificationService.unlockedAvatarItems(); track item.id) {
                       <div class="text-center" [title]="item.name">
                         <span class="text-4xl drop-shadow-md">{{ item.icon }}</span>
-                        <p class="text-xs font-semibold text-slate-600 mt-1">{{ item.name }}</p>
+                        <p class="text-xs font-semibold text-[rgb(var(--c-text-secondary))] mt-1">{{ item.name }}</p>
                       </div>
                     }
                   </div>
                 } @else {
-                   <p class="text-slate-500 italic">Puan kazanarak baykuşun için yeni eşyaların kilidini aç!</p>
+                   <p class="text-[rgb(var(--c-text-muted))] italic">Puan kazanarak baykuşun için yeni eşyaların kilidini aç!</p>
                 }
             </section>
           </div>
@@ -336,10 +377,10 @@
     </div>
   </div>
 } @else {
-  <div class="relative min-h-screen bg-slate-50 p-4 sm:p-6 lg:p-8">
+  <div class="relative min-h-screen bg-[rgb(var(--c-page-bg))] p-4 sm:p-6 lg:p-8">
     
     <div class="absolute top-4 right-4 z-10 no-print accessibility-container">
-      <button (click)="toggleAccessibilityMenu()" class="p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition-colors duration-200" aria-label="Erişilebilirlik ayarlarını aç">
+      <button (click)="toggleAccessibilityMenu()" class="p-2 bg-[rgba(var(--c-card-bg),0.8)] backdrop-blur-sm rounded-full shadow-md hover:bg-[rgb(var(--c-card-bg))] transition-colors duration-200" aria-label="Erişilebilirlik ayarlarını aç">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.096 2.572-1.065z"></path>
           <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -347,43 +388,97 @@
       </button>
       
       @if (isAccessibilityMenuOpen()) {
-        <div class="absolute top-full right-0 mt-2 w-72 bg-white/90 backdrop-blur-sm rounded-lg shadow-xl p-4 animate-fade-in border border-gray-200">
+        <div class="absolute top-full right-0 mt-2 w-80 bg-white/90 backdrop-blur-sm rounded-lg shadow-xl p-4 animate-fade-in border border-gray-200">
           <div class="space-y-4">
             <div class="space-y-3">
+               <h4 class="text-base text-gray-800 font-semibold">Görünüm</h4>
+               <div class="flex items-center justify-between">
+                <span class="text-base text-gray-700">Tema</span>
+                 <div class="flex items-center gap-2">
+                    @for(theme of themes; track theme.id) {
+                      <button (click)="setTheme(theme.id)" [title]="theme.name" class="w-7 h-7 rounded-full transition-transform transform hover:scale-110" [class]="theme.color">
+                        @if (activeTheme() === theme.id) {
+                          <div class="w-full h-full flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                            </svg>
+                          </div>
+                        }
+                      </button>
+                    }
+                 </div>
+               </div>
+               <hr class="border-gray-200/80">
               <div class="flex items-center justify-between">
                 <span class="text-base text-gray-700 font-medium">Metin Boyutu</span>
                 <div class="flex items-center gap-1">
-                  <button (click)="decreaseFontSize()" [disabled]="isMinFontSize()" class="w-7 h-7 flex items-center justify-center bg-gray-200 rounded-full text-lg font-bold text-gray-600 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition" aria-label="Metin boyutunu küçült">-</button>
-                  <span class="text-sm font-semibold text-gray-700 w-12 text-center tabular-nums">{{ fontSizeLabel() }}</span>
-                  <button (click)="increaseFontSize()" [disabled]="isMaxFontSize()" class="w-7 h-7 flex items-center justify-center bg-gray-200 rounded-full text-lg font-bold text-gray-600 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition" aria-label="Metin boyutunu büyüt">+</button>
+                  <button (click)="decreaseFontSize()" [disabled]="isMinFontSize()" class="w-7 h-7 flex items-center justify-center bg-gray-200 rounded-full text-lg font-bold text-gray-600 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition" aria-label="Metin boyutunu azalt">
+                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>
+                  </button>
+                  <span class="text-base font-semibold text-gray-800 w-16 text-center">{{ fontSizeLabel() }}</span>
+                  <button (click)="increaseFontSize()" [disabled]="isMaxFontSize()" class="w-7 h-7 flex items-center justify-center bg-gray-200 rounded-full text-lg font-bold text-gray-600 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition" aria-label="Metin boyutunu artır">
+                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd" /></svg>
+                  </button>
                 </div>
               </div>
-              <hr class="border-gray-200/80">
               <div class="flex items-center justify-between">
-                <span class="text-base text-gray-700 font-medium">Erişilebilir Yazı Tipi</span>
-                <label class="inline-flex items-center cursor-pointer">
-                  <input type="checkbox" class="sr-only peer" [checked]="isDyslexiaFontEnabled()" (change)="toggleDyslexiaFont()">
-                  <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                </label>
+                <span class="text-base text-gray-700 font-medium">Disleksi Fontu</span>
+                <button (click)="toggleDyslexiaFont()"
+                        class="relative inline-flex items-center h-6 rounded-full w-11 transition-colors"
+                        [class.bg-indigo-600]="isDyslexiaFontEnabled()"
+                        [class.bg-gray-300]="!isDyslexiaFontEnabled()">
+                  <span class="inline-block w-4 h-4 transform bg-white rounded-full transition-transform"
+                        [class.translate-x-6]="isDyslexiaFontEnabled()"
+                        [class.translate-x-1]="!isDyslexiaFontEnabled()"></span>
+                </button>
               </div>
             </div>
             <hr class="border-gray-200/80">
-            <div class="space-y-3">
-              <h4 class="text-base text-gray-800 font-semibold">Geri Bildirim Ayarları</h4>
-              <div class="flex items-center justify-between">
-                <span class="text-base text-gray-700">Doğru/Yanlış Göster</span>
-                <label class="inline-flex items-center cursor-pointer">
-                  <input type="checkbox" class="sr-only peer" [checked]="feedbackEnabled()" (change)="toggleFeedbackEnabled()">
-                  <div class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                </label>
-              </div>
-              <div class="flex items-center justify-between" [class.opacity-50]="!feedbackEnabled()">
-                <span class="text-base text-gray-700">Gösterme Süresi</span>
-                <div class="flex items-center gap-1 bg-gray-200 rounded-full p-0.5">
-                  <button (click)="setFeedbackDuration('continuous')" [disabled]="!feedbackEnabled()" [class.bg-white]="feedbackDuration() === 'continuous'" [class.text-indigo-600]="feedbackDuration() === 'continuous'" class="px-2 py-0.5 rounded-full text-sm font-semibold transition">Sürekli</button>
-                  <button (click)="setFeedbackDuration(5)" [disabled]="!feedbackEnabled()" [class.bg-white]="feedbackDuration() === 5" [class.text-indigo-600]="feedbackDuration() === 5" class="px-2 py-0.5 rounded-full text-sm font-semibold transition">5 sn</button>
-                  <button (click)="setFeedbackDuration(10)" [disabled]="!feedbackEnabled()" [class.bg-white]="feedbackDuration() === 10" [class.text-indigo-600]="feedbackDuration() === 10" class="px-2 py-0.5 rounded-full text-sm font-semibold transition">10 sn</button>
+            <div>
+              <h4 class="text-base text-gray-800 font-semibold mb-3">Geri Bildirim</h4>
+              <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-base text-gray-700 font-medium">Anında Geri Bildirim</span>
+                    <button (click)="toggleFeedbackEnabled()"
+                            class="relative inline-flex items-center h-6 rounded-full w-11 transition-colors"
+                            [class.bg-indigo-600]="feedbackEnabled()"
+                            [class.bg-gray-300]="!feedbackEnabled()">
+                      <span class="inline-block w-4 h-4 transform bg-white rounded-full transition-transform"
+                            [class.translate-x-6]="feedbackEnabled()"
+                            [class.translate-x-1]="!feedbackEnabled()"></span>
+                    </button>
                 </div>
+                @if(feedbackEnabled()) {
+                    <div class="space-y-2 animate-fade-in">
+                        <span class="text-base text-gray-700 font-medium block">Geri Bildirim Süresi</span>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button (click)="setFeedbackDuration('continuous')"
+                                    class="px-2 py-1 text-sm font-semibold rounded-md transition-colors"
+                                    [class.bg-indigo-600]="feedbackDuration() === 'continuous'"
+                                    [class.text-white]="feedbackDuration() === 'continuous'"
+                                    [class.bg-gray-200]="feedbackDuration() !== 'continuous'"
+                                    [class.text-gray-700]="feedbackDuration() !== 'continuous'">
+                                Sürekli
+                            </button>
+                            <button (click)="setFeedbackDuration(5)"
+                                    class="px-2 py-1 text-sm font-semibold rounded-md transition-colors"
+                                    [class.bg-indigo-600]="feedbackDuration() === 5"
+                                    [class.text-white]="feedbackDuration() === 5"
+                                    [class.bg-gray-200]="feedbackDuration() !== 5"
+                                    [class.text-gray-700]="feedbackDuration() !== 5">
+                                5 sn
+                            </button>
+                            <button (click)="setFeedbackDuration(10)"
+                                    class="px-2 py-1 text-sm font-semibold rounded-md transition-colors"
+                                    [class.bg-indigo-600]="feedbackDuration() === 10"
+                                    [class.text-white]="feedbackDuration() === 10"
+                                    [class.bg-gray-200]="feedbackDuration() !== 10"
+                                    [class.text-gray-700]="feedbackDuration() !== 10">
+                                10 sn
+                            </button>
+                        </div>
+                    </div>
+                }
               </div>
             </div>
           </div>
@@ -392,139 +487,136 @@
     </div>
 
     <div class="max-w-5xl mx-auto">
-      <header class="text-center mb-8">
-        <h1 class="text-4xl sm:text-5xl font-bold text-slate-800 tracking-tight">
-          Öğrenme Köprüsü
-        </h1>
-        <p class="mt-2 text-lg text-slate-600">
-          Eğlenceli ve Kişiselleştirilmiş Öğrenme Etkinlikleri
-        </p>
+      <header class="flex flex-col sm:flex-row justify-between items-center mb-6 sm:mb-10">
+        <div class="text-center sm:text-left">
+          <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[rgb(var(--c-text-primary))] tracking-tight">Öğrenme Köprüsü</h1>
+          <p class="mt-2 text-lg text-[rgb(var(--c-text-secondary))]">Kişiselleştirilmiş öğrenme yolculuğuna hoş geldin!</p>
+        </div>
+        <button (click)="openStudentDashboard()" class="mt-4 sm:mt-0 flex items-center bg-[rgb(var(--c-accent-500))] hover:bg-[rgb(var(--c-accent-600))] text-white font-bold py-3 px-6 rounded-full shadow-lg transition-transform transform hover:scale-105 no-print">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+            Başarı Raporu
+        </button>
       </header>
 
+      <!-- Main Content Area -->
       <main>
-        @if (!selectedTopic()) {
-          <div class="text-center mb-10 animate-fade-in">
-            <h2 class="text-2xl font-semibold text-slate-700">Hangi alanda etkinlik oluşturmak istersin?</h2>
-            <div class="mt-4 max-w-lg mx-auto relative">
-              <input 
-                type="text" 
-                [value]="searchQuery()" 
-                (input)="searchQuery.set($any($event.target).value)"
-                placeholder="Etkinlik ara (örn: okuma, toplama)..." 
-                class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-full shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
-              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-              </div>
-            </div>
-          </div>
-
-          @if (searchQuery()) {
-            <div class="animate-fade-in">
-              @if (searchResults().length > 0) {
-                <div class="space-y-3 max-w-2xl mx-auto">
-                  @for(result of searchResults(); track result.subTopic.id) {
-                    <div (click)="selectSearchResult(result)"
-                         class="group bg-white p-4 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 cursor-pointer flex items-center justify-between border-l-4"
-                         [class]="result.topic.colorClasses.border">
-                      <div>
-                        <span class="text-sm font-semibold rounded-full px-2 py-0.5" [class]="result.topic.colorClasses.bg + ' ' + result.topic.colorClasses.border.replace('border', 'text')">{{ result.topic.title }}</span>
-                        <h3 class="text-lg font-bold text-slate-800 group-hover:text-indigo-600 mt-1">{{ result.subTopic.title }}</h3>
-                      </div>
-                       <div class="text-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity transform group-hover:translate-x-0 -translate-x-2 duration-300">
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                              <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                          </svg>
-                      </div>
-                    </div>
-                  }
-                </div>
-              } @else {
-                <div class="text-center text-slate-500 py-10">
-                  <p class="text-lg">"{{ searchQuery() }}" için sonuç bulunamadı.</p>
-                  <p class="text-sm mt-1">Lütfen başka bir anahtar kelime deneyin.</p>
-                </div>
-              }
-            </div>
-          } @else {
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
-              <button (click)="openStudentDashboard()" class="md:col-span-2 group relative bg-gradient-to-r from-indigo-500 to-purple-600 p-6 rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden text-white">
-                  <div class="flex flex-col sm:flex-row items-center justify-center text-center sm:text-left gap-4">
-                      <div class="text-5xl">🏆</div>
-                      <div>
-                          <h3 class="text-2xl font-bold">Başarı Raporum</h3>
-                          <p class="mt-1 opacity-90">İlerlemeni gör, puanlarını ve rozetlerini takip et!</p>
-                      </div>
-                  </div>
-              </button>
-              @for(topicKey of topicKeys(); track topicKey) {
-                @let topic = topicsDataSignal()[topicKey];
-                <div (click)="selectTopic(topicKey)" class="group relative bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden border-l-4" [class]="topic.colorClasses.border">
-                  <div class="flex items-center text-left">
-                    <div [class]="'p-3 rounded-full mr-5 ' + topic.colorClasses.bg" [innerHTML]="topic.icon | safeHtml"></div>
-                    <div>
-                      <h3 class="text-xl font-bold text-slate-800">{{ topic.title }}</h3>
-                      <p class="mt-1 text-slate-500">{{ topic.description }}</p>
-                    </div>
-                  </div>
-                </div>
-              }
-            </div>
-          }
-        } @else if (selectedTopic() && !selectedSubTopic()) {
-          @let currentTopic = currentTopicData();
-          @if(currentTopic) {
-            <div class="animate-fade-in">
-              <div class="flex items-center mb-8">
-                 <button (click)="resetToTopics()" class="flex items-center text-slate-600 hover:text-indigo-600 transition-colors duration-200 font-semibold">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
-                  </svg>
-                  Ana Menü
-                </button>
-              </div>
-              <div class="text-center mb-10">
-                <h2 class="text-3xl font-bold text-slate-800">{{ currentTopic.title }} Başarı Haritam</h2>
-                <p class="mt-2 text-lg text-slate-600">Bir alt konu seçerek öğrenmeye başla!</p>
-              </div>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                @for(subTopic of currentTopic.subTopics; track subTopic.id) {
-                  <div (click)="selectSubTopic(subTopic)" 
-                       class="group bg-white rounded-xl shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col justify-between p-6 border-l-4"
-                       [class]="currentTopic.colorClasses.border">
-                      <div>
-                          <h3 class="text-xl font-bold text-slate-800 group-hover:text-indigo-600 transition-colors">{{ subTopic.title }}</h3>
-                          <p class="mt-2 text-slate-500 text-sm">{{ subTopic.description }}</p>
-                      </div>
-                      <div class="mt-6 flex justify-between items-center">
-                          <div class="flex items-center space-x-1">
-                              <span class="text-sm font-medium text-slate-500 mr-2">Başarı:</span>
-                              @for (i of [0, 1, 2]; track i) {
-                                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor" [class]="(progressData()[subTopic.id] || 0) > i ? 'text-yellow-400' : 'text-slate-300'">
-                                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                  </svg>
-                              }
-                          </div>
-                          <div class="text-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity transform group-hover:translate-x-0 -translate-x-2 duration-300">
-                              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                  <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                              </svg>
-                          </div>
-                      </div>
-                  </div>
-                }
-              </div>
-            </div>
-          }
-        } @else {
+        @if (selectedTopic() && selectedSubTopic() && !activeReviewActivity()) {
           <app-activity-generator 
             [topic]="selectedTopic()!" 
-            [subTopic]="selectedSubTopic()!" 
+            [subTopic]="selectedSubTopic()!"
+            [customPrompts]="customPrompts()[selectedSubTopic()!.id]"
             [feedbackSettings]="feedbackSettings()"
-            [customPrompts]="customPrompts()['creative-writing-prompts']"
-            (activityCompleted)="updateProgress($event)"
-            (backToSubtopics)="resetToSubTopics()"></app-activity-generator>
+            (backToSubtopics)="resetToSubTopics()"
+            (activityCompleted)="updateProgress($event)">
+          </app-activity-generator>
+        } @else if (activeReviewActivity()) {
+            <div class="bg-white p-4 sm:p-8 rounded-2xl shadow-xl border border-gray-200 animate-fade-in">
+                <div class="flex items-center justify-between mb-6 no-print">
+                    <button (click)="endReviewActivity()" class="flex items-center text-gray-600 hover:text-indigo-600 transition-colors duration-200 font-semibold">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+                      </svg>
+                      Ana Menü
+                    </button>
+                    <h2 class="text-xl sm:text-2xl font-bold text-gray-800 text-center">Konu Tekrarı</h2>
+                    <div class="w-24"></div> <!-- Spacer -->
+                </div>
+                 <app-activity-display 
+                    [activity]="activeReviewActivity()!"
+                    [topic]="selectedTopic() || 'disleksi'"
+                    [initialAnswers]="null"
+                    [feedbackSettings]="feedbackSettings()"
+                    (activitySuccess)="updateProgress($event)"
+                    (nextActivity)="endReviewActivity()">
+                 </app-activity-display>
+            </div>
+        } @else if (selectedTopic() && currentTopicData(); as topicData) {
+          <!-- SubTopic Selection -->
+          <div class="animate-fade-in">
+            <button (click)="resetToTopics()" class="flex items-center text-sm font-semibold text-[rgb(var(--c-text-secondary))] hover:text-[rgb(var(--c-text-primary))] mb-4 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+              Tüm konulara geri dön
+            </button>
+            <div [class]="'p-6 rounded-2xl shadow-lg border-2 ' + topicData.colorClasses.border + ' ' + topicData.colorClasses.bg">
+                <div class="flex items-center gap-4 mb-4">
+                  <div [innerHTML]="topicData.icon | safeHtml"></div>
+                  <div>
+                    <h2 class="text-2xl font-bold text-[rgb(var(--c-text-primary))]">{{ topicData.title }}</h2>
+                    <p class="text-[rgb(var(--c-text-secondary))]">{{ topicData.description }}</p>
+                  </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  @for (sub of topicData.subTopics; track sub.id) {
+                    <button (click)="selectSubTopic(sub)" class="text-left bg-white/70 hover:bg-white p-4 rounded-lg shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 group">
+                       <div class="flex justify-between items-start">
+                           <h3 class="font-bold text-lg text-[rgb(var(--c-text-primary))] group-hover:text-[rgb(var(--c-accent-600))] transition-colors">{{ sub.title }}</h3>
+                           <!-- Star progress indicator -->
+                           <div class="flex text-yellow-400">
+                                @for(i of [1,2,3]; track i) {
+                                    @if((progressData()[sub.id] || 0) >= i) {
+                                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                                    } @else {
+                                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-300" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                                    }
+                                }
+                           </div>
+                       </div>
+                      <p class="mt-1 text-sm text-[rgb(var(--c-text-secondary))]">{{ sub.description }}</p>
+                    </button>
+                  }
+                </div>
+            </div>
+          </div>
+        } @else {
+          <!-- Topic Selection -->
+          <div class="space-y-6">
+              <!-- Search Bar -->
+            <div class="relative">
+                <input type="text" [value]="searchQuery()" (input)="searchQuery.set($any($event.target).value)" placeholder="Bir konu veya etkinlik ara..." class="w-full pl-10 pr-4 py-3 text-lg border-2 border-slate-300 rounded-full focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow shadow-sm hover:shadow-md">
+                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                </div>
+
+                @if(searchResults().length > 0) {
+                  <div class="absolute top-full left-0 mt-2 w-full bg-white rounded-xl shadow-lg border border-slate-200 z-10 max-h-80 overflow-y-auto animate-fade-in">
+                    @for(result of searchResults(); track result.subTopic.id) {
+                      <button (click)="selectSearchResult(result)" class="w-full text-left p-4 hover:bg-slate-100 transition-colors">
+                        <p class="font-semibold text-indigo-700">{{ result.subTopic.title }}</p>
+                        <p class="text-sm text-slate-500">{{ result.topic.title }}</p>
+                      </button>
+                    }
+                  </div>
+                }
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              @for (key of topicKeys(); track key) {
+                @let topic = topicsDataSignal()[key];
+                <button (click)="selectTopic(key)" [class]="'relative p-6 rounded-2xl shadow-lg border-2 text-left transition-all duration-300 transform hover:scale-105 hover:shadow-2xl ' + topic.colorClasses.border + ' ' + topic.colorClasses.bg">
+                  <div class="flex items-center gap-4">
+                    <div [innerHTML]="topic.icon | safeHtml"></div>
+                    <div>
+                      <h2 class="text-xl font-bold text-[rgb(var(--c-text-primary))]">{{ topic.title }}</h2>
+                    </div>
+                  </div>
+                  <p class="mt-2 text-[rgb(var(--c-text-secondary))]">{{ topic.description }}</p>
+                  
+                  <!-- Progress Bar -->
+                  @let progress = topicProgress(key);
+                  <div class="absolute bottom-4 left-6 right-6">
+                      <div class="w-full bg-black/10 rounded-full h-2">
+                        <div class="h-2 rounded-full" [class]="topic.colorClasses.accent" [style.width.%]="progress.percentage"></div>
+                      </div>
+                  </div>
+                </button>
+              }
+            </div>
+          </div>
         }
       </main>
     </div>
+
   </div>
 }

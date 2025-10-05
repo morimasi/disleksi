@@ -4,10 +4,13 @@ export type GradeLevel = 'ilkokul' | 'ortaokul';
 export type SubTopicId =
   | 'phonological-awareness' | 'letter-sound' | 'reading-fluency' | 'reading-comprehension' | 'visual-processing' | 'vocabulary-morphology' | 'spelling-patterns' | 'working-memory-sequencing' // Dyslexia
   | 'number-sense' | 'basic-arithmetic' | 'problem-solving' | 'math-symbols' | 'time-measurement' | 'spatial-reasoning' | 'estimation-skills' | 'fractions-decimals' | 'visual-number-representation' // Dyscalculia
-  | 'handwriting-legibility' | 'letter-formation' | 'writing-speed' | 'sentence-construction' | 'punctuation-grammar' | 'fine-motor-skills' | 'writing-planning' | 'creative-writing-prompts' | 'keyboarding-skills'; // Dysgraphia
+  | 'handwriting-legibility' | 'letter-formation' | 'writing-speed' | 'sentence-construction' | 'punctuation-grammar' | 'fine-motor-skills' | 'writing-planning' | 'creative-writing-prompts' | 'keyboarding-skills' // Dysgraphia
+  | 'interactive-story' // New dynamic activity type
+  | 'auditory-dictation' // New for Dyslexia
+  | 'visual-arithmetic'; // New for Dyscalculia
 
 export interface SubTopic {
-    id: SubTopicId;
+    id: SubTopicId | 'review'; // 'review' is a virtual ID for review sessions
     title: string;
     description: string;
 }
@@ -80,6 +83,41 @@ export interface SequencingEventsData {
   }[];
 }
 
+// --- New Multisensory Activity Models ---
+export interface AuditoryDictationData {
+  problems: {
+    wordToSpeak: string; // The word TTS will say and the user must type.
+  }[];
+}
+
+export interface VisualArithmeticData {
+    problems: {
+        visualQuestion: string; // The problem shown with emojis, e.g., "🍎🍎 + 🍎🍎🍎"
+        answer: string; // The numerical answer, e.g., "5"
+    }[];
+}
+
+
+// --- Interactive Story Models ---
+export interface InteractiveStoryChoice {
+  text: string;
+  nextSceneId: string;
+}
+
+export interface InteractiveStoryScene {
+  id: string;
+  text: string;
+  choices: InteractiveStoryChoice[];
+  // An embedded activity that must be completed to proceed.
+  // It's a full Activity object, but should only contain ONE problem.
+  microActivity?: Activity; 
+}
+
+export interface InteractiveStoryData {
+    startSceneId: string;
+    scenes: Record<string, InteractiveStoryScene>; // A map of scene IDs to scene objects
+}
+
 
 interface BaseActivity<T, U extends string> {
   title: string;
@@ -100,9 +138,12 @@ export type TrueFalseActivity = BaseActivity<TrueFalseData, 'true-false'>;
 export type VisualMatchActivity = BaseActivity<VisualMatchData, 'visual-match'>;
 export type MatchingPairsActivity = BaseActivity<MatchingPairsData, 'matching-pairs'>;
 export type SequencingEventsActivity = BaseActivity<SequencingEventsData, 'sequencing-events'>;
+export type InteractiveStoryActivity = BaseActivity<InteractiveStoryData, 'interactive-story'>;
+export type AuditoryDictationActivity = BaseActivity<AuditoryDictationData, 'auditory-dictation'>;
+export type VisualArithmeticActivity = BaseActivity<VisualArithmeticData, 'visual-arithmetic'>;
 
 
-export type Activity = WordScrambleActivity | SimpleMathActivity | SentenceCompletionActivity | MultipleChoiceActivity | OrderingActivity | DragDropMatchActivity | FillInTheBlanksActivity | TrueFalseActivity | VisualMatchActivity | MatchingPairsActivity | SequencingEventsActivity;
+export type Activity = WordScrambleActivity | SimpleMathActivity | SentenceCompletionActivity | MultipleChoiceActivity | OrderingActivity | DragDropMatchActivity | FillInTheBlanksActivity | TrueFalseActivity | VisualMatchActivity | MatchingPairsActivity | SequencingEventsActivity | InteractiveStoryActivity | AuditoryDictationActivity | VisualArithmeticActivity;
 
 // Type guards to help TypeScript understand which activity type is being used.
 export function isWordScramble(activity: Activity): activity is WordScrambleActivity {
@@ -147,4 +188,16 @@ export function isMatchingPairs(activity: Activity): activity is MatchingPairsAc
 
 export function isSequencingEvents(activity: Activity): activity is SequencingEventsActivity {
     return activity.activityType === 'sequencing-events';
+}
+
+export function isInteractiveStory(activity: Activity): activity is InteractiveStoryActivity {
+    return activity.activityType === 'interactive-story';
+}
+
+export function isAuditoryDictation(activity: Activity): activity is AuditoryDictationActivity {
+    return activity.activityType === 'auditory-dictation';
+}
+
+export function isVisualArithmetic(activity: Activity): activity is VisualArithmeticActivity {
+    return activity.activityType === 'visual-arithmetic';
 }

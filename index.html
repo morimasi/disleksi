@@ -21,11 +21,108 @@
     "@angular/compiler": "https://next.esm.sh/@angular/compiler@^20.3.3?external=rxjs",
     "@angular/platform-browser": "https://next.esm.sh/@angular/platform-browser@^20.3.3?external=rxjs",
     "@angular/common/http": "https://next.esm.sh/@angular/common@^20.3.3/http?external=rxjs",
-    "@angular/common": "https://next.esm.sh/@angular/common@^20.3.3?external=rxjs"
+    "@angular/common": "https://next.esm.sh/@angular/common@^20.3.3?external=rxjs",
+    "jspdf": "https://next.esm.sh/jspdf@2.5.1",
+    "html2canvas": "https://next.esm.sh/html2canvas@1.4.1"
   }
 }
 </script>
 <style>
+  :root, [data-theme="bridge"] {
+    --c-page-bg: 248 250 252; /* slate-50 */
+    --c-card-bg: 255 255 255;
+    --c-text-primary: 30 41 59; /* slate-800 */
+    --c-text-secondary: 51 65 85; /* slate-600 */
+    --c-text-muted: 100 116 139; /* slate-500 */
+    --c-border: 226 232 240; /* slate-200 */
+    --c-accent-500: 99 102 241; /* indigo-500 */
+    --c-accent-600: 79 70 229; /* indigo-600 */
+    --c-accent-700: 67 56 202; /* indigo-700 */
+    --c-topic-disleksi-100: 224 231 255; /* blue-100 */
+    --c-topic-disleksi-400: 96 165 250; /* blue-400 */
+    --c-topic-disleksi-500: 59 130 246; /* blue-500 */
+    --c-topic-diskalkuli-100: 254 249 195; /* yellow-100 */
+    --c-topic-diskalkuli-400: 250 204 21; /* yellow-400 */
+    --c-topic-diskalkuli-500: 234 179 8; /* yellow-500 */
+    --c-topic-disgrafi-100: 220 252 231; /* green-100 */
+    --c-topic-disgrafi-400: 74 222 128; /* green-400 */
+    --c-topic-disgrafi-500: 34 197 94; /* green-500 */
+    --c-dashboard-bg-from: 237 233 254; /* purple-50 */
+    --c-dashboard-bg-via: 239 246 255; /* indigo-50 */
+    --c-dashboard-bg-to: 236 253 255; /* cyan-50 */
+  }
+  [data-theme="forest"] {
+    --c-page-bg: 245 245 244; /* stone-100 */
+    --c-card-bg: 255 255 255;
+    --c-text-primary: 28 25 23; /* stone-800 */
+    --c-text-secondary: 68 64 60; /* stone-600 */
+    --c-text-muted: 87 83 78; /* stone-500 */
+    --c-border: 231 229 228; /* stone-200 */
+    --c-accent-500: 34 197 94; /* green-500 */
+    --c-accent-600: 22 163 74; /* green-600 */
+    --c-accent-700: 21 128 61; /* green-700 */
+    --c-topic-disleksi-100: 219 234 254; /* blue-100 */
+    --c-topic-disleksi-400: 96 165 250; /* blue-400 */
+    --c-topic-disleksi-500: 59 130 246; /* blue-500 */
+    --c-topic-diskalkuli-100: 254 249 195; /* yellow-100 */
+    --c-topic-diskalkuli-400: 250 204 21; /* yellow-400 */
+    --c-topic-diskalkuli-500: 234 179 8; /* yellow-500 */
+    --c-topic-disgrafi-100: 240 253 244; /* lime-100 */
+    --c-topic-disgrafi-400: 163 230 53; /* lime-400 */
+    --c-topic-disgrafi-500: 132 204 22; /* lime-500 */
+    --c-dashboard-bg-from: 240 253 244; /* green-50 */
+    --c-dashboard-bg-via: 236 252 203; /* lime-50 */
+    --c-dashboard-bg-to: 254 249 195; /* yellow-50 */
+  }
+  [data-theme="ocean"] {
+    --c-page-bg: 240 249 255; /* sky-50 */
+    --c-card-bg: 255 255 255;
+    --c-text-primary: 15 23 42; /* slate-900 */
+    --c-text-secondary: 51 65 85; /* slate-600 */
+    --c-text-muted: 71 85 105; /* slate-500 */
+    --c-border: 226 232 240; /* slate-200 */
+    --c-accent-500: 6 182 212; /* cyan-500 */
+    --c-accent-600: 8 145 178; /* cyan-600 */
+    --c-accent-700: 14 116 144; /* cyan-700 */
+    --c-topic-disleksi-100: 224 242 254; /* sky-100 */
+    --c-topic-disleksi-400: 56 189 248; /* sky-400 */
+    --c-topic-disleksi-500: 14 165 233; /* sky-500 */
+    --c-topic-diskalkuli-100: 207 250 254; /* cyan-100 */
+    --c-topic-diskalkuli-400: 34 211 238; /* cyan-400 */
+    --c-topic-diskalkuli-500: 6 182 212; /* cyan-500 */
+    --c-topic-disgrafi-100: 204 251 241; /* teal-100 */
+    --c-topic-disgrafi-400: 45 212 191; /* teal-400 */
+    --c-topic-disgrafi-500: 20 184 166; /* teal-500 */
+    --c-dashboard-bg-from: 236 254 255; /* cyan-50 */
+    --c-dashboard-bg-via: 240 253 250; /* teal-50 */
+    --c-dashboard-bg-to: 240 249 255; /* sky-50 */
+  }
+  [data-theme="sunset"] {
+    --c-page-bg: 255 251 235; /* amber-50 */
+    --c-card-bg: 255 255 255;
+    --c-text-primary: 28 25 23; /* stone-900 */
+    --c-text-secondary: 87 83 78; /* stone-600 */
+    --c-text-muted: 120 113 108; /* stone-500 */
+    --c-border: 245 245 244; /* stone-200 */
+    --c-accent-500: 249 115 22; /* orange-500 */
+    --c-accent-600: 234 88 12; /* orange-600 */
+    --c-accent-700: 194 65 12; /* orange-700 */
+    --c-topic-disleksi-100: 255 237 213; /* orange-100 */
+    --c-topic-disleksi-400: 251 146 60; /* orange-400 */
+    --c-topic-disleksi-500: 249 115 22; /* orange-500 */
+    --c-topic-diskalkuli-100: 254 226 226; /* red-100 */
+    --c-topic-diskalkuli-400: 248 113 113; /* red-400 */
+    --c-topic-diskalkuli-500: 239 68 68; /* red-500 */
+    --c-topic-disgrafi-100: 253 230 255; /* fuchsia-100 */
+    --c-topic-disgrafi-400: 232 121 249; /* fuchsia-400 */
+    --c-topic-disgrafi-500: 217 70 239; /* fuchsia-500 */
+    --c-dashboard-bg-from: 255 240 245; /* rose-50 */
+    --c-dashboard-bg-via: 255 241 224; /* orange-50 */
+    --c-dashboard-bg-to: 254 252 232; /* yellow-50 */
+  }
+  body {
+    background-color: rgb(var(--c-page-bg));
+  }
   body.font-dyslexic {
     font-family: 'OpenDyslexic', sans-serif;
   }
@@ -164,7 +261,7 @@
   }
 </style>
 </head>
-<body class="bg-blue-50 font-sans">
+<body class="font-sans">
   <app-root></app-root>
 </body>
 </html>

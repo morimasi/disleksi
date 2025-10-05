@@ -1,6 +1,6 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { GoogleGenAI } from '@google/genai';
-import { Activity, GradeLevel, Topic, SubTopic, SentenceCompletionActivity, isWordScramble, isSimpleMath, isMultipleChoice, isOrdering, isDragDropMatch, isFillInTheBlanks, isTrueFalse, isVisualMatch, isMatchingPairs, isSequencingEvents } from '../models/activity.model';
+import { Activity, GradeLevel, Topic, SubTopic, isWordScramble, isSimpleMath, isMultipleChoice, isOrdering, isDragDropMatch, isFillInTheBlanks, isTrueFalse, isVisualMatch, isMatchingPairs, isSequencingEvents, isInteractiveStory, isSentenceCompletion, isAuditoryDictation, isVisualArithmetic } from '../models/activity.model';
 import { ACTIVITY_CONFIGS } from './activity-config';
 
 @Injectable({
@@ -10,10 +10,6 @@ export class GeminiService {
   private ai: GoogleGenAI | null = null;
 
   constructor() {
-    // IMPORTANT: The API key is sourced from environment variables.
-    // Do not hardcode or expose it in the client-side code.
-    // This assumes `process.env.API_KEY` is available during the build process
-    // or through server-side rendering environment variables.
     const apiKey = process.env.API_KEY;
     if (apiKey) {
       this.ai = new GoogleGenAI({ apiKey });
@@ -22,26 +18,95 @@ export class GeminiService {
     }
   }
 
-  async generateDashboardFeedback(progressData: string): Promise<string> {
+  async generatePedagogicalFeedback(activity: Activity, problemIndex: number, userAnswer: string | string[] | null): Promise<string> {
     if (!this.ai) {
-      throw new Error('Gemini AI client is not initialized. Check API Key.');
+      throw new Error('Gemini AI client not initialized.');
     }
+
+    let problemContext = '';
+    let studentResponse = `Öğrencinin cevabı: "${Array.isArray(userAnswer) ? userAnswer.join(', ') : userAnswer}"`;
+    let correctAnswerInfo = '';
     
-    const prompt = `İşte bir öğrencinin ilerleme raporu:\n${progressData}\nBu verilere dayanarak, öğrenciye yönelik sıcak, cesaret verici ve kişiselleştirilmiş bir geri bildirim mesajı oluştur. Mesajın bir parçası olarak, en çok ilerleme kaydettiği bir alanı öv ve ardından 0 veya 1 yıldıza sahip olduğu bir konuyu bir sonraki adım olarak öner. Cevabın sadece 2-3 cümlelik, arkadaş canlısı bir metin olsun.`;
+    // Extract problem details and correct answer based on activity type
+    if (isWordScramble(activity)) {
+        const problem = activity.data.words[problemIndex];
+        problemContext = `Soru Tipi: Karışık Kelime\nKarışık kelime: "${problem.scrambled}".`;
+        correctAnswerInfo = `Doğru cevap: "${problem.correct}".`;
+    } else if (isSimpleMath(activity)) {
+        const problem = activity.data.problems[problemIndex];
+        problemContext = `Soru Tipi: Matematik Problemi\nSoru: "${problem.question}".`;
+        correctAnswerInfo = `Doğru cevap: "${problem.answer}".`;
+    } else if (isMultipleChoice(activity) || isVisualMatch(activity)) {
+        const problem = activity.data.problems[problemIndex];
+        problemContext = `Soru Tipi: Çoktan Seçmeli\nSoru: "${problem.question}"\nSeçenekler: ${problem.options.join(', ')}.`;
+        correctAnswerInfo = `Doğru cevap: "${problem.correctAnswer}".`;
+    } else if (isTrueFalse(activity)) {
+        const problem = activity.data.problems[problemIndex];
+        problemContext = `Soru Tipi: Doğru/Yanlış\nİfade: "${problem.statement}".`;
+        correctAnswerInfo = `Doğru cevap: "${problem.isCorrect ? 'Doğru' : 'Yanlış'}".`;
+    } else if (isFillInTheBlanks(activity)) {
+        const problem = activity.data.problems[problemIndex];
+        problemContext = `Soru Tipi: Boşluk Doldurma\nCümle: "${problem.prompt}".`;
+        correctAnswerInfo = `Doğru cevap: "${problem.correctAnswer}".`;
+    } else if (isAuditoryDictation(activity)) {
+        const problem = activity.data.problems[problemIndex];
+        problemContext = `Soru Tipi: İşitsel Yazma\nSöylenen kelime: "${problem.wordToSpeak}".`;
+        correctAnswerInfo = `Doğru cevap: "${problem.wordToSpeak}".`;
+    } else if (isVisualArithmetic(activity)) {
+        const problem = activity.data.problems[problemIndex];
+        problemContext = `Soru Tipi: Görsel Aritmetik\nSoru: "${problem.visualQuestion}".`;
+        correctAnswerInfo = `Doğru cevap: "${problem.answer}".`;
+    } else {
+        return "Bu etkinlik türü için açıklama henüz mevcut değil.";
+    }
+
+    const prompt = `Bir öğrenme güçlüğü çeken ilkokul öğrencisi aşağıdaki soruyu yanıtladı:\n\n${problemContext}\n${correctAnswerInfo}\n${studentResponse}\n\nÖğrencinin cevabının neden yanlış (veya doğru) olduğunu, 2-3 cümlelik çok basit, cesaret verici ve pedagojik bir dille açıkla. Nazikçe doğru cevabın arkasındaki mantığa yönlendir. Cevabın SADECE açıklama metni olsun.`;
 
     try {
         const response = await this.ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,
             config: {
-              systemInstruction: "You are a friendly and encouraging educational assistant for a child with learning difficulties. Your name is 'Bilge Baykuş'. Always speak in a warm, motivating, and simple tone in Turkish. Never sound like a robot. Start your response by greeting the student warmly.",
+              systemInstruction: "Senin adın 'Bilge Baykuş'. Öğrenme güçlüğü çeken çocuklar için sıcak, motive edici ve basit bir tonda konuşan, arkadaş canlısı bir eğitim asistanısın. Asla bir robot gibi konuşma.",
             }
         });
-
         return response.text.trim();
     } catch (error) {
-        console.error('Error generating dashboard feedback:', error);
-        throw new Error('Failed to generate dashboard feedback.');
+        console.error('Error generating pedagogical feedback:', error);
+        return 'Üzgünüm, şu anda bir açıklama oluşturamıyorum.';
+    }
+  }
+
+  async generateReviewActivity(topic: Topic, weakSubTopics: SubTopic[]): Promise<Activity> {
+    if (!this.ai) {
+        throw new Error('Gemini AI client is not initialized.');
+    }
+
+    const subTopicTitles = weakSubTopics.map(st => st.title).join(', ');
+    const prompt = `Bir öğrencinin "${topic}" kategorisindeki en çok zorlandığı alanlar şunlardır: ${subTopicTitles}. Bu alanların her birinden birer tane olmak üzere, toplamda 5 soruluk karma bir 'çoktan seçmeli' etkinlik oluştur. Sorular çeşitli ve ilgi çekici olmalıdır. Yanıtı, Çoktan Seçmeli Etkinlik şemasına uyan geçerli bir JSON nesnesi olarak döndür. İçerik dili Türkçe olmalıdır.`;
+
+    try {
+        const config = ACTIVITY_CONFIGS[topic].subtopics['reading-fluency']; // Using a representative multiple-choice schema
+        if (!config) throw new Error("Config not found for schema.");
+        
+        const response = await this.ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+            config: {
+                responseMimeType: 'application/json',
+                responseSchema: config.schema,
+            },
+        });
+
+        const jsonStr = response.text.trim();
+        const activity = JSON.parse(jsonStr) as Activity;
+        activity.title = `${topic === 'disleksi' ? 'Okuma' : topic === 'diskalkuli' ? 'Matematik' : 'Yazma'} Tekrarı`;
+        activity.instructions = "Zorlandığın konuları tekrar etme zamanı!";
+        return activity;
+
+    } catch (error) {
+        console.error('Error generating review activity:', error);
+        throw new Error('Tekrar etkinliği oluşturulamadı.');
     }
   }
 
@@ -80,6 +145,17 @@ export class GeminiService {
     } else if (isMatchingPairs(activity)) {
       const problem = activity.data.pairs[problemIndex];
       problemContext = `Soru Tipi: Eşleştirme\nEşleştirilecek: "${problem.item1}". Eşleştirme seçenekleri: ${activity.data.pairs.map(p => p.item2).join(', ')}.`;
+    } else if (isAuditoryDictation(activity)) {
+        const problem = activity.data.problems[problemIndex];
+        problemContext = `Soru Tipi: İşitsel Yazma.\nİpucu, kelimenin ilk harfi olabilir. Söylenen kelime: ${problem.wordToSpeak}`;
+    } else if (isVisualArithmetic(activity)) {
+        const problem = activity.data.problems[problemIndex];
+        problemContext = `Soru Tipi: Görsel Aritmetik.\nSoru: ${problem.visualQuestion}. İpucu, nesneleri saymaya teşvik edebilir.`;
+    } else if (isSentenceCompletion(activity)) {
+        const problem = activity.data.prompts[problemIndex];
+        problemContext = `Soru Tipi: Cümle Tamamlama\nCümle başlangıcı: "${problem}".`;
+    } else if (isInteractiveStory(activity)) {
+        return "Bu etkinlik türü için ipucu özelliği bulunmuyor.";
     }
 
     const prompt = `Bir öğrenme güçlüğü çeken ilkokul öğrencisi aşağıdaki soruda takıldı:\n\n${problemContext}\n${studentAnswer}\n\nDoğru cevabı doğrudan vermeden, öğrencinin doğru cevabı bulmasına yardımcı olacak tek cümlelik, çok basit, cesaret verici bir ipucu oluştur. İpucu Türkçe olmalıdır. Örnek: Karışık kelime "ealm" ise, ipucu "Kırmızı veya yeşil renkli bir meyvedir." olabilir. Matematik sorusu "5+3" ise, "5'in üzerine 3 daha saymayı dene." olabilir. Sadece ipucu cümlesini döndür.`;
@@ -132,6 +208,14 @@ export class GeminiService {
         if (options.problemCount) {
              activityDescription = activityDescription.replace(/a set of \d+/, `a set of ${options.problemCount}`);
         }
+    }
+     if (subTopic.id === 'interactive-story') {
+        const themes = {
+            disleksi: 'a reading-focused adventure about finding a lost book or deciphering a secret message',
+            diskalkuli: 'a math-focused adventure about solving puzzles in a treasure hunt or managing a magical potion shop',
+            disgrafi: 'a writing-focused adventure about completing a story, writing a ship\'s log, or creating a spell'
+        };
+        activityDescription = activityDescription.replace('THEME_PLACEHOLDER', themes[topic]);
     }
 
     const prompt = `You are an expert in creating engaging educational activities for children with learning difficulties. Generate an activity for a Turkish-speaking '${gradeLevel}' student with ${topic}. Specifically, this activity should focus on the sub-topic: '${subTopic.title}'. The activity is ${activityDescription}. Also, include a 'hint' field containing a single, brief, encouraging, and informative tip or 'did you know?' fact in Turkish related to the topic and sub-topic, suitable for a child. This hint should be no more than one or two sentences. Please respond ONLY with a valid JSON object that conforms to the provided schema. The language of the content must be Turkish.`;

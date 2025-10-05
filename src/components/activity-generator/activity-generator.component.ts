@@ -39,9 +39,10 @@ export class ActivityGeneratorComponent {
     }
   });
   
-  onActivitySuccess(event: { successRate: number, correctAnswers: number, totalQuestions: number }): void {
+  onActivitySuccess(event: { subTopicId: SubTopicId | 'review'; successRate: number, correctAnswers: number, totalQuestions: number }): void {
     this.activityCompleted.emit({ 
-      subTopicId: this.subTopic().id, 
+      // FIX: Cast subTopic id to SubTopicId as this component doesn't handle 'review' activities.
+      subTopicId: this.subTopic().id as SubTopicId, 
       successRate: event.successRate,
       correctAnswers: event.correctAnswers,
       totalQuestions: event.totalQuestions

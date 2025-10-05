@@ -1,14 +1,19 @@
 import { ChangeDetectionStrategy, Component, computed, signal, effect, ElementRef, inject, WritableSignal } from '@angular/core';
-import { Topic, SubTopic, SubTopicId } from './models/activity.model';
+import { Topic, SubTopic, SubTopicId, Activity } from './models/activity.model';
 import { ActivityGeneratorComponent } from './components/activity-generator/activity-generator.component';
 import { TOPICS_DATA } from './topics.data';
 import { SafeHtmlPipe } from './pipes/safe-html.pipe';
 import { GeminiService } from './services/gemini.service';
 import { GamificationService } from './services/gamification.service';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import { ActivityDisplayComponent } from './components/activity-display/activity-display.component';
+import { AvatarCustomizerComponent } from './components/avatar-customizer/avatar-customizer.component';
+import { ALL_AVATAR_ITEMS } from './gamification.data';
 
 type FontSize = 'sm' | 'base' | 'lg';
 const fontSizes: FontSize[] = ['sm', 'base', 'lg'];
-const fontSizeLabels: Record<FontSize, string> = { sm: 'Küçük', base: 'Normal', lg: 'Büyük' };
+const fontLabels: Record<FontSize, string> = { sm: 'Küçük', base: 'Normal', lg: 'Büyük' };
 
 export type FeedbackDuration = 'continuous' | 5 | 10;
 export interface FeedbackSettings {
@@ -27,11 +32,19 @@ interface SearchResult {
   subTopic: SubTopic;
 }
 
+export type Theme = 'bridge' | 'forest' | 'ocean' | 'sunset';
+export const themes: { id: Theme, name: string, color: string }[] = [
+    { id: 'bridge', name: 'Köprü', color: 'bg-indigo-500' },
+    { id: 'forest', name: 'Orman', color: 'bg-green-500' },
+    { id: 'ocean', name: 'Okyanus', color: 'bg-cyan-500' },
+    { id: 'sunset', name: 'Gün Batımı', color: 'bg-orange-500' },
+];
+
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ActivityGeneratorComponent, SafeHtmlPipe],
+  imports: [ActivityGeneratorComponent, ActivityDisplayComponent, SafeHtmlPipe, AvatarCustomizerComponent],
   host: {
     '(document:click)': 'onDocumentClick($event)',
   },
@@ -51,8 +64,8 @@ export class AppComponent {
 
   // --- Student Dashboard State ---
   showStudentDashboard = signal(false);
-  isGeneratingFeedback = signal(false);
-  aiFeedback = signal<string | null>(null);
+  isGeneratingPdf = signal(false);
+  showAvatarCustomizer = signal(false);
 
   // --- Dynamic Content Management ---
   private readonly topicsStorageKey = 'ogrenmeKoprusuTopicsData';
@@ -67,6 +80,10 @@ export class AppComponent {
   // --- Notification System ---
   notification = signal<{ message: string; type: 'success' | 'error' | 'achievement' } | null>(null);
   private notificationTimeout: any;
+
+  // --- Smart Review System ---
+  activeReviewActivity = signal<Activity | null>(null);
+  isGeneratingReview = signal(false);
 
   // --- Search Functionality ---
   searchQuery = signal('');
@@ -140,21 +157,33 @@ export class AppComponent {
     return { stars, maxStars, percentage };
   });
 
-  updateProgress(event: { subTopicId: SubTopicId; successRate: number, correctAnswers: number, totalQuestions: number }): void {
-    const currentStars = Number(this.progressData()[event.subTopicId] || 0);
-    let newStars = currentStars;
+  updateProgress(event: { subTopicId: SubTopicId | 'review'; successRate: number, correctAnswers: number, totalQuestions: number }): void {
+    // FIX: Using a direct check on the property ensures TypeScript can correctly narrow the type
+    // within the `if` block, resolving the type mismatch.
+    if (event.subTopicId !== 'review') {
+      // Within this block, event.subTopicId is guaranteed to be of type SubTopicId.
+      const subTopicId = event.subTopicId;
+      const currentStars = Number(this.progressData()[subTopicId] || 0);
 
-    if (event.successRate >= 0.8 && currentStars < 3) {
-      newStars = currentStars + 1;
-      this.progressData.update(data => ({
-        ...data,
-        [event.subTopicId]: newStars
-      }));
-      try {
-        localStorage.setItem(this.progressStorageKey, JSON.stringify(this.progressData()));
-      } catch (e) {
-        console.error('Could not save progress data to localStorage.', e);
+      if (event.successRate >= 0.8 && currentStars < 3) {
+        const newStars = currentStars + 1;
+        this.progressData.update(data => ({
+          ...data,
+          [subTopicId]: newStars
+        }));
+        try {
+          localStorage.setItem(this.progressStorageKey, JSON.stringify(this.progressData()));
+        } catch (e) {
+          console.error('Could not save progress data to localStorage.', e);
+        }
       }
+
+      // Contextual badge check
+      const isPerfect = event.correctAnswers === event.totalQuestions;
+      const contextualBadges = this.gamificationService.checkContextualBadges(subTopicId, this.progressData(), this.topicsDataSignal(), isPerfect);
+      [...contextualBadges].forEach(unlockable => {
+        this.showNotification(`Yeni Rozet: ${unlockable.name} ${unlockable.icon}`, 'achievement');
+      });
     }
     
     // Add points
@@ -162,18 +191,14 @@ export class AppComponent {
     const activityBonus = event.successRate >= 0.8 ? 50 : 0;
     const { newLevel, newItems, newBadges } = this.gamificationService.addPoints(pointsToAdd + activityBonus);
 
-    // Check for contextual badges
-    const isPerfect = event.correctAnswers === event.totalQuestions;
-    const contextualBadges = this.gamificationService.checkContextualBadges(event.subTopicId, this.progressData(), this.topicsDataSignal(), isPerfect);
-
-    // Show notifications
+    // Show notifications for level-ups and item unlocks
     if (newLevel) this.showNotification(`Tebrikler! Seviye ${newLevel} oldun!`, 'achievement');
-    [...newItems, ...newBadges, ...contextualBadges].forEach(unlockable => {
+    [...newItems, ...newBadges].forEach(unlockable => {
        this.showNotification(`Yeni Ödül: ${unlockable.name} ${unlockable.icon}`, 'achievement');
     });
   }
 
-  // --- Accessibility Features ---
+  // --- Accessibility & Theming Features ---
   isAccessibilityMenuOpen = signal(false);
   private elementRef = inject(ElementRef);
   isDyslexiaFontEnabled = signal<boolean>(false);
@@ -185,10 +210,20 @@ export class AppComponent {
   private readonly feedbackEnabledStorageKey = 'ogrenmeKoprusuFeedbackEnabled';
   private readonly feedbackDurationStorageKey = 'ogrenmeKoprusuFeedbackDuration';
 
+  // Theming
+  private readonly themeStorageKey = 'ogrenmeKoprusuTheme';
+  themes = themes;
+  activeTheme = signal<Theme>(this.loadTheme());
+
   feedbackSettings = computed<FeedbackSettings>(() => ({
     enabled: this.feedbackEnabled(),
     duration: this.feedbackDuration(),
   }));
+
+  equippedAvatarItems = computed(() => {
+    const equippedIds = this.gamificationService.studentProfile().equippedItemIds;
+    return ALL_AVATAR_ITEMS.filter(item => equippedIds.includes(item.id));
+  });
 
   constructor() {
     this.topicsDataSignal = signal(this.loadTopicsData());
@@ -202,6 +237,34 @@ export class AppComponent {
       fontSizes.forEach(size => document.body.classList.remove(`font-size-${size}`));
       document.body.classList.add(`font-size-${this.fontSize()}`);
     });
+
+    effect(() => {
+        const theme = this.activeTheme();
+        document.documentElement.dataset.theme = theme;
+        try {
+            localStorage.setItem(this.themeStorageKey, theme);
+        } catch (e) {
+            console.error('Could not save theme.', e);
+        }
+    });
+  }
+
+  private loadTheme(): Theme {
+    try {
+        const savedTheme = localStorage.getItem(this.themeStorageKey) as Theme | null;
+        return savedTheme && themes.some(t => t.id === savedTheme) ? savedTheme : 'bridge';
+    } catch (e) {
+        return 'bridge';
+    }
+  }
+
+  setTheme(theme: Theme): void {
+    this.activeTheme.set(theme);
+  }
+
+  handleSaveAvatar(newItemIds: string[]): void {
+    this.gamificationService.equipItems(newItemIds);
+    this.showNotification('Görünümün kaydedildi!', 'success');
   }
 
   handleLoginInput(field: 'username' | 'password', event: Event): void {
@@ -232,8 +295,43 @@ export class AppComponent {
 
   async openStudentDashboard(): Promise<void> {
     this.showStudentDashboard.set(true);
-    // AI feedback generation can now be optional or triggered separately
   }
+
+  async startTopicReview(topicKey: Topic): Promise<void> {
+    this.isGeneratingReview.set(true);
+    this.showStudentDashboard.set(false); // Go back to the main screen to show the activity
+
+    try {
+        const allWeakSubTopics = this.areasForImprovement();
+        const topicSubTopicIds = this.topicsDataSignal()[topicKey].subTopics.map((st: SubTopic) => st.id);
+        
+        const weakSubTopicsForTopic = allWeakSubTopics.filter(st => topicSubTopicIds.includes(st.id));
+
+        if (weakSubTopicsForTopic.length === 0) {
+            this.showNotification('Bu konuda geliştirilecek bir alan bulunamadı. Harika!', 'success');
+            this.showStudentDashboard.set(true); // Re-open dashboard
+            return;
+        }
+
+        const reviewActivity = await this.geminiService.generateReviewActivity(topicKey, weakSubTopicsForTopic);
+        this.activeReviewActivity.set(reviewActivity);
+
+    } catch(e: any) {
+        this.showNotification(e.message || 'Tekrar etkinliği oluşturulamadı.', 'error');
+        // If it fails, don't leave the user on a blank screen
+        if (!this.selectedTopic()) {
+            this.resetToTopics();
+        }
+    } finally {
+        this.isGeneratingReview.set(false);
+    }
+  }
+
+  endReviewActivity(): void {
+    this.activeReviewActivity.set(null);
+    this.resetToTopics();
+  }
+
 
   private loadTopicsData(): Record<Topic, any> {
     try {
@@ -385,7 +483,7 @@ export class AppComponent {
     });
   }
 
-  fontSizeLabel = computed(() => fontSizeLabels[this.fontSize()]);
+  fontSizeLabel = computed(() => fontLabels[this.fontSize()]);
   isMinFontSize = computed(() => this.fontSize() === fontSizes[0]);
   isMaxFontSize = computed(() => this.fontSize() === fontSizes[fontSizes.length - 1]);
 
@@ -447,13 +545,63 @@ export class AppComponent {
   resetToTopics(): void {
     this.selectedTopic.set(null);
     this.selectedSubTopic.set(null);
+    this.activeReviewActivity.set(null);
   }
 
   resetToSubTopics(): void {
     this.selectedSubTopic.set(null);
   }
 
-  printReport(): void {
-    window.print();
+  async downloadPdfReport(): Promise<void> {
+    this.isGeneratingPdf.set(true);
+    await new Promise(resolve => setTimeout(resolve, 50)); 
+    
+    const reportElement = document.querySelector('.printable-area') as HTMLElement;
+    if (!reportElement) {
+        console.error('Report element not found!');
+        this.isGeneratingPdf.set(false);
+        this.showNotification('Rapor oluşturulurken bir hata oluştu.', 'error');
+        return;
+    }
+
+    try {
+        const canvas = await html2canvas(reportElement, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#f8fafc' // a light background color matching the theme
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({
+            orientation: 'p',
+            unit: 'mm',
+            format: 'a4'
+        });
+
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        const canvasWidth = canvas.width;
+        const canvasHeight = canvas.height;
+        const canvasRatio = canvasWidth / canvasHeight;
+
+        let imgWidth = pdfWidth - 20; // with margin
+        let imgHeight = imgWidth / canvasRatio;
+        
+        if (imgHeight > pdfHeight - 20) {
+            imgHeight = pdfHeight - 20;
+            imgWidth = imgHeight * canvasRatio;
+        }
+
+        const xOffset = (pdfWidth - imgWidth) / 2;
+        const yOffset = 10;
+
+        pdf.addImage(imgData, 'PNG', xOffset, yOffset, imgWidth, imgHeight);
+        pdf.save('basari-raporu.pdf');
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+        this.showNotification('Rapor PDF olarak indirilemedi.', 'error');
+    } finally {
+        this.isGeneratingPdf.set(false);
+    }
   }
 }

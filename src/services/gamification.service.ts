@@ -58,7 +58,15 @@ export class GamificationService {
         try {
             const savedProfile = localStorage.getItem(this.profileStorageKey);
             if (savedProfile) {
-                return JSON.parse(savedProfile);
+                const profile = JSON.parse(savedProfile);
+                // Ensure completedActivities exists for backward compatibility
+                if (!profile.completedActivities) {
+                    profile.completedActivities = 0;
+                }
+                if (!profile.equippedItemIds) {
+                    profile.equippedItemIds = [];
+                }
+                return profile;
             }
         } catch (e) {
             console.error('Failed to load student profile from localStorage.', e);
@@ -67,8 +75,10 @@ export class GamificationService {
         return {
             level: 1,
             points: 0,
+            completedActivities: 0,
             unlockedBadgeIds: [],
             unlockedAvatarItemIds: [],
+            equippedItemIds: [],
         };
     }
 
@@ -80,6 +90,14 @@ export class GamificationService {
         }
     }
 
+    equipItems(newItemIds: string[]): void {
+        this.studentProfile.update(profile => ({
+            ...profile,
+            equippedItemIds: newItemIds
+        }));
+        this.saveProfile();
+    }
+
     addPoints(points: number): { newLevel: number | null, newItems: AvatarItem[], newBadges: Badge[] } {
         let newLevel: number | null = null;
         let newItems: AvatarItem[] = [];
@@ -88,6 +106,7 @@ export class GamificationService {
         this.studentProfile.update(profile => {
             const oldPoints = profile.points;
             const newPoints = oldPoints + points;
+            const newCompletedActivities = (profile.completedActivities || 0) + 1;
             
             // Check for avatar item unlocks based on points
             const newlyUnlockedItems = ALL_AVATAR_ITEMS.filter(item => 
@@ -98,20 +117,30 @@ export class GamificationService {
             newItems = newlyUnlockedItems;
             const newUnlockedItemIds = newlyUnlockedItems.map(item => item.id);
 
-            // Check for badge unlocks based on points
+            // Check for badge unlocks based on points and activity count
             const newlyUnlockedBadgesByPoints = ALL_BADGES.filter(badge =>
                 !profile.unlockedBadgeIds.includes(badge.id) &&
                 badge.unlockCondition.type === 'points' &&
+                // FIX: Add type guard to ensure value is a number before comparison.
+                typeof badge.unlockCondition.value === 'number' &&
                 newPoints >= badge.unlockCondition.value
             );
-            newBadges.push(...newlyUnlockedBadgesByPoints);
-            const newUnlockedBadgeIdsByPoints = newlyUnlockedBadgesByPoints.map(b => b.id);
+             const newlyUnlockedBadgesByActivityCount = ALL_BADGES.filter(badge =>
+                !profile.unlockedBadgeIds.includes(badge.id) &&
+                badge.unlockCondition.type === 'activitiesCompleted' &&
+                // FIX: Add type guard to ensure value is a number before comparison.
+                typeof badge.unlockCondition.value === 'number' &&
+                newCompletedActivities >= badge.unlockCondition.value
+            );
+            newBadges.push(...newlyUnlockedBadgesByPoints, ...newlyUnlockedBadgesByActivityCount);
+            const newUnlockedBadgeIds = newBadges.map(b => b.id);
 
             return {
                 ...profile,
                 points: newPoints,
+                completedActivities: newCompletedActivities,
                 unlockedAvatarItemIds: [...profile.unlockedAvatarItemIds, ...newUnlockedItemIds],
-                unlockedBadgeIds: [...profile.unlockedBadgeIds, ...newUnlockedBadgeIdsByPoints]
+                unlockedBadgeIds: [...profile.unlockedBadgeIds, ...newUnlockedBadgeIds]
             };
         });
 
@@ -119,8 +148,13 @@ export class GamificationService {
         const levelCheckResult = this.checkForLevelUp();
         if (levelCheckResult.newLevel) {
             newLevel = levelCheckResult.newLevel;
-            newItems.push(...levelCheckResult.newItems);
-            newBadges.push(...levelCheckResult.newBadges);
+            // Avoid duplicating items/badges if unlocked by both level and another metric simultaneously
+            levelCheckResult.newItems.forEach(item => {
+                if (!newItems.some(i => i.id === item.id)) newItems.push(item);
+            });
+            levelCheckResult.newBadges.forEach(badge => {
+                if (!newBadges.some(b => b.id === badge.id)) newBadges.push(badge);
+            });
         }
 
         this.saveProfile();
@@ -144,6 +178,8 @@ export class GamificationService {
             const newlyUnlockedBadges = ALL_BADGES.filter(badge =>
                 !profile.unlockedBadgeIds.includes(badge.id) &&
                 badge.unlockCondition.type === 'level' &&
+                // FIX: Add type guard to ensure value is a number before comparison.
+                typeof badge.unlockCondition.value === 'number' &&
                 nextLevel >= badge.unlockCondition.value
             );
 
@@ -183,11 +219,6 @@ export class GamificationService {
             const { type, value } = badge.unlockCondition;
 
             switch (type) {
-                case 'completeSubTopic':
-                    if (Object.keys(allProgress).length >= (value as number)) {
-                        unlocked = true;
-                    }
-                    break;
                 case 'perfectScore':
                      if (isPerfectScore) {
                         unlocked = true;

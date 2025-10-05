@@ -3,6 +3,63 @@ import { Topic, SubTopicId } from '../models/activity.model';
 
 // --- Reusable Schemas ---
 
+const visualArithmeticSchema = {
+    type: Type.OBJECT,
+    properties: {
+        title: { type: Type.STRING, description: 'A fun title for the activity in Turkish (e.g., "Meyve Matematiği").' },
+        instructions: { type: Type.STRING, description: 'Simple instructions for the child in Turkish (e.g., "İşlemin sonucunu bul").' },
+        hint: { type: Type.STRING, description: 'A brief, encouraging tip in Turkish.' },
+        activityType: { type: Type.STRING, description: "Should be 'visual-arithmetic'." },
+        data: {
+            type: Type.OBJECT,
+            properties: {
+                problems: {
+                    type: Type.ARRAY,
+                    description: 'An array of 3 to 5 visual arithmetic problem objects.',
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            visualQuestion: { type: Type.STRING, description: "The math problem represented as a string of emojis (e.g., '🍎🍎 + 🍎🍎🍎')." },
+                            answer: { type: Type.STRING, description: 'The correct numerical answer as a string (e.g., "5").' }
+                        },
+                        required: ['visualQuestion', 'answer'],
+                    },
+                },
+            },
+            required: ['problems'],
+        },
+    },
+    required: ['title', 'instructions', 'activityType', 'data'],
+};
+
+const auditoryDictationSchema = {
+    type: Type.OBJECT,
+    properties: {
+        title: { type: Type.STRING, description: 'A fun title for the activity in Turkish (e.g., "Sihirli Kelimeler").' },
+        instructions: { type: Type.STRING, description: 'Simple instructions for the child in Turkish (e.g., "Duyduğun kelimeyi yaz").' },
+        hint: { type: Type.STRING, description: 'A brief, encouraging tip in Turkish.' },
+        activityType: { type: Type.STRING, description: "Should be 'auditory-dictation'." },
+        data: {
+            type: Type.OBJECT,
+            properties: {
+                problems: {
+                    type: Type.ARRAY,
+                    description: 'An array of 5 dictation problem objects.',
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            wordToSpeak: { type: Type.STRING, description: 'The Turkish word the user should hear and type.' },
+                        },
+                        required: ['wordToSpeak'],
+                    },
+                },
+            },
+            required: ['problems'],
+        },
+    },
+    required: ['title', 'instructions', 'activityType', 'data'],
+};
+
 const matchingPairsSchema = {
     type: Type.OBJECT,
     properties: {
@@ -352,6 +409,30 @@ const visualMatchSchema = {
     required: ['title', 'instructions', 'activityType', 'data'],
 };
 
+const interactiveStorySchema = {
+    type: Type.OBJECT,
+    properties: {
+        title: { type: Type.STRING, description: "A captivating title for the story in Turkish." },
+        instructions: { type: Type.STRING, description: "Simple instructions in Turkish, e.g., 'Hikayede ilerlemek için seçimler yap.'" },
+        activityType: { type: Type.STRING, description: "Should be 'interactive-story'." },
+        hint: { type: Type.STRING, description: 'A brief, encouraging tip in Turkish.' },
+        data: {
+            type: Type.OBJECT,
+            properties: {
+                startSceneId: { type: Type.STRING, description: "The ID of the first scene." },
+                scenes: {
+                    type: Type.OBJECT,
+                    description: "A map of scene IDs to scene objects. Must contain at least 3 scenes.",
+                    properties: {}, // This allows for arbitrary keys (the scene IDs)
+                }
+            },
+            required: ['startSceneId', 'scenes']
+        }
+    },
+    required: ['title', 'instructions', 'activityType', 'data']
+};
+
+
 // --- Activity Configuration Map ---
 
 interface ActivityConfig {
@@ -367,8 +448,12 @@ export const ACTIVITY_CONFIGS: Record<Topic, { subtopics: Partial<Record<SubTopi
                 description: "a 'Phonological Awareness' true/false activity with 5 questions. Questions should focus on identifying rhyming Turkish words (e.g., 'The word *masa* rhymes with *kasa*.'), counting syllables (e.g., '*Kelebek* has 3 syllables.'), or identifying initial/final sounds (e.g., 'The word *kapı* starts with the 'k' sound.'). Some statements should be true, some false. The 'isCorrect' field must reflect the statement's truthfulness."
             },
             'letter-sound': {
-                schema: fillInTheBlanksSchema,
-                description: "a 'Letter-Sound Relationship' fill-in-the-blanks activity with 5 problems. For each problem, provide a common Turkish word with ONE letter or a digraph missing, represented by a double underscore '__'. The 'prompt' field must contain this word. The 'correctAnswer' must be the single missing letter or digraph."
+                schema: auditoryDictationSchema,
+                description: "an 'Auditory Dictation' activity to strengthen letter-sound relationships. Provide 5 common, phonetically regular Turkish words appropriate for the student's grade level. The user will hear the word and must type it correctly."
+            },
+            'auditory-dictation': {
+                schema: auditoryDictationSchema,
+                description: "an 'Auditory Dictation' activity to strengthen letter-sound relationships. Provide 5 common, phonetically regular Turkish words appropriate for primary school students. The user will hear the word and must type it correctly."
             },
             'reading-fluency': {
                 schema: multipleChoiceSchema,
@@ -387,12 +472,16 @@ export const ACTIVITY_CONFIGS: Record<Topic, { subtopics: Partial<Record<SubTopi
                 description: "a 'Vocabulary and Morphology' matching pairs activity. Column 1 should contain 5 Turkish root words, and Column 2 should contain their corresponding suffixes or prefixes that form a new, common word (e.g., item1: 'göz', item2: '-lük')."
             },
             'spelling-patterns': {
-                schema: multipleChoiceSchema,
-                description: "a 'Spelling Patterns' multiple-choice activity. The 'question' should be 'Hangi kelime doğru yazılmıştır?'. Provide a correctly spelled Turkish word as the 'correctAnswer' that exemplifies a common spelling rule or pattern (e.g., words with 'ğ', compound words, 'de/da' usage). The other 'options' must be common misspellings of that word. Provide 5 items."
+                schema: fillInTheBlanksSchema,
+                description: "a 'Spelling Patterns' fill-in-the-blanks activity. For each problem, provide a Turkish sentence with a word missing that exemplifies a common spelling rule (like vowel harmony or consonant assimilation). The 'correctAnswer' should be the correctly spelled word for the blank."
             },
             'working-memory-sequencing': {
                 schema: orderingSchema,
                 description: "a 'Working Memory and Sequencing' ordering activity. The 'question' should be 'Öğeleri doğru sıraya diz.'. The 'items' should be a jumbled array of 3-5 simple Turkish words, numbers, or letters. The 'correctOrder' should be the logically ordered version (e.g., alphabetical, numerical)."
+            },
+            'interactive-story': {
+                schema: interactiveStorySchema,
+                description: "an 'Interactive Story' activity. This should be a branching narrative with 3-5 scenes. At least one scene must contain a 'microActivity' to proceed. The micro-activity must be a simple, one-question activity object of type 'word-scramble' or 'fill-in-the-blanks' relevant to the story's context."
             },
         },
         fallback: {
@@ -403,8 +492,8 @@ export const ACTIVITY_CONFIGS: Record<Topic, { subtopics: Partial<Record<SubTopi
     'diskalkuli': {
         subtopics: {
             'number-sense': {
-                schema: trueFalseSchema,
-                description: "a 'Number Sense' true/false activity with 5 problems. For each problem, create a mathematical statement for comparison (e.g., '15 < 12' or '25 > 10'). The 'isCorrect' field must be a boolean representing the truthfulness of the statement. Statements and numbers must be in Turkish."
+                schema: visualArithmeticSchema,
+                description: "a 'Visual Arithmetic' activity for number sense. Provide 5 problems using emojis to represent simple addition or comparison concepts. For example, the 'visualQuestion' could be '🍎🍎🍎 + 🍎' and the 'answer' should be '4'. Keep numbers small (under 10)."
             },
             'basic-arithmetic': {
                 schema: simpleMathSchema,
@@ -438,6 +527,10 @@ export const ACTIVITY_CONFIGS: Record<Topic, { subtopics: Partial<Record<SubTopi
                 schema: visualMatchSchema,
                 description: "a 'Visual Number Representation' visual matching activity with 5 problems. For each problem, the 'question' is a number string (e.g., '7'). The 'options' should be 3-4 short, descriptive strings of illustrated objects (e.g., '7 Sarı Civciv', '5 Kırmızı Top', '3 Yeşil Elma'). The 'correctAnswer' must be the string that correctly matches the number in the question. Use a variety of simple objects like fruits, animals, or toys."
             },
+            'interactive-story': {
+                schema: interactiveStorySchema,
+                description: "an 'Interactive Story' activity. This should be a branching narrative with 3-5 scenes themed around a math-related adventure. At least one scene must contain a 'microActivity' to proceed. The micro-activity must be a simple, one-question activity object of type 'simple-math' relevant to the story's context."
+            },
         },
         fallback: {
             schema: simpleMathSchema,
@@ -469,6 +562,10 @@ export const ACTIVITY_CONFIGS: Record<Topic, { subtopics: Partial<Record<SubTopi
             'keyboarding-skills': {
                 schema: sentenceCompletionSchema,
                 description: "a set of 'keyboarding skills' practice prompts. Provide 3 short, simple Turkish sentences that are easy to type. The purpose is not sentence construction, but to provide text for typing practice. For example: 'Ali ata bak.', or 'Hızlı tilki, tembel köpeğin üzerinden atlar.'"
+            },
+            'interactive-story': {
+                schema: interactiveStorySchema,
+                description: "an 'Interactive Story' activity. This should be a branching narrative with 3-5 scenes. At least one scene must contain a 'microActivity' to proceed. The micro-activity must be a simple, one-question activity object of type 'sentence-completion' or 'fill-in-the-blanks' relevant to the story's context."
             },
         },
         fallback: {

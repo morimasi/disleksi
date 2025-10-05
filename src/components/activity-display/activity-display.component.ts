@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal, WritableSignal, OnDestroy, effect } from '@angular/core';
-import { Activity, isSentenceCompletion, isSimpleMath, isWordScramble, isMultipleChoice, Topic, isOrdering, isDragDropMatch, DragDropMatchActivity, isFillInTheBlanks, isTrueFalse, FillInTheBlanksActivity, isVisualMatch, isMatchingPairs, isSequencingEvents } from '../../models/activity.model';
+// FIX: Import SubTopicId to be used in the output event type.
+import { Activity, isSentenceCompletion, isSimpleMath, isWordScramble, isMultipleChoice, Topic, isOrdering, isDragDropMatch, DragDropMatchActivity, isFillInTheBlanks, isTrueFalse, FillInTheBlanksActivity, isVisualMatch, isMatchingPairs, isSequencingEvents, isInteractiveStory, InteractiveStoryActivity, InteractiveStoryChoice, isAuditoryDictation, isVisualArithmetic, SubTopicId } from '../../models/activity.model';
 import { TtsService } from '../../services/tts.service';
 import { GeminiService } from '../../services/gemini.service';
 import { FeedbackSettings } from '../../app.component';
@@ -41,7 +42,8 @@ export class ActivityDisplayComponent implements OnDestroy {
 
   answersChanged = output<any[]>();
   nextActivity = output<void>();
-  activitySuccess = output<{ successRate: number, correctAnswers: number, totalQuestions: number }>();
+  // FIX: Update the output type to include subTopicId to match how it's being used.
+  activitySuccess = output<{ subTopicId: SubTopicId | 'review'; successRate: number, correctAnswers: number, totalQuestions: number }>();
 
   userAnswers: WritableSignal<(string | string[] | null)[]> = signal([]);
   answerStatuses: WritableSignal<AnswerStatus[]> = signal([]);
@@ -51,6 +53,10 @@ export class ActivityDisplayComponent implements OnDestroy {
 
   dynamicHints = signal<Record<number, string | null>>({});
   isHintLoading = signal<Record<number, boolean>>({});
+  
+  // --- AI Tutor State ---
+  aiTutorFeedback = signal<Record<number, string | null>>({});
+  isTutorLoading = signal<Record<number, boolean>>({});
   
   draggedOverIndex = signal<number | null>(null);
 
@@ -65,6 +71,22 @@ export class ActivityDisplayComponent implements OnDestroy {
   
   history: WritableSignal<Record<number, string[]>> = signal({});
   historyIndex: WritableSignal<Record<number, number>> = signal({});
+
+  // --- Interactive Story State ---
+  currentSceneId = signal<string | null>(null);
+  isMicroActivitySolved = signal(false);
+  microActivityAnswer = signal<string | string[] | null>(null);
+  microActivityStatus = signal<AnswerStatus>('unchecked');
+
+  currentScene = computed(() => {
+    const activity = this.activity();
+    const sceneId = this.currentSceneId();
+    if (isInteractiveStory(activity) && sceneId) {
+        return activity.data.scenes[sceneId] || null;
+    }
+    return null;
+  });
+
 
   canUndo = computed(() => (index: number) => (this.historyIndex()[index] ?? 0) > 0);
   canRedo = computed(() => (index: number) => {
@@ -86,46 +108,47 @@ export class ActivityDisplayComponent implements OnDestroy {
   isVisualMatch = isVisualMatch;
   isMatchingPairs = isMatchingPairs;
   isSequencingEvents = isSequencingEvents;
+  isInteractiveStory = isInteractiveStory;
+  isAuditoryDictation = isAuditoryDictation;
+  isVisualArithmetic = isVisualArithmetic;
 
   topicColors = computed(() => {
+    const topicName = this.topic();
+    const baseClasses = {
+        border: `border-[rgb(var(--c-topic-${topicName}-400))]`,
+        progress: `bg-[rgb(var(--c-topic-${topicName}-500))]`,
+        accentText: `text-[rgb(var(--c-topic-${topicName}-500))]`,
+        hoverAccentText: `hover:text-[rgb(var(--c-topic-${topicName}-600))]`,
+        questionNumberBg: `bg-[rgb(var(--c-topic-${topicName}-100))]`,
+        questionNumberText: `text-[rgb(var(--c-topic-${topicName}-700))]`
+    };
+
     switch (this.topic()) {
-      case 'disleksi': return { 
-          border: 'border-blue-400', 
-          progress: 'bg-blue-500', 
-          accentText: 'text-indigo-700', 
-          hoverAccentText: 'hover:text-indigo-600',
-          questionNumberBg: 'bg-blue-100', 
-          questionNumberText: 'text-blue-700'
-      };
-      case 'diskalkuli': return { 
-          border: 'border-yellow-400', 
-          progress: 'bg-yellow-500', 
-          accentText: 'text-amber-700', 
-          hoverAccentText: 'hover:text-amber-600',
-          questionNumberBg: 'bg-yellow-100', 
-          questionNumberText: 'text-yellow-700'
-      };
-      case 'disgrafi': return { 
-          border: 'border-green-400', 
-          progress: 'bg-green-500', 
-          accentText: 'text-green-700', 
-          hoverAccentText: 'hover:text-green-600',
-          questionNumberBg: 'bg-green-100', 
-          questionNumberText: 'text-green-700'
-      };
-      default: return { 
-          border: 'border-gray-300', 
-          progress: 'bg-gray-500',
-          accentText: 'text-gray-700', 
-          hoverAccentText: 'hover:text-gray-600',
-          questionNumberBg: 'bg-gray-100', 
-          questionNumberText: 'text-gray-700'
-      };
+        case 'disleksi': return {
+             ...baseClasses,
+             accentText: `text-[rgb(var(--c-accent-700))]`,
+             hoverAccentText: `hover:text-[rgb(var(--c-accent-600))]`
+        };
+        case 'diskalkuli': return baseClasses;
+        case 'disgrafi': return baseClasses;
+        default: return {
+            border: 'border-gray-300',
+            progress: 'bg-gray-500',
+            accentText: 'text-gray-700',
+            hoverAccentText: 'hover:text-gray-600',
+            questionNumberBg: 'bg-gray-100',
+            questionNumberText: 'text-gray-700'
+        };
     }
   });
 
   progress = computed(() => {
     const currentActivity = this.activity();
+    if (isInteractiveStory(currentActivity)) {
+        // Progress for stories can be chapter-based if needed, but for now it's just one whole activity.
+        return { percentage: 100, completed: 1, total: 1 };
+    }
+    
     const answers = this.userAnswers();
     if (!currentActivity || !answers) {
       return { percentage: 0, completed: 0, total: 0 };
@@ -142,7 +165,7 @@ export class ActivityDisplayComponent implements OnDestroy {
 
     if (isWordScramble(currentActivity)) {
       totalCount = currentActivity.data.words.length;
-    } else if (isSimpleMath(currentActivity) || isDragDropMatch(currentActivity) || isMultipleChoice(currentActivity) || isOrdering(currentActivity) || isFillInTheBlanks(currentActivity) || isTrueFalse(currentActivity) || isVisualMatch(currentActivity) || isSequencingEvents(currentActivity)) {
+    } else if (isSimpleMath(currentActivity) || isDragDropMatch(currentActivity) || isMultipleChoice(currentActivity) || isOrdering(currentActivity) || isFillInTheBlanks(currentActivity) || isTrueFalse(currentActivity) || isVisualMatch(currentActivity) || isSequencingEvents(currentActivity) || isAuditoryDictation(currentActivity) || isVisualArithmetic(currentActivity)) {
       totalCount = currentActivity.data.problems.length;
     } else if (isMatchingPairs(currentActivity)) {
         totalCount = currentActivity.data.pairs.length;
@@ -164,10 +187,31 @@ export class ActivityDisplayComponent implements OnDestroy {
   }
 
   private initializeState(activity: Activity): void {
+    // Reset general state
+    this.showFeedback.set(false);
+    this.score.set(null);
+    this.dynamicHints.set({});
+    this.isHintLoading.set({});
+    this.aiTutorFeedback.set({});
+    this.isTutorLoading.set({});
+    
+    // Reset story state
+    this.currentSceneId.set(null);
+    this.microActivityAnswer.set(null);
+    this.microActivityStatus.set('unchecked');
+    this.isMicroActivitySolved.set(false);
+
+    if (isInteractiveStory(activity)) {
+        this.currentSceneId.set(activity.data.startSceneId);
+        this.userAnswers.set([]); // Not used for stories in the same way
+        this.answerStatuses.set([]);
+        return;
+    }
+
     let size = 0;
     if (isWordScramble(activity)) {
       size = activity.data.words.length;
-    } else if (isSimpleMath(activity) || isDragDropMatch(activity) || isMultipleChoice(activity) || isOrdering(activity) || isFillInTheBlanks(activity) || isTrueFalse(activity) || isVisualMatch(activity) || isSequencingEvents(activity)) {
+    } else if (isSimpleMath(activity) || isDragDropMatch(activity) || isMultipleChoice(activity) || isOrdering(activity) || isFillInTheBlanks(activity) || isTrueFalse(activity) || isVisualMatch(activity) || isSequencingEvents(activity) || isAuditoryDictation(activity) || isVisualArithmetic(activity)) {
       size = activity.data.problems.length;
     } else if (isMatchingPairs(activity)) {
       size = activity.data.pairs.length;
@@ -190,10 +234,6 @@ export class ActivityDisplayComponent implements OnDestroy {
     }
     
     this.answerStatuses.set(Array(size).fill('unchecked'));
-    this.showFeedback.set(false);
-    this.score.set(null);
-    this.dynamicHints.set({});
-    this.isHintLoading.set({});
 
     const initialHistory: Record<number, string[]> = {};
     const initialHistoryIndex: Record<number, number> = {};
@@ -206,6 +246,7 @@ export class ActivityDisplayComponent implements OnDestroy {
   }
 
   updateAnswer(index: number, event: Event): void {
+    if (this.showFeedback()) return;
     const value = (event.target as HTMLInputElement | HTMLTextAreaElement).value;
     this.userAnswers.update(answers => {
       const newAnswers = [...answers];
@@ -404,6 +445,25 @@ export class ActivityDisplayComponent implements OnDestroy {
     }
   }
 
+  async requestPedagogicalFeedback(problemIndex: number): Promise<void> {
+    const currentActivity = this.activity();
+    if (!currentActivity || this.isTutorLoading()[problemIndex]) return;
+
+    this.isTutorLoading.update(loading => ({ ...loading, [problemIndex]: true }));
+    this.aiTutorFeedback.update(feedback => ({ ...feedback, [problemIndex]: null }));
+
+    try {
+        const userAnswer = this.userAnswers()[problemIndex];
+        const feedback = await this.geminiService.generatePedagogicalFeedback(currentActivity, problemIndex, userAnswer);
+        this.aiTutorFeedback.update(f => ({ ...f, [problemIndex]: feedback }));
+    } catch (error) {
+        console.error('Failed to get pedagogical feedback', error);
+        this.aiTutorFeedback.update(f => ({ ...f, [problemIndex]: 'Üzgünüm, şu anda bir açıklama oluşturamıyorum.' }));
+    } finally {
+        this.isTutorLoading.update(loading => ({ ...loading, [problemIndex]: false }));
+    }
+  }
+
   checkAnswers(): void {
     clearTimeout(this.feedbackTimeoutId);
     const currentActivity = this.activity();
@@ -419,10 +479,12 @@ export class ActivityDisplayComponent implements OnDestroy {
         if (isCorrect) correctCount++;
         return isCorrect ? 'correct' : 'incorrect';
       });
-    } else if (isSimpleMath(currentActivity) || isDragDropMatch(currentActivity)) {
+    } else if (isSimpleMath(currentActivity) || isDragDropMatch(currentActivity) || isVisualArithmetic(currentActivity)) {
       totalCount = currentActivity.data.problems.length;
       newStatuses = answers.map((answer, index) => {
-        const correctAnswer = isSimpleMath(currentActivity) ? currentActivity.data.problems[index].answer : currentActivity.data.problems[index].correctAnswer;
+        const correctAnswer = isSimpleMath(currentActivity) ? currentActivity.data.problems[index].answer 
+            : isDragDropMatch(currentActivity) ? currentActivity.data.problems[index].correctAnswer 
+            : currentActivity.data.problems[index].answer;
         const isCorrect = (answer as string).trim() === correctAnswer;
         if (isCorrect) correctCount++;
         return isCorrect ? 'correct' : 'incorrect';
@@ -463,6 +525,13 @@ export class ActivityDisplayComponent implements OnDestroy {
             if (isCorrect) correctCount++;
             return isCorrect ? 'correct' : 'incorrect';
         });
+    } else if (isAuditoryDictation(currentActivity)) {
+        totalCount = currentActivity.data.problems.length;
+        newStatuses = answers.map((answer, index) => {
+            const isCorrect = (answer as string).trim().toLowerCase() === currentActivity.data.problems[index].wordToSpeak.toLowerCase();
+            if (isCorrect) correctCount++;
+            return isCorrect ? 'correct' : 'incorrect';
+        });
     }
 
     this.answerStatuses.set(newStatuses);
@@ -481,11 +550,60 @@ export class ActivityDisplayComponent implements OnDestroy {
     if (totalCount > 0) {
       const successRate = correctCount / totalCount;
       if (successRate >= 0.8) {
-        this.activitySuccess.emit({ successRate, correctAnswers: correctCount, totalQuestions: totalCount });
+        // FIX: Provide a valid subTopicId. 'review' is a safe default that works for both review and non-review cases.
+        this.activitySuccess.emit({ subTopicId: 'review', successRate, correctAnswers: correctCount, totalQuestions: totalCount });
         this.triggerSuccessModal();
       }
     }
   }
+  
+  // --- INTERACTIVE STORY METHODS ---
+  selectStoryChoice(choice: InteractiveStoryChoice) {
+    this.currentSceneId.set(choice.nextSceneId);
+    this.microActivityAnswer.set(null);
+    this.microActivityStatus.set('unchecked');
+    this.isMicroActivitySolved.set(false);
+
+    // If the new scene is an ending scene (no choices, no micro-activity), trigger success.
+    const newScene = this.currentScene();
+    if(newScene && newScene.choices.length === 0 && !newScene.microActivity) {
+      // FIX: Provide a valid subTopicId. 'review' is a safe default.
+      this.activitySuccess.emit({ subTopicId: 'review', successRate: 1, correctAnswers: 1, totalQuestions: 1 });
+      this.triggerSuccessModal();
+    }
+  }
+
+  updateMicroActivityAnswer(event: Event) {
+    if (this.microActivityStatus() !== 'unchecked') return;
+    const value = (event.target as HTMLInputElement).value;
+    this.microActivityAnswer.set(value);
+  }
+
+  checkMicroActivityAnswer() {
+    const scene = this.currentScene();
+    if (!scene?.microActivity) return;
+
+    const microActivity = scene.microActivity;
+    let isCorrect = false;
+
+    // We assume micro-activities have only one problem at index 0
+    if (isWordScramble(microActivity)) {
+        isCorrect = (this.microActivityAnswer() as string || '').trim().toLowerCase() === microActivity.data.words[0].correct.toLowerCase();
+    } else if (isSimpleMath(microActivity)) {
+        isCorrect = (this.microActivityAnswer() as string || '').trim() === microActivity.data.problems[0].answer;
+    } else if (isFillInTheBlanks(microActivity)) {
+        isCorrect = (this.microActivityAnswer() as string || '').trim().toLowerCase() === microActivity.data.problems[0].correctAnswer.toLowerCase();
+    } else if (isSentenceCompletion(microActivity)) {
+        // For sentence completion, any non-empty answer is "correct" to proceed.
+        isCorrect = (this.microActivityAnswer() as string || '').trim().length > 0;
+    }
+    
+    this.microActivityStatus.set(isCorrect ? 'correct' : 'incorrect');
+    if(isCorrect) {
+        setTimeout(() => this.isMicroActivitySolved.set(true), 1000); // give feedback time
+    }
+  }
+
 
   private generateConfetti(): void {
     const pieces = [];
