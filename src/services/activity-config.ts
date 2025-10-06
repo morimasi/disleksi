@@ -3,6 +3,28 @@ import { Topic, SubTopicId } from '../models/activity.model';
 
 // --- Reusable Schemas ---
 
+const readingAloudCoachSchema = {
+    type: Type.OBJECT,
+    properties: {
+        title: { type: Type.STRING, description: 'A fun and encouraging title in Turkish (e.g., "Okuma Yıldızı").' },
+        instructions: { type: Type.STRING, description: 'Simple instructions in Turkish (e.g., "Metni sesli ve akıcı bir şekilde oku.").' },
+        hint: { type: Type.STRING, description: 'A brief, encouraging tip about reading aloud in Turkish.' },
+        activityType: { type: Type.STRING, description: "Should be 'reading-aloud-coach'." },
+        data: {
+            type: Type.OBJECT,
+            properties: {
+                paragraphs: {
+                    type: Type.ARRAY,
+                    description: 'An array of 2-3 short paragraphs of an engaging, grade-appropriate story or text in Turkish.',
+                    items: { type: Type.STRING },
+                },
+            },
+            required: ['paragraphs'],
+        },
+    },
+    required: ['title', 'instructions', 'activityType', 'data'],
+};
+
 const wordExplorerSchema = {
     type: Type.OBJECT,
     properties: {
@@ -427,27 +449,167 @@ const visualMatchSchema = {
     required: ['title', 'instructions', 'activityType', 'data'],
 };
 
+const microActivitySchema = {
+    type: Type.OBJECT,
+    description: "An optional, simple, one-question activity. Must be of type 'word-scramble', 'simple-math', or 'fill-in-the-blanks'.",
+    properties: {
+        title: { type: Type.STRING, description: "A title for the mini-challenge." },
+        instructions: { type: Type.STRING, description: "Instructions for the mini-challenge." },
+        activityType: { type: Type.STRING, description: "Either 'word-scramble', 'simple-math', or 'fill-in-the-blanks'." },
+        data: {
+            type: Type.OBJECT,
+            properties: {
+                words: {
+                    type: Type.ARRAY,
+                    description: "For 'word-scramble' type. Must contain only one item.",
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            scrambled: { type: Type.STRING },
+                            correct: { type: Type.STRING },
+                        },
+                        required: ['scrambled', 'correct'],
+                    },
+                },
+                problems: {
+                    type: Type.ARRAY,
+                    description: "For 'simple-math' or 'fill-in-the-blanks' types. Must contain only one item.",
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            // for simple-math
+                            question: { type: Type.STRING },
+                            answer: { type: Type.STRING },
+                            // for fill-in-the-blanks
+                            prompt: { type: Type.STRING },
+                            correctAnswer: { type: Type.STRING },
+                        },
+                    },
+                },
+            },
+        },
+    },
+    required: ['title', 'instructions', 'activityType', 'data'],
+};
+
 const interactiveStorySchema = {
     type: Type.OBJECT,
     properties: {
         title: { type: Type.STRING, description: "A captivating title for the story in Turkish." },
         instructions: { type: Type.STRING, description: "Simple instructions in Turkish, e.g., 'Hikayede ilerlemek için seçimler yap.'" },
-        activityType: { type: Type.STRING, description: "Should be 'interactive-story'." },
+        activityType: { type: Type.STRING, description: "Must be 'interactive-story'." },
         hint: { type: Type.STRING, description: 'A brief, encouraging tip in Turkish.' },
         data: {
             type: Type.OBJECT,
             properties: {
-                startSceneId: { type: Type.STRING, description: "The ID of the first scene." },
+                startSceneId: { type: Type.STRING, description: "The ID of the first scene, e.g., 'scene1'." },
                 scenes: {
-                    type: Type.OBJECT,
-                    description: "A map of scene IDs to scene objects. Must contain at least 3 scenes.",
-                    properties: {}, // This allows for arbitrary keys (the scene IDs)
+                    type: Type.ARRAY,
+                    description: "An array of 3-5 scene objects that form the story.",
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            id: { type: Type.STRING, description: "A unique identifier for the scene, e.g., 'scene1'." },
+                            text: { type: Type.STRING, description: "The text content of the scene." },
+                            choices: {
+                                type: Type.ARRAY,
+                                description: "An array of choices for the user. An empty array signifies an ending scene.",
+                                items: {
+                                    type: Type.OBJECT,
+                                    properties: {
+                                        text: { type: Type.STRING, description: "The text for the choice button." },
+                                        nextSceneId: { type: Type.STRING, description: "The ID of the scene this choice leads to." },
+                                    },
+                                    required: ['text', 'nextSceneId'],
+                                },
+                            },
+                            microActivity: microActivitySchema
+                        },
+                        required: ['id', 'text', 'choices'],
+                    }
                 }
             },
             required: ['startSceneId', 'scenes']
         }
     },
     required: ['title', 'instructions', 'activityType', 'data']
+};
+
+export const fiveWOneHStorySchema = {
+  type: Type.OBJECT,
+  properties: {
+    title: { type: Type.STRING, description: 'A fun title for the activity in Turkish (e.g., "Kayıp Uçurtmanın Gizemi").' },
+    instructions: { type: Type.STRING, description: 'Simple instructions for the child in Turkish (e.g., "Hikayeyi oku ve soruları cevapla!").' },
+    hint: { type: Type.STRING, description: 'A brief, encouraging tip in Turkish.' },
+    activityType: { type: Type.STRING, description: "Must be 'five-w-one-h-story'." },
+    data: {
+      type: Type.OBJECT,
+      properties: {
+        story: { type: Type.STRING, description: 'The generated short story in Turkish.' },
+        comprehensionQuestions: {
+          type: Type.ARRAY,
+          description: 'An array of exactly 6 questions based on the story, one for each 5N1K category.',
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              question: { type: Type.STRING, description: 'The 5N1K question in Turkish (e.g., "Hikayedeki ana karakter kimdi?").' },
+              answer: { type: Type.STRING, description: 'The concise answer to the question, based on the story.' },
+              hint: { type: Type.STRING, description: 'A simple, one-sentence hint for the question in Turkish.' },
+            },
+            required: ['question', 'answer']
+          }
+        },
+        inferenceQuestions: {
+            type: Type.ARRAY,
+            description: 'An array of 2 questions that require inference or reasoning.',
+            items: {
+                type: Type.OBJECT,
+                properties: {
+                    question: { type: Type.STRING, description: 'The inference question in Turkish (e.g., "Sence karakter neden böyle davrandı?").' }
+                },
+                required: ['question']
+            }
+        }
+      },
+      required: ['story', 'comprehensionQuestions', 'inferenceQuestions']
+    }
+  },
+  required: ['title', 'instructions', 'activityType', 'data']
+};
+
+export const spatialRelationsSchema = {
+    type: Type.OBJECT,
+    properties: {
+        title: { type: Type.STRING, description: 'A fun title for the activity in Turkish.' },
+        instructions: { type: Type.STRING, description: 'Simple instructions in Turkish (e.g., "Resme bak ve soruyu cevapla").' },
+        hint: { type: Type.STRING, description: 'A brief, encouraging tip in Turkish.' },
+        activityType: { type: Type.STRING, description: "Should be 'spatial-relations'." },
+        data: {
+            type: Type.OBJECT,
+            properties: {
+                problems: {
+                    type: Type.ARRAY,
+                    description: 'An array of 3 to 5 spatial relations problem objects.',
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            imagePrompt: { type: Type.STRING, description: "A simple, clear, descriptive prompt for an image generation model to create a visual scene. E.g., 'A red ball on top of a blue box'." },
+                            question: { type: Type.STRING, description: 'The question about the scene in Turkish (e.g., "Top nerede?").' },
+                            options: {
+                                type: Type.ARRAY,
+                                description: 'An array of 3-4 Turkish strings for multiple-choice options.',
+                                items: { type: Type.STRING }
+                            },
+                            correctAnswer: { type: Type.STRING, description: 'The correct string from the options array.' },
+                        },
+                        required: ['imagePrompt', 'question', 'options', 'correctAnswer'],
+                    },
+                },
+            },
+            required: ['problems'],
+        },
+    },
+    required: ['title', 'instructions', 'activityType', 'data'],
 };
 
 
@@ -473,9 +635,9 @@ export const ACTIVITY_CONFIGS: Record<Topic, { subtopics: Partial<Record<SubTopi
                 schema: auditoryDictationSchema,
                 description: "an 'Auditory Dictation' activity to strengthen letter-sound relationships. Provide 5 common, phonetically regular Turkish words appropriate for primary school students. The user will hear the word and must type it correctly."
             },
-            'reading-fluency': {
-                schema: multipleChoiceSchema,
-                description: "a 'Reading Fluency' practice activity. The 'question' field should be 'Aşağıdaki cümlelerden hangisi doğrudur?'. For each item, provide a short, simple Turkish correct sentence (3-5 words) as the 'correctAnswer'. Then provide 3-4 'options' that include the correct sentence and distractors that are very similar but have one or two words changed or reordered. The goal is to encourage careful and quick reading."
+            'reading-aloud-coach': {
+                schema: readingAloudCoachSchema,
+                description: "a 'Reading Aloud Coach' activity. Generate a short, engaging, and grade-appropriate story or informative text in Turkish, split into 2-3 paragraphs."
             },
             'reading-comprehension': {
                 schema: sequencingEventsSchema,
@@ -516,6 +678,10 @@ export const ACTIVITY_CONFIGS: Record<Topic, { subtopics: Partial<Record<SubTopi
             'number-sense': {
                 schema: visualArithmeticSchema,
                 description: "a 'Visual Arithmetic' activity for number sense. Provide 5 problems using emojis to represent simple addition or comparison concepts. For example, the 'visualQuestion' could be '🍎🍎🍎 + 🍎' and the 'answer' should be '4'. Keep numbers small (under 10)."
+            },
+            'visual-arithmetic': {
+                schema: visualArithmeticSchema,
+                description: "a 'Visual Arithmetic' activity. Provide 5 problems using emojis to represent simple addition, subtraction or multiplication. For example, the 'visualQuestion' could be '🍎🍎🍎 + 🍎' and the 'answer' should be '4'. Keep numbers appropriate for the grade level."
             },
             'basic-arithmetic': {
                 schema: simpleMathSchema,
@@ -599,4 +765,24 @@ export const ACTIVITY_CONFIGS: Record<Topic, { subtopics: Partial<Record<SubTopi
             description: "a set of 'sentence completion' prompts to encourage writing, related to the sub-topic. Provide 3 creative and simple prompts."
         }
     },
+    'mekansal-farkindalik': {
+        subtopics: {
+            'spatial-relations-positional': {
+                schema: spatialRelationsSchema,
+                description: "a 'spatial relations' activity focusing on positional concepts (on, under, inside, next to, between). The image prompts should describe simple scenes with 2-3 objects."
+            },
+            'spatial-relations-directional': {
+                schema: spatialRelationsSchema,
+                description: "a 'spatial relations' activity focusing on directional concepts (right, left, above, below). The image prompts should describe simple scenes where object direction is key."
+            },
+            'spatial-relations-visual-discrimination': {
+                schema: spatialRelationsSchema,
+                description: "a 'spatial relations' activity for visual discrimination. The image prompts should describe scenes with multiple similar objects, and the question should ask to identify one based on its unique position or feature."
+            }
+        },
+        fallback: {
+            schema: spatialRelationsSchema,
+            description: "a general 'spatial relations' activity with a mix of positional and directional concepts."
+        }
+    }
 };

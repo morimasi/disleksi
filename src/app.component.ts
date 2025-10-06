@@ -11,6 +11,9 @@ import { ActivityDisplayComponent } from './components/activity-display/activity
 import { AvatarCustomizerComponent } from './components/avatar-customizer/avatar-customizer.component';
 import { ALL_AVATAR_ITEMS } from './gamification.data';
 import { FiveWOneHComponent } from './components/five-w-one-h/five-w-one-h.component';
+import { LevelUpModalComponent } from './components/level-up-modal/level-up-modal.component';
+import { Badge, AvatarItem } from './models/gamification.model';
+import { SkeletonLoaderComponent } from './components/skeleton-loader/skeleton-loader.component';
 
 type FontSize = 'sm' | 'base' | 'lg';
 const fontSizes: FontSize[] = ['sm', 'base', 'lg'];
@@ -45,7 +48,7 @@ export const themes: { id: Theme, name: string, color: string }[] = [
   selector: 'app-root',
   templateUrl: './app.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ActivityGeneratorComponent, ActivityDisplayComponent, SafeHtmlPipe, AvatarCustomizerComponent, FiveWOneHComponent],
+  imports: [ActivityGeneratorComponent, ActivityDisplayComponent, SafeHtmlPipe, AvatarCustomizerComponent, FiveWOneHComponent, LevelUpModalComponent, SkeletonLoaderComponent],
   host: {
     '(document:click)': 'onDocumentClick($event)',
   },
@@ -82,9 +85,15 @@ export class AppComponent {
   notification = signal<{ message: string; type: 'success' | 'error' | 'achievement' } | null>(null);
   private notificationTimeout: any;
 
+  // --- Gamification Enhancement ---
+  levelUpInfo = signal<{ level: number; rewards: (Badge | AvatarItem)[] } | null>(null);
+
   // --- Smart Review System ---
   activeReviewActivity = signal<Activity | null>(null);
   isGeneratingReview = signal(false);
+  
+  // --- Practice Mode ---
+  practiceModeSourceView = signal<'activities' | 'profile' | '5n1k' | null>(null);
 
   // --- Search Functionality ---
   searchQuery = signal('');
@@ -143,6 +152,55 @@ export class AppComponent {
     return allSubTopics.filter(st => (progress[st.id] || 0) < 3).sort((a,b) => (progress[a.id] || 0) - (progress[b.id] || 0));
   });
 
+  weeklyActivityReport = computed(() => {
+    const history = this.gamificationService.studentProfile().activityHistory || [];
+    const topicsData = this.topicsDataSignal();
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const last7Days: { day: string, count: number }[] = [];
+    const dayLabels = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
+    
+    let totalThisWeek = 0;
+    const topicCounts: Record<string, number> = {};
+
+    for (let i = 6; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(today.getDate() - i);
+        const dateString = date.toISOString().split('T')[0];
+        
+        const activitiesOnThisDay = history.filter(h => h.date === dateString);
+        const count = activitiesOnThisDay.length;
+        
+        if(i <= 6) { // Count only for the past 7 days including today
+            totalThisWeek += count;
+            activitiesOnThisDay.forEach(activity => {
+                topicCounts[activity.topic] = (topicCounts[activity.topic] || 0) + 1;
+            });
+        }
+
+        last7Days.push({
+            day: dayLabels[date.getDay()],
+            count: count
+        });
+    }
+
+    let mostPracticedTopic = 'Yok';
+    if (Object.keys(topicCounts).length > 0) {
+        const mostPracticedTopicKey = Object.keys(topicCounts).reduce((a, b) => topicCounts[a] > topicCounts[b] ? a : b);
+        mostPracticedTopic = topicsData[mostPracticedTopicKey as Topic]?.title || 'Bilinmiyor';
+    }
+    
+    const maxCount = Math.max(...last7Days.map(d => d.count), 1);
+
+    return {
+        chartData: last7Days,
+        totalThisWeek,
+        mostPracticedTopic,
+        maxCount
+    };
+  });
+
   getTopicProgress(topicKey: Topic) {
     const topicData = this.topicsDataSignal()[topicKey];
     if (!topicData) return { stars: 0, maxStars: 0, percentage: 0 };
@@ -158,11 +216,8 @@ export class AppComponent {
     return { stars, maxStars, percentage };
   }
 
-  updateProgress(event: { subTopicId: SubTopicId | 'review'; successRate: number, correctAnswers: number, totalQuestions: number }): void {
-    // FIX: Using a direct check on the property ensures TypeScript can correctly narrow the type
-    // within the `if` block, resolving the type mismatch.
+  updateProgress(event: { subTopicId: SubTopicId | 'review'; topic: Topic; successRate: number, correctAnswers: number, totalQuestions: number }): void {
     if (event.subTopicId !== 'review') {
-      // Within this block, event.subTopicId is guaranteed to be of type SubTopicId.
       const subTopicId = event.subTopicId;
       const currentStars = Number(this.progressData()[subTopicId] || 0);
 
@@ -179,12 +234,13 @@ export class AppComponent {
         }
       }
 
-      // Contextual badge check
       const isPerfect = event.correctAnswers === event.totalQuestions;
       const contextualBadges = this.gamificationService.checkContextualBadges(subTopicId, this.progressData(), this.topicsDataSignal(), isPerfect);
-      [...contextualBadges].forEach(unlockable => {
-        this.showNotification(`Yeni Rozet: ${unlockable.name} ${unlockable.icon}`, 'achievement');
-      });
+      if (this.notifyOnBadgeUnlock()) {
+        [...contextualBadges].forEach(unlockable => {
+          this.showNotification(`Yeni Rozet: ${unlockable.name} ${unlockable.icon}`, 'achievement');
+        });
+      }
     }
     
     // Add points
@@ -192,11 +248,59 @@ export class AppComponent {
     const activityBonus = event.successRate >= 0.8 ? 50 : 0;
     const { newLevel, newItems, newBadges } = this.gamificationService.addPoints(pointsToAdd + activityBonus);
 
-    // Show notifications for level-ups and item unlocks
-    if (newLevel) this.showNotification(`Tebrikler! Seviye ${newLevel} oldun!`, 'achievement');
-    [...newItems, ...newBadges].forEach(unlockable => {
-       this.showNotification(`Yeni Ödül: ${unlockable.name} ${unlockable.icon}`, 'achievement');
-    });
+    // Show LEVEL UP MODAL instead of toast for level ups
+    if (newLevel) {
+        this.levelUpInfo.set({ level: newLevel, rewards: [...newItems, ...newBadges] });
+    } else {
+        // If not leveling up, show individual item/badge notifications
+        if (this.notifyOnBadgeUnlock()) {
+          [...newItems, ...newBadges].forEach(unlockable => {
+            this.showNotification(`Yeni Ödül: ${unlockable.name} ${unlockable.icon}`, 'achievement');
+          });
+        }
+    }
+    
+    // Update streak and activity history
+    const streakResult = this.gamificationService.recordActivityCompletion(event.subTopicId, event.topic);
+    if (this.notifyOnStreak() && streakResult.streakUpdated && streakResult.newStreak > 1) {
+      this.showNotification(`${streakResult.newStreak} günlük seri! 🔥`, 'achievement');
+    }
+
+    // Check for daily challenge completion
+    const dailyChallenge = this.gamificationService.dailyChallenge();
+    if (dailyChallenge && event.subTopicId === dailyChallenge.subTopicId && !this.gamificationService.studentProfile().dailyChallengeCompleted) {
+        const challengeResult = this.gamificationService.completeDailyChallenge();
+        this.showNotification(`Günlük Görev Tamamlandı! +${challengeResult.points} Puan!`, 'achievement');
+        // Handle notifications for unlocks from the daily challenge bonus
+        if (challengeResult.newLevel) {
+          // If a level up happens from daily challenge, show the modal as well
+           this.levelUpInfo.set({ level: challengeResult.newLevel, rewards: [...challengeResult.newItems, ...challengeResult.newBadges] });
+        } else {
+            if (this.notifyOnBadgeUnlock()) {
+              [...challengeResult.newItems, ...challengeResult.newBadges].forEach(unlockable => {
+                this.showNotification(`Yeni Ödül: ${unlockable.name} ${unlockable.icon}`, 'achievement');
+              });
+            }
+        }
+    }
+  }
+
+  closeLevelUpModal(): void {
+    this.levelUpInfo.set(null);
+  }
+
+  startDailyChallenge(): void {
+    const challenge = this.gamificationService.dailyChallenge();
+    if (!challenge || this.gamificationService.studentProfile().dailyChallengeCompleted) return;
+
+    const topicData = this.topicsDataSignal()[challenge.topic];
+    const subTopicData = topicData.subTopics.find((st: SubTopic) => st.id === challenge.subTopicId);
+
+    if (subTopicData) {
+        this.selectTopic(challenge.topic);
+        this.selectSubTopic(subTopicData);
+        this.currentView.set('activities');
+    }
   }
 
   // --- Accessibility & Theming Features ---
@@ -210,6 +314,13 @@ export class AppComponent {
   feedbackDuration = signal<FeedbackDuration>('continuous');
   private readonly feedbackEnabledStorageKey = 'ogrenmeKoprusuFeedbackEnabled';
   private readonly feedbackDurationStorageKey = 'ogrenmeKoprusuFeedbackDuration';
+
+  // --- Gamification Settings ---
+  notifyOnStreak = signal<boolean>(true);
+  notifyOnBadgeUnlock = signal<boolean>(true);
+  dailyChallengeReminder = signal<boolean>(true);
+  private readonly gamificationSettingsStorageKey = 'ogrenmeKoprusuGamificationSettings';
+
 
   // Theming
   private readonly themeStorageKey = 'ogrenmeKoprusuTheme';
@@ -454,6 +565,14 @@ export class AppComponent {
 
       const savedDuration = localStorage.getItem(this.feedbackDurationStorageKey);
       this.feedbackDuration.set(savedDuration === '5' ? 5 : savedDuration === '10' ? 10 : 'continuous');
+
+      const savedGamificationSettings = localStorage.getItem(this.gamificationSettingsStorageKey);
+      if (savedGamificationSettings) {
+        const settings = JSON.parse(savedGamificationSettings);
+        this.notifyOnStreak.set(settings.notifyOnStreak ?? true);
+        this.notifyOnBadgeUnlock.set(settings.notifyOnBadgeUnlock ?? true);
+        this.dailyChallengeReminder.set(settings.dailyChallengeReminder ?? true);
+      }
     } catch (e) {
       console.error('Could not access localStorage for preferences.', e);
     }
@@ -527,6 +646,35 @@ export class AppComponent {
       localStorage.setItem(this.feedbackDurationStorageKey, String(duration));
     } catch (e) { console.error('Could not save feedback duration.', e); }
   }
+  
+  private saveGamificationSettings(): void {
+    try {
+      const settings = {
+        notifyOnStreak: this.notifyOnStreak(),
+        notifyOnBadgeUnlock: this.notifyOnBadgeUnlock(),
+        dailyChallengeReminder: this.dailyChallengeReminder()
+      };
+      localStorage.setItem(this.gamificationSettingsStorageKey, JSON.stringify(settings));
+    } catch(e) {
+      console.error('Could not save gamification settings.', e);
+    }
+  }
+  
+  toggleNotifyOnStreak(): void {
+    this.notifyOnStreak.update(v => !v);
+    this.saveGamificationSettings();
+  }
+
+  toggleNotifyOnBadgeUnlock(): void {
+    this.notifyOnBadgeUnlock.update(v => !v);
+    this.saveGamificationSettings();
+  }
+  
+  toggleDailyChallengeReminder(): void {
+    this.dailyChallengeReminder.update(v => !v);
+    this.saveGamificationSettings();
+  }
+
 
   selectTopic(topic: Topic): void {
     this.selectedTopic.set(topic);
@@ -551,6 +699,32 @@ export class AppComponent {
 
   resetToSubTopics(): void {
     this.selectedSubTopic.set(null);
+  }
+
+  startPractice(subTopicToPractice: SubTopic): void {
+    const data = this.topicsDataSignal();
+    const parentTopicKey = this.topicKeys().find(key => 
+      data[key].subTopics.some((st: SubTopic) => st.id === subTopicToPractice.id)
+    );
+
+    if (parentTopicKey) {
+      this.practiceModeSourceView.set(this.currentView());
+      this.selectTopic(parentTopicKey);
+      this.selectSubTopic(subTopicToPractice);
+      this.currentView.set('activities');
+    } else {
+      console.error("Could not find parent topic for subtopic:", subTopicToPractice);
+      this.showNotification('Etkinlik başlatılırken bir hata oluştu.', 'error');
+    }
+  }
+
+  handlePracticeFinished(): void {
+    const sourceView = this.practiceModeSourceView();
+    if (sourceView) {
+      this.setView(sourceView);
+      this.resetToTopics();
+      this.practiceModeSourceView.set(null);
+    }
   }
 
   async downloadPdfReport(): Promise<void> {

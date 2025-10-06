@@ -10,112 +10,93 @@
     <div class="w-16"></div> <!-- Spacer -->
   </div>
 
-  @if (!activity()) {
-    <div class="space-y-6 no-print">
-      <div>
-        <label class="text-lg font-semibold text-gray-700 mb-2 block text-center sm:text-left">Seviye Seçin</label>
-        <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
-          <label class="flex-1">
-            <input type="radio" name="grade" value="ilkokul" [checked]="gradeLevel() === 'ilkokul'" (change)="gradeLevel.set('ilkokul')" class="sr-only peer">
-            <div class="p-4 text-center rounded-lg border-2 cursor-pointer transition-all peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 hover:border-indigo-400 font-semibold">
-              İlkokul (1-4. Sınıf)
-            </div>
-          </label>
-          <label class="flex-1">
-            <input type="radio" name="grade" value="ortaokul" [checked]="gradeLevel() === 'ortaokul'" (change)="gradeLevel.set('ortaokul')" class="sr-only peer">
-            <div class="p-4 text-center rounded-lg border-2 cursor-pointer transition-all peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 hover:border-indigo-400 font-semibold">
-              Ortaokul (5-8. Sınıf)
-            </div>
-          </label>
+  @if (loading()) {
+    <app-skeleton-loader></app-skeleton-loader>
+  } @else {
+    @if (!activity()) {
+      <div class="space-y-6 no-print">
+        <div>
+          <label class="text-lg font-semibold text-gray-700 mb-2 block text-center sm:text-left">Seviye Seçin</label>
+          <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
+            <label class="flex-1">
+              <input type="radio" name="grade" value="ilkokul" [checked]="gradeLevel() === 'ilkokul'" (change)="gradeLevel.set('ilkokul')" class="sr-only peer">
+              <div class="p-4 text-center rounded-lg border-2 cursor-pointer transition-all active:scale-95 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 hover:border-indigo-400 font-semibold">
+                İlkokul (1-4. Sınıf)
+              </div>
+            </label>
+            <label class="flex-1">
+              <input type="radio" name="grade" value="ortaokul" [checked]="gradeLevel() === 'ortaokul'" (change)="gradeLevel.set('ortaokul')" class="sr-only peer">
+              <div class="p-4 text-center rounded-lg border-2 cursor-pointer transition-all active:scale-95 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 hover:border-indigo-400 font-semibold">
+                Ortaokul (5-8. Sınıf)
+              </div>
+            </label>
+          </div>
         </div>
-      </div>
-
-      @if (subTopic().id === 'basic-arithmetic') {
-        <div class="animate-fade-in">
-            <label class="text-lg font-semibold text-gray-700 mb-2 block text-center sm:text-left">Zorluk Seçin</label>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <label>
-                    <input type="radio" name="difficulty" value="easy" [checked]="difficulty() === 'easy'" (change)="difficulty.set('easy')" class="sr-only peer">
-                    <div class="p-3 text-center rounded-lg border-2 cursor-pointer transition-all peer-checked:bg-green-600 peer-checked:text-white peer-checked:border-green-600 hover:border-green-400 font-semibold">Kolay</div>
-                </label>
-                <label>
-                    <input type="radio" name="difficulty" value="medium" [checked]="difficulty() === 'medium'" (change)="difficulty.set('medium')" class="sr-only peer">
-                    <div class="p-3 text-center rounded-lg border-2 cursor-pointer transition-all peer-checked:bg-yellow-500 peer-checked:text-white peer-checked:border-yellow-500 hover:border-yellow-400 font-semibold">Orta</div>
-                </label>
-                <label>
-                    <input type="radio" name="difficulty" value="hard" [checked]="difficulty() === 'hard'" (change)="difficulty.set('hard')" class="sr-only peer">
-                    <div class="p-3 text-center rounded-lg border-2 cursor-pointer transition-all peer-checked:bg-red-600 peer-checked:text-white peer-checked:border-red-600 hover:border-red-400 font-semibold">Zor</div>
-                </label>
-            </div>
-        </div>
-        <div class="animate-fade-in" style="animation-delay: 100ms;">
-            <label class="text-lg font-semibold text-gray-700 mb-2 block text-center sm:text-left">Soru Sayısı</label>
-            <div class="grid grid-cols-3 gap-3">
-                <label>
-                    <input type="radio" name="problemCount" value="3" [checked]="problemCount() === 3" (change)="problemCount.set(3)" class="sr-only peer">
-                    <div class="p-3 text-center rounded-lg border-2 cursor-pointer transition-all peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 hover:border-indigo-400 font-semibold">3 Soru</div>
-                </label>
-                <label>
-                    <input type="radio" name="problemCount" value="5" [checked]="problemCount() === 5" (change)="problemCount.set(5)" class="sr-only peer">
-                    <div class="p-3 text-center rounded-lg border-2 cursor-pointer transition-all peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 hover:border-indigo-400 font-semibold">5 Soru</div>
-                </label>
-                <label>
-                    <input type="radio" name="problemCount" value="7" [checked]="problemCount() === 7" (change)="problemCount.set(7)" class="sr-only peer">
-                    <div class="p-3 text-center rounded-lg border-2 cursor-pointer transition-all peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 hover:border-indigo-400 font-semibold">7 Soru</div>
-                </label>
-            </div>
-        </div>
-      }
-
-      <div class="text-center pt-4">
-        <button (click)="generateActivity()" [disabled]="loading()" class="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-full transition-transform transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:scale-100 flex items-center justify-center">
-          @if (loading()) {
-            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span>Oluşturuluyor...</span>
-          } @else {
-            <span>Etkinlik Oluştur</span>
-          }
-        </button>
-      </div>
-    </div>
-  }
-
-  @if (error()) {
-    <div class="mt-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg no-print">
-      <strong>Hata:</strong> {{ error() }}
-    </div>
-  }
   
-  @if (activity(); as currentActivity) {
-    <div class="mt-2 transition-opacity duration-300 ease-in-out"
-         [class.opacity-100]="activityWrapperVisible()"
-         [class.opacity-0]="!activityWrapperVisible()">
-      <app-activity-display 
-        [activity]="currentActivity"
-        [topic]="topic()"
-        [initialAnswers]="null"
-        [feedbackSettings]="feedbackSettings()"
-        (activitySuccess)="onActivitySuccess($event)"
-        (nextActivity)="generateActivity()"></app-activity-display>
-       <div class="text-center pt-8 no-print">
-        <button (click)="generateActivity()" [disabled]="loading()" class="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-full transition-transform transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:scale-100 flex items-center justify-center">
-          @if (loading()) {
-             <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span>Oluşturuluyor...</span>
-          } @else {
-             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5V4H4zm0 12v5h5v-5H4zM15 4v5h5V4h-5zm0 12v5h5v-5h-5z" />
-             </svg>
-            <span>Yeni Etkinlik Oluştur</span>
-          }
-        </button>
+        @if (subTopic().id === 'basic-arithmetic') {
+          <div class="animate-fade-in">
+              <label class="text-lg font-semibold text-gray-700 mb-2 block text-center sm:text-left">Zorluk Seçin</label>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <label>
+                      <input type="radio" name="difficulty" value="easy" [checked]="difficulty() === 'easy'" (change)="difficulty.set('easy')" class="sr-only peer">
+                      <div class="p-3 text-center rounded-lg border-2 cursor-pointer transition-all active:scale-95 peer-checked:bg-green-600 peer-checked:text-white peer-checked:border-green-600 hover:border-green-400 font-semibold">Kolay</div>
+                  </label>
+                  <label>
+                      <input type="radio" name="difficulty" value="medium" [checked]="difficulty() === 'medium'" (change)="difficulty.set('medium')" class="sr-only peer">
+                      <div class="p-3 text-center rounded-lg border-2 cursor-pointer transition-all active:scale-95 peer-checked:bg-yellow-500 peer-checked:text-white peer-checked:border-yellow-500 hover:border-yellow-400 font-semibold">Orta</div>
+                  </label>
+                  <label>
+                      <input type="radio" name="difficulty" value="hard" [checked]="difficulty() === 'hard'" (change)="difficulty.set('hard')" class="sr-only peer">
+                      <div class="p-3 text-center rounded-lg border-2 cursor-pointer transition-all active:scale-95 peer-checked:bg-red-600 peer-checked:text-white peer-checked:border-red-600 hover:border-red-400 font-semibold">Zor</div>
+                  </label>
+              </div>
+          </div>
+          <div class="animate-fade-in" style="animation-delay: 100ms;">
+              <label class="text-lg font-semibold text-gray-700 mb-2 block text-center sm:text-left">Soru Sayısı</label>
+              <div class="grid grid-cols-3 gap-3">
+                  <label>
+                      <input type="radio" name="problemCount" value="3" [checked]="problemCount() === 3" (change)="problemCount.set(3)" class="sr-only peer">
+                      <div class="p-3 text-center rounded-lg border-2 cursor-pointer transition-all active:scale-95 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 hover:border-indigo-400 font-semibold">3 Soru</div>
+                  </label>
+                  <label>
+                      <input type="radio" name="problemCount" value="5" [checked]="problemCount() === 5" (change)="problemCount.set(5)" class="sr-only peer">
+                      <div class="p-3 text-center rounded-lg border-2 cursor-pointer transition-all active:scale-95 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 hover:border-indigo-400 font-semibold">5 Soru</div>
+                  </label>
+                  <label>
+                      <input type="radio" name="problemCount" value="7" [checked]="problemCount() === 7" (change)="problemCount.set(7)" class="sr-only peer">
+                      <div class="p-3 text-center rounded-lg border-2 cursor-pointer transition-all active:scale-95 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 hover:border-indigo-400 font-semibold">7 Soru</div>
+                  </label>
+              </div>
+          </div>
+        }
+  
+        <div class="text-center pt-4">
+          <button (click)="generateActivity()" class="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-full transition-transform transform active:scale-95 hover:scale-105 flex items-center justify-center">
+              <span>Etkinlik Oluştur</span>
+          </button>
+        </div>
       </div>
-    </div>
+    }
+  
+    @if (error()) {
+      <div class="mt-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg no-print">
+        <strong>Hata:</strong> {{ error() }}
+      </div>
+    }
+    
+    @if (activity(); as currentActivity) {
+      <div class="mt-2 animate-fade-in">
+        <app-activity-display 
+          [activity]="currentActivity"
+          [topic]="topic()"
+          [subTopicId]="subTopic().id"
+          [initialAnswers]="null"
+          [feedbackSettings]="feedbackSettings()"
+          [isPracticeSession]="isPracticeSession()"
+          (activitySuccess)="onActivitySuccess($event)"
+          (nextActivity)="generateActivity()"
+          (practiceSessionFinished)="onPracticeSessionFinished()"></app-activity-display>
+      </div>
+    }
   }
 </div>

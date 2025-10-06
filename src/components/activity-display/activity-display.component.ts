@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal, WritableSignal, OnDestroy, effect } from '@angular/core';
-// FIX: Import SubTopicId to be used in the output event type.
-import { Activity, isSentenceCompletion, isSimpleMath, isWordScramble, isMultipleChoice, Topic, isOrdering, isDragDropMatch, DragDropMatchActivity, isFillInTheBlanks, isTrueFalse, FillInTheBlanksActivity, isVisualMatch, isMatchingPairs, isSequencingEvents, isInteractiveStory, InteractiveStoryActivity, InteractiveStoryChoice, isAuditoryDictation, isVisualArithmetic, SubTopicId, isFiveWOneHStory } from '../../models/activity.model';
+import { Activity, isSentenceCompletion, isSimpleMath, isWordScramble, isMultipleChoice, Topic, isOrdering, isDragDropMatch, DragDropMatchActivity, isFillInTheBlanks, isTrueFalse, FillInTheBlanksActivity, isVisualMatch, isMatchingPairs, isSequencingEvents, isInteractiveStory, InteractiveStoryActivity, InteractiveStoryChoice, isAuditoryDictation, isVisualArithmetic, SubTopicId, isFiveWOneHStory, FiveWOneHStoryData, FiveWOneHStoryActivity, isWordExplorer, MultipleChoiceProblem, isSpatialRelations, isReadingAloudCoach } from '../../models/activity.model';
 import { TtsService } from '../../services/tts.service';
 import { GeminiService } from '../../services/gemini.service';
 import { FeedbackSettings } from '../../app.component';
 import { SpeechRecognitionService } from '../../services/speech-recognition.service';
+import { SafeHtml } from '@angular/platform-browser';
 
 type AnswerStatus = 'correct' | 'incorrect' | 'unchecked';
 
@@ -21,15 +21,21 @@ export class ActivityDisplayComponent implements OnDestroy {
   speechService = inject(SpeechRecognitionService);
 
   activity = input.required<Activity>();
+  displayActivity: WritableSignal<Activity | null> = signal(null);
+  isRegeneratingImage = signal(false);
+
   topic = input.required<Topic>();
+  subTopicId = input.required<SubTopicId | 'review'>();
   initialAnswers = input<any[] | null>(null);
   feedbackSettings = input.required<FeedbackSettings>();
+  isPracticeSession = input<boolean>(false);
   
   sttTargetIndex = signal<number | null>(null);
 
   constructor() {
     effect(() => {
       const value = this.activity();
+      this.displayActivity.set(value);
       this.initializeState(value);
       
       clearTimeout(this.hintTimeoutId);
@@ -41,11 +47,23 @@ export class ActivityDisplayComponent implements OnDestroy {
       } else {
         this.showHint.set(false);
       }
+
+      if (isWordExplorer(value)) {
+          this.fetchWordDetails(value.data.word);
+      }
     });
 
     effect(() => {
       const transcript = this.speechService.transcript();
       const targetIndex = this.sttTargetIndex();
+      const activity = this.displayActivity();
+
+      if (transcript && activity && isReadingAloudCoach(activity)) {
+          this.checkReadingFluency();
+          this.sttTargetIndex.set(null); // Reset after use
+          return;
+      }
+
       if (transcript && targetIndex !== null) {
         this.userAnswers.update(answers => {
           const newAnswers = [...answers];
@@ -60,7 +78,7 @@ export class ActivityDisplayComponent implements OnDestroy {
 
   answersChanged = output<any[]>();
   nextActivity = output<void>();
-  // FIX: Update the output type to include subTopicId to match how it's being used.
+  practiceSessionFinished = output<void>();
   activitySuccess = output<{ subTopicId: SubTopicId | 'review'; successRate: number, correctAnswers: number, totalQuestions: number }>();
 
   userAnswers: WritableSignal<(string | string[] | null)[]> = signal([]);
@@ -98,14 +116,40 @@ export class ActivityDisplayComponent implements OnDestroy {
   
   // --- 5N1K Story State ---
   currentStep = signal(0); // 0 for story, 1+ for questions
-  allQuestions = signal<{ question: string }[]>([]);
+  allQuestions = signal<{ question: string; answer?: string; hint?: string }[]>([]);
   totalSteps = signal(0);
+  comprehensionFeedback = signal<Record<number, { isCorrect: boolean; feedback: string; } | null>>({});
+  inferenceFeedback = signal<Record<number, string | null>>({});
+  isCheckingAnswer = signal(false);
+
+  // --- Reading Aloud Coach State ---
+  currentParagraphIndex = signal(0);
+  readingFeedback = signal<Record<number, { feedback: string; incorrectWords: string[] } | null>>({});
+  isCheckingReading = signal(false);
+
+  // --- Word Explorer State ---
+  wordExplorerState = signal({
+    definition: '',
+    sentences: [] as string[],
+    synonym: '',
+    imageBase64: '',
+    comprehensionQuestion: null as MultipleChoiceProblem | null,
+    loading: {
+        definition: false,
+        sentences: false,
+        synonym: false,
+        image: false,
+        question: false,
+    },
+    comprehensionAnswer: '',
+    comprehensionStatus: 'unchecked' as AnswerStatus
+  });
 
   currentScene = computed(() => {
-    const activity = this.activity();
+    const activity = this.displayActivity();
     const sceneId = this.currentSceneId();
-    if (isInteractiveStory(activity) && sceneId) {
-        return activity.data.scenes[sceneId] || null;
+    if (activity && isInteractiveStory(activity) && sceneId) {
+        return activity.data.scenes.find(s => s.id === sceneId) || null;
     }
     return null;
   });
@@ -137,9 +181,24 @@ export class ActivityDisplayComponent implements OnDestroy {
   isAuditoryDictation = isAuditoryDictation;
   isVisualArithmetic = isVisualArithmetic;
   isFiveWOneHStory = isFiveWOneHStory;
+  isWordExplorer = isWordExplorer;
+  isSpatialRelations = isSpatialRelations;
+  isReadingAloudCoach = isReadingAloudCoach;
 
   topicColors = computed(() => {
     const topicName = this.topic();
+    
+    if (topicName === 'mekansal-farkindalik') {
+        return {
+            border: 'border-pink-400',
+            progress: 'bg-pink-500',
+            accentText: 'text-pink-500',
+            hoverAccentText: 'hover:text-pink-600',
+            questionNumberBg: 'bg-pink-100',
+            questionNumberText: 'text-pink-700'
+        };
+    }
+
     const baseClasses = {
         border: `border-[rgb(var(--c-topic-${topicName}-400))]`,
         progress: `bg-[rgb(var(--c-topic-${topicName}-500))]`,
@@ -169,12 +228,22 @@ export class ActivityDisplayComponent implements OnDestroy {
   });
 
   progress = computed(() => {
-    const currentActivity = this.activity();
-    if (isInteractiveStory(currentActivity)) {
-        // Progress for stories can be chapter-based if needed, but for now it's just one whole activity.
+    const currentActivity = this.displayActivity();
+    if (!currentActivity) {
+      return { percentage: 0, completed: 0, total: 0 };
+    }
+
+    if (isInteractiveStory(currentActivity) || isWordExplorer(currentActivity)) {
         return { percentage: 100, completed: 1, total: 1 };
     }
     
+    if(isReadingAloudCoach(currentActivity)) {
+        const total = currentActivity.data.paragraphs.length;
+        const completed = this.currentParagraphIndex();
+        const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+        return { percentage, completed, total };
+    }
+
     if(isFiveWOneHStory(currentActivity)) {
         const step = this.currentStep();
         const total = this.totalSteps();
@@ -184,7 +253,7 @@ export class ActivityDisplayComponent implements OnDestroy {
     }
 
     const answers = this.userAnswers();
-    if (!currentActivity || !answers) {
+    if (!answers) {
       return { percentage: 0, completed: 0, total: 0 };
     }
 
@@ -199,7 +268,7 @@ export class ActivityDisplayComponent implements OnDestroy {
 
     if (isWordScramble(currentActivity)) {
       totalCount = currentActivity.data.words.length;
-    } else if (isSimpleMath(currentActivity) || isDragDropMatch(currentActivity) || isMultipleChoice(currentActivity) || isOrdering(currentActivity) || isFillInTheBlanks(currentActivity) || isTrueFalse(currentActivity) || isVisualMatch(currentActivity) || isSequencingEvents(currentActivity) || isAuditoryDictation(currentActivity) || isVisualArithmetic(currentActivity)) {
+    } else if (isSimpleMath(currentActivity) || isDragDropMatch(currentActivity) || isMultipleChoice(currentActivity) || isOrdering(currentActivity) || isFillInTheBlanks(currentActivity) || isTrueFalse(currentActivity) || isVisualMatch(currentActivity) || isSequencingEvents(currentActivity) || isAuditoryDictation(currentActivity) || isVisualArithmetic(currentActivity) || isSpatialRelations(currentActivity)) {
       totalCount = currentActivity.data.problems.length;
     } else if (isMatchingPairs(currentActivity)) {
         totalCount = currentActivity.data.pairs.length;
@@ -240,10 +309,25 @@ export class ActivityDisplayComponent implements OnDestroy {
     this.currentStep.set(0);
     this.allQuestions.set([]);
     this.totalSteps.set(0);
+    this.comprehensionFeedback.set({});
+    this.inferenceFeedback.set({});
+    this.isCheckingAnswer.set(false);
 
-    if (isInteractiveStory(activity)) {
-        this.currentSceneId.set(activity.data.startSceneId);
-        this.userAnswers.set([]); // Not used for stories in the same way
+    // Reset Reading Aloud Coach state
+    this.currentParagraphIndex.set(0);
+    this.readingFeedback.set({});
+    this.isCheckingReading.set(false);
+
+    // Reset Word Explorer state
+    this.wordExplorerState.set({
+      definition: '', sentences: [], synonym: '', imageBase64: '', comprehensionQuestion: null,
+      loading: { definition: false, sentences: false, synonym: false, image: false, question: false },
+      comprehensionAnswer: '', comprehensionStatus: 'unchecked'
+    });
+
+    if (isInteractiveStory(activity) || isWordExplorer(activity) || isReadingAloudCoach(activity)) {
+        this.currentSceneId.set(isInteractiveStory(activity) ? activity.data.startSceneId : null);
+        this.userAnswers.set([]);
         this.answerStatuses.set([]);
         return;
     }
@@ -264,7 +348,7 @@ export class ActivityDisplayComponent implements OnDestroy {
     let size = 0;
     if (isWordScramble(activity)) {
       size = activity.data.words.length;
-    } else if (isSimpleMath(activity) || isDragDropMatch(activity) || isMultipleChoice(activity) || isOrdering(activity) || isFillInTheBlanks(activity) || isTrueFalse(activity) || isVisualMatch(activity) || isSequencingEvents(activity) || isAuditoryDictation(activity) || isVisualArithmetic(activity)) {
+    } else if (isSimpleMath(activity) || isDragDropMatch(activity) || isMultipleChoice(activity) || isOrdering(activity) || isFillInTheBlanks(activity) || isTrueFalse(activity) || isVisualMatch(activity) || isSequencingEvents(activity) || isAuditoryDictation(activity) || isVisualArithmetic(activity) || isSpatialRelations(activity)) {
       size = activity.data.problems.length;
     } else if (isMatchingPairs(activity)) {
       size = activity.data.pairs.length;
@@ -486,7 +570,7 @@ export class ActivityDisplayComponent implements OnDestroy {
   }
 
   async requestDynamicHint(problemIndex: number): Promise<void> {
-    const currentActivity = this.activity();
+    const currentActivity = this.displayActivity();
     if (!currentActivity || this.isHintLoading()[problemIndex] || this.dynamicHints()[problemIndex]) return;
 
     this.isHintLoading.update(loading => ({ ...loading, [problemIndex]: true }));
@@ -504,7 +588,7 @@ export class ActivityDisplayComponent implements OnDestroy {
   }
 
   async requestPedagogicalFeedback(problemIndex: number): Promise<void> {
-    const currentActivity = this.activity();
+    const currentActivity = this.displayActivity();
     if (!currentActivity || this.isTutorLoading()[problemIndex]) return;
 
     this.isTutorLoading.update(loading => ({ ...loading, [problemIndex]: true }));
@@ -524,7 +608,14 @@ export class ActivityDisplayComponent implements OnDestroy {
 
   checkAnswers(): void {
     clearTimeout(this.feedbackTimeoutId);
-    const currentActivity = this.activity();
+    const currentActivity = this.displayActivity();
+    if (!currentActivity) return;
+
+    if (isReadingAloudCoach(currentActivity)) {
+        this.finishReadingActivity();
+        return;
+    }
+
     let newStatuses: AnswerStatus[] = [];
     let correctCount = 0;
     let totalCount = 0;
@@ -547,7 +638,7 @@ export class ActivityDisplayComponent implements OnDestroy {
         if (isCorrect) correctCount++;
         return isCorrect ? 'correct' : 'incorrect';
       });
-    } else if (isMultipleChoice(currentActivity) || isVisualMatch(currentActivity)) {
+    } else if (isMultipleChoice(currentActivity) || isVisualMatch(currentActivity) || isSpatialRelations(currentActivity)) {
       totalCount = currentActivity.data.problems.length;
       newStatuses = answers.map((answer, index) => {
         const isCorrect = answer === currentActivity.data.problems[index].correctAnswer;
@@ -608,8 +699,7 @@ export class ActivityDisplayComponent implements OnDestroy {
     if (totalCount > 0) {
       const successRate = correctCount / totalCount;
       if (successRate >= 0.8) {
-        // FIX: Provide a valid subTopicId. 'review' is a safe default that works for both review and non-review cases.
-        this.activitySuccess.emit({ subTopicId: 'review', successRate, correctAnswers: correctCount, totalQuestions: totalCount });
+        this.activitySuccess.emit({ subTopicId: this.subTopicId()!, successRate, correctAnswers: correctCount, totalQuestions: totalCount });
         this.triggerSuccessModal();
       }
     }
@@ -625,8 +715,7 @@ export class ActivityDisplayComponent implements OnDestroy {
     // If the new scene is an ending scene (no choices, no micro-activity), trigger success.
     const newScene = this.currentScene();
     if(newScene && newScene.choices.length === 0 && !newScene.microActivity) {
-      // FIX: Provide a valid subTopicId. 'review' is a safe default.
-      this.activitySuccess.emit({ subTopicId: 'review', successRate: 1, correctAnswers: 1, totalQuestions: 1 });
+      this.activitySuccess.emit({ subTopicId: this.subTopicId()!, successRate: 1, correctAnswers: 1, totalQuestions: 1 });
       this.triggerSuccessModal();
     }
   }
@@ -668,16 +757,215 @@ export class ActivityDisplayComponent implements OnDestroy {
       this.currentStep.set(step);
     }
   }
+
+  async regenerateStoryImage(): Promise<void> {
+    const act = this.displayActivity();
+    if (!act || !isFiveWOneHStory(act) || this.isRegeneratingImage()) {
+      return;
+    }
+
+    this.isRegeneratingImage.set(true);
+    try {
+      const newImageUrl = await this.geminiService.generateImageForStory(act.data.story);
+      if (newImageUrl) {
+        this.displayActivity.update(currentActivity => {
+          if (currentActivity && isFiveWOneHStory(currentActivity)) {
+            // Create a new activity object with the new image URL
+            const updatedData = { ...currentActivity.data, imageUrl: newImageUrl };
+            return { ...currentActivity, data: updatedData };
+          }
+          return currentActivity;
+        });
+      }
+    } catch (error) {
+      console.error("Failed to regenerate image", error);
+    } finally {
+      this.isRegeneratingImage.set(false);
+    }
+  }
+
+
+  request5W1HHint(questionIndex: number, hint: string | undefined): void {
+    if (hint) {
+      this.dynamicHints.update(h => ({...h, [questionIndex]: hint}));
+    }
+  }
+
+  async handleCheckComprehension(questionIndex: number): Promise<void> {
+    const activity = this.displayActivity();
+    if (!activity || !isFiveWOneHStory(activity) || this.isCheckingAnswer()) return;
+    
+    const userAnswer = this.userAnswers()[questionIndex] as string;
+    if (!userAnswer || userAnswer.trim() === '') return;
+
+    this.isCheckingAnswer.set(true);
+    const question = activity.data.comprehensionQuestions[questionIndex];
+
+    try {
+      const result = await this.geminiService.checkComprehensionAnswer(activity.data.story, question.question, question.answer, userAnswer);
+      this.comprehensionFeedback.update(f => ({ ...f, [questionIndex]: result }));
+    } catch (e) {
+      console.error(e);
+      this.comprehensionFeedback.update(f => ({ ...f, [questionIndex]: { isCorrect: false, feedback: 'Cevap kontrol edilirken bir hata oluştu.' } }));
+    } finally {
+      this.isCheckingAnswer.set(false);
+    }
+  }
+
+  async handleEvaluateInference(questionIndex: number): Promise<void> {
+    const activity = this.displayActivity();
+    if (!activity || !isFiveWOneHStory(activity) || this.isCheckingAnswer()) return;
+
+    const allQuestionsIndex = activity.data.comprehensionQuestions.length + questionIndex;
+    const userAnswer = this.userAnswers()[allQuestionsIndex] as string;
+    if (!userAnswer || userAnswer.trim() === '') return;
+
+    this.isCheckingAnswer.set(true);
+    const question = activity.data.inferenceQuestions[questionIndex];
+
+    try {
+      const result = await this.geminiService.evaluateInferenceAnswer(activity.data.story, question.question, userAnswer);
+      this.inferenceFeedback.update(f => ({ ...f, [questionIndex]: result }));
+    } catch (e) {
+      console.error(e);
+      this.inferenceFeedback.update(f => ({ ...f, [questionIndex]: 'Harika bir fikir!' }));
+    } finally {
+      this.isCheckingAnswer.set(false);
+    }
+  }
   
   finish5W1HActivity(): void {
     const questionsCount = this.allQuestions().length;
     this.activitySuccess.emit({ 
-      subTopicId: 'review', // This is a special activity type
+      subTopicId: this.subTopicId()!,
       successRate: 1, 
       correctAnswers: questionsCount, 
       totalQuestions: questionsCount 
     });
     this.triggerSuccessModal();
+  }
+
+  // --- READING ALOUD COACH METHODS ---
+  toggleReadingAloud(): void {
+    if (this.speechService.isListening()) {
+        this.speechService.stop();
+    } else {
+        this.sttTargetIndex.set(this.currentParagraphIndex());
+        this.speechService.start();
+    }
+  }
+
+  async checkReadingFluency(): Promise<void> {
+    const activity = this.displayActivity();
+    if (!activity || !isReadingAloudCoach(activity) || this.isCheckingReading()) return;
+    
+    const index = this.currentParagraphIndex();
+    const originalText = activity.data.paragraphs[index];
+    const transcript = this.speechService.transcript();
+
+    if (!transcript) return;
+
+    this.isCheckingReading.set(true);
+    try {
+        const result = await this.geminiService.evaluateReadingFluency(originalText, transcript);
+        this.readingFeedback.update(f => ({ ...f, [index]: result }));
+    } catch(e) {
+        console.error(e);
+        this.readingFeedback.update(f => ({ ...f, [index]: { feedback: 'Geri bildirim alınırken bir hata oluştu.', incorrectWords: [] } }));
+    } finally {
+        this.isCheckingReading.set(false);
+    }
+  }
+
+  goToNextParagraph(): void {
+    const activity = this.displayActivity();
+    if (!activity || !isReadingAloudCoach(activity)) return;
+
+    if (this.currentParagraphIndex() < activity.data.paragraphs.length - 1) {
+        this.currentParagraphIndex.update(i => i + 1);
+    }
+  }
+
+  finishReadingActivity(): void {
+    const activity = this.displayActivity();
+    if (!activity || !isReadingAloudCoach(activity)) return;
+    
+    const totalParagraphs = activity.data.paragraphs.length;
+    const allFeedback = this.readingFeedback();
+    const incorrectWordsCount = Object.values(allFeedback).reduce((acc, val) => acc + (val?.incorrectWords.length || 0), 0);
+    
+    // Consider the activity a "success" if it's completed, maybe with a penalty for many errors.
+    // For now, completion is success.
+    const successRate = 1.0;
+    
+    this.activitySuccess.emit({
+        subTopicId: this.subTopicId()!,
+        successRate: successRate,
+        correctAnswers: totalParagraphs, // Base success on completing paragraphs
+        totalQuestions: totalParagraphs
+    });
+    this.triggerSuccessModal();
+  }
+  
+  highlightIncorrectWords(text: string, incorrectWords: string[] | undefined): string {
+    if (!incorrectWords || incorrectWords.length === 0) {
+        return text;
+    }
+    const regex = new RegExp(`\\b(${incorrectWords.join('|')})\\b`, 'gi');
+    return text.replace(regex, `<mark class="bg-red-200 rounded-sm px-1">$&</mark>`);
+  }
+
+   // --- WORD EXPLORER METHODS ---
+  async fetchWordDetails(word: string): Promise<void> {
+    this.wordExplorerState.update(s => ({ ...s, loading: { definition: true, sentences: true, synonym: true, image: true, question: true } }));
+    
+    // Fetch all details in parallel
+    const definitionPromise = this.geminiService.getWordDefinition(word);
+    const sentencesPromise = this.geminiService.getExampleSentences(word);
+    const synonymPromise = this.geminiService.getWordSynonym(word);
+    const imagePromise = this.geminiService.generateImageForWord(word);
+
+    try {
+      const definition = await definitionPromise;
+      this.wordExplorerState.update(s => ({ ...s, definition, loading: { ...s.loading, definition: false } }));
+      
+      const questionPromise = this.geminiService.generateComprehensionQuestion(word, definition);
+      
+      const sentences = await sentencesPromise;
+      this.wordExplorerState.update(s => ({ ...s, sentences, loading: { ...s.loading, sentences: false } }));
+      
+      const synonym = await synonymPromise;
+      this.wordExplorerState.update(s => ({ ...s, synonym, loading: { ...s.loading, synonym: false } }));
+      
+      const imageBytes = await imagePromise;
+      this.wordExplorerState.update(s => ({ ...s, imageBase64: `data:image/jpeg;base64,${imageBytes}`, loading: { ...s.loading, image: false } }));
+
+      const question = await questionPromise;
+      this.wordExplorerState.update(s => ({ ...s, comprehensionQuestion: question, loading: { ...s.loading, question: false } }));
+
+    } catch (error) {
+      console.error("Error fetching word details:", error);
+      // You can set error states for each part if needed
+      this.wordExplorerState.update(s => ({ ...s, loading: { definition: false, sentences: false, synonym: false, image: false, question: false } }));
+    }
+  }
+
+  checkWordExplorerAnswer(): void {
+    const state = this.wordExplorerState();
+    if (!state.comprehensionQuestion) return;
+
+    const isCorrect = state.comprehensionAnswer === state.comprehensionQuestion.correctAnswer;
+    this.wordExplorerState.update(s => ({ ...s, comprehensionStatus: isCorrect ? 'correct' : 'incorrect' }));
+
+    if (isCorrect) {
+      this.activitySuccess.emit({ 
+        subTopicId: this.subTopicId()!, 
+        successRate: 1, 
+        correctAnswers: 1, 
+        totalQuestions: 1 
+      });
+      this.triggerSuccessModal();
+    }
   }
 
 
@@ -717,6 +1005,11 @@ export class ActivityDisplayComponent implements OnDestroy {
     this.showSuccessModal.set(false);
     this.showConfetti.set(false);
     this.confettiPieces.set([]);
+  }
+  
+  finishPracticeSession(): void {
+    this.closeSuccessModal();
+    this.practiceSessionFinished.emit();
   }
 
   requestNextActivity(): void {

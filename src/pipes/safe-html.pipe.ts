@@ -6,7 +6,6 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
   standalone: true,
 })
 export class SafeHtmlPipe implements PipeTransform {
-  // FIX: Explicitly type `sanitizer` to ensure TypeScript recognizes its type correctly.
   private sanitizer: DomSanitizer = inject(DomSanitizer);
 
   transform(value: string): SafeHtml {

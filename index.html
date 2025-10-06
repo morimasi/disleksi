@@ -173,6 +173,21 @@
     animation: shake-horizontal 0.5s cubic-bezier(.36,.07,.19,.97) both;
   }
 
+  @keyframes pulse-ring {
+    0% {
+      box-shadow: 0 0 0 0px rgba(251, 191, 36, 0.7);
+    }
+    70% {
+      box-shadow: 0 0 0 10px rgba(251, 191, 36, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0px rgba(251, 191, 36, 0);
+    }
+  }
+  .animate-pulse-ring {
+    animation: pulse-ring 2s infinite;
+  }
+
   @media print {
     body {
       background-color: #fff !important;

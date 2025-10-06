@@ -1,14 +1,22 @@
-export type Topic = 'disleksi' | 'diskalkuli' | 'disgrafi';
+import { FiveWOneHStoryData, InteractiveStoryData } from './story.model';
+export * from './story.model';
+export * from './activity.typeguards';
+
+export type Topic = 'disleksi' | 'diskalkuli' | 'disgrafi' | 'mekansal-farkindalik';
 export type GradeLevel = 'ilkokul' | 'ortaokul';
 
 export type SubTopicId =
-  | 'phonological-awareness' | 'letter-sound' | 'reading-fluency' | 'reading-comprehension' | 'visual-processing' | 'vocabulary-morphology' | 'spelling-patterns' | 'working-memory-sequencing' // Dyslexia
+  | 'phonological-awareness' | 'letter-sound' | 'reading-aloud-coach' | 'reading-comprehension' | 'visual-processing' | 'vocabulary-morphology' | 'spelling-patterns' | 'working-memory-sequencing' // Dyslexia
   | 'number-sense' | 'basic-arithmetic' | 'problem-solving' | 'math-symbols' | 'time-measurement' | 'spatial-reasoning' | 'estimation-skills' | 'fractions-decimals' | 'visual-number-representation' // Dyscalculia
   | 'handwriting-legibility' | 'letter-formation' | 'writing-speed' | 'sentence-construction' | 'punctuation-grammar' | 'fine-motor-skills' | 'writing-planning' | 'creative-writing-prompts' | 'keyboarding-skills' | 'letter-form-recognition' // Dysgraphia
   | 'interactive-story' // New dynamic activity type
   | 'auditory-dictation' // New for Dyslexia
   | 'visual-arithmetic' // New for Dyscalculia
-  | 'word-explorer'; // New for Dyslexia
+  | 'word-explorer' // New for Dyslexia
+  // New Spatial Relations SubTopics
+  | 'spatial-relations-positional' 
+  | 'spatial-relations-directional' 
+  | 'spatial-relations-visual-discrimination';
 
 export interface SubTopic {
     id: SubTopicId | 'review'; // 'review' is a virtual ID for review sessions
@@ -99,39 +107,28 @@ export interface VisualArithmeticData {
     }[];
 }
 
-
-// --- Interactive Story Models ---
-export interface InteractiveStoryChoice {
-  text: string;
-  nextSceneId: string;
-}
-
-export interface InteractiveStoryScene {
-  id: string;
-  text: string;
-  choices: InteractiveStoryChoice[];
-  // An embedded activity that must be completed to proceed.
-  // It's a full Activity object, but should only contain ONE problem.
-  microActivity?: Activity; 
-}
-
-export interface InteractiveStoryData {
-    startSceneId: string;
-    scenes: Record<string, InteractiveStoryScene>; // A map of scene IDs to scene objects
-}
-
 // --- Word Explorer Model ---
 export interface WordExplorerData {
   word: string;
 }
 
-// --- 5N1K Story Model ---
-export interface FiveWOneHStoryData {
-  story: string;
-  comprehensionQuestions: { question: string; answer: string }[];
-  inferenceQuestions: { question: string }[];
+// --- New Spatial Relations Model ---
+export interface SpatialRelationsProblem {
+    imagePrompt: string; // The prompt used to generate the image
+    imageUrl: string; // The base64 data URL of the generated image
+    question: string;
+    options: string[];
+    correctAnswer: string;
 }
 
+export interface SpatialRelationsData {
+    problems: SpatialRelationsProblem[];
+}
+
+// --- New Reading Aloud Coach Model ---
+export interface ReadingAloudData {
+  paragraphs: string[];
+}
 
 interface BaseActivity<T, U extends string> {
   title: string;
@@ -157,71 +154,8 @@ export type AuditoryDictationActivity = BaseActivity<AuditoryDictationData, 'aud
 export type VisualArithmeticActivity = BaseActivity<VisualArithmeticData, 'visual-arithmetic'>;
 export type WordExplorerActivity = BaseActivity<WordExplorerData, 'word-explorer'>;
 export type FiveWOneHStoryActivity = BaseActivity<FiveWOneHStoryData, 'five-w-one-h-story'>;
+export type SpatialRelationsActivity = BaseActivity<SpatialRelationsData, 'spatial-relations'>;
+export type ReadingAloudActivity = BaseActivity<ReadingAloudData, 'reading-aloud-coach'>;
 
 
-export type Activity = WordScrambleActivity | SimpleMathActivity | SentenceCompletionActivity | MultipleChoiceActivity | OrderingActivity | DragDropMatchActivity | FillInTheBlanksActivity | TrueFalseActivity | VisualMatchActivity | MatchingPairsActivity | SequencingEventsActivity | InteractiveStoryActivity | AuditoryDictationActivity | VisualArithmeticActivity | WordExplorerActivity | FiveWOneHStoryActivity;
-
-// Type guards to help TypeScript understand which activity type is being used.
-export function isWordScramble(activity: Activity): activity is WordScrambleActivity {
-    return activity.activityType === 'word-scramble';
-}
-
-export function isSimpleMath(activity: Activity): activity is SimpleMathActivity {
-    return activity.activityType === 'simple-math';
-}
-
-export function isSentenceCompletion(activity: Activity): activity is SentenceCompletionActivity {
-    return activity.activityType === 'sentence-completion';
-}
-
-export function isMultipleChoice(activity: Activity): activity is MultipleChoiceActivity {
-    return activity.activityType === 'multiple-choice';
-}
-
-export function isOrdering(activity: Activity): activity is OrderingActivity {
-    return activity.activityType === 'ordering';
-}
-
-export function isDragDropMatch(activity: Activity): activity is DragDropMatchActivity {
-    return activity.activityType === 'drag-drop-match';
-}
-
-export function isFillInTheBlanks(activity: Activity): activity is FillInTheBlanksActivity {
-    return activity.activityType === 'fill-in-the-blanks';
-}
-
-export function isTrueFalse(activity: Activity): activity is TrueFalseActivity {
-    return activity.activityType === 'true-false';
-}
-
-export function isVisualMatch(activity: Activity): activity is VisualMatchActivity {
-    return activity.activityType === 'visual-match';
-}
-
-export function isMatchingPairs(activity: Activity): activity is MatchingPairsActivity {
-    return activity.activityType === 'matching-pairs';
-}
-
-export function isSequencingEvents(activity: Activity): activity is SequencingEventsActivity {
-    return activity.activityType === 'sequencing-events';
-}
-
-export function isInteractiveStory(activity: Activity): activity is InteractiveStoryActivity {
-    return activity.activityType === 'interactive-story';
-}
-
-export function isAuditoryDictation(activity: Activity): activity is AuditoryDictationActivity {
-    return activity.activityType === 'auditory-dictation';
-}
-
-export function isVisualArithmetic(activity: Activity): activity is VisualArithmeticActivity {
-    return activity.activityType === 'visual-arithmetic';
-}
-
-export function isWordExplorer(activity: Activity): activity is WordExplorerActivity {
-    return activity.activityType === 'word-explorer';
-}
-
-export function isFiveWOneHStory(activity: Activity): activity is FiveWOneHStoryActivity {
-    return activity.activityType === 'five-w-one-h-story';
-}
+export type Activity = WordScrambleActivity | SimpleMathActivity | SentenceCompletionActivity | MultipleChoiceActivity | OrderingActivity | DragDropMatchActivity | FillInTheBlanksActivity | TrueFalseActivity | VisualMatchActivity | MatchingPairsActivity | SequencingEventsActivity | InteractiveStoryActivity | AuditoryDictationActivity | VisualArithmeticActivity | WordExplorerActivity | FiveWOneHStoryActivity | SpatialRelationsActivity | ReadingAloudActivity;

@@ -1,25 +1,47 @@
 <div class="bg-white p-4 sm:p-8 rounded-2xl shadow-xl border border-gray-200 animate-fade-in">
-  <!-- Initial State: Grade selection and generate button -->
+  <!-- Initial State: Grade and theme selection and generate button -->
   @if (!generatedActivity()) {
-    <div class="text-center max-w-lg mx-auto">
+    <div class="text-center max-w-2xl mx-auto">
       <h2 class="text-3xl font-bold text-gray-800">5N1K Hikaye Atölyesi</h2>
       <p class="mt-2 text-lg text-gray-600">Okuduğunu anlama becerini geliştirmek için bir hikaye oluşturalım ve sorularını cevaplayalım.</p>
       
-      <div class="my-8 space-y-4">
-        <label class="text-xl font-semibold text-gray-700 mb-2 block">Sınıf Düzeyi Seçin</label>
-        <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
-          <label class="flex-1">
-            <input type="radio" name="grade" value="ilkokul" [checked]="gradeLevel() === 'ilkokul'" (change)="gradeLevel.set('ilkokul')" class="sr-only peer">
-            <div class="p-4 text-center rounded-lg border-2 cursor-pointer transition-all peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 hover:border-indigo-400 font-semibold text-lg">
-              İlkokul (1-4. Sınıf)
-            </div>
-          </label>
-          <label class="flex-1">
-            <input type="radio" name="grade" value="ortaokul" [checked]="gradeLevel() === 'ortaokul'" (change)="gradeLevel.set('ortaokul')" class="sr-only peer">
-            <div class="p-4 text-center rounded-lg border-2 cursor-pointer transition-all peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 hover:border-indigo-400 font-semibold text-lg">
-              Ortaokul (5-8. Sınıf)
-            </div>
-          </label>
+      <div class="my-8 space-y-8">
+        <!-- Grade Level Selection -->
+        <div>
+          <label class="text-xl font-semibold text-gray-700 mb-3 block">1. Sınıf Düzeyini Seç</label>
+          <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
+            <label class="flex-1">
+              <input type="radio" name="grade" value="ilkokul" [checked]="gradeLevel() === 'ilkokul'" (change)="gradeLevel.set('ilkokul')" class="sr-only peer">
+              <div class="p-4 text-center rounded-lg border-2 cursor-pointer transition-all peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 hover:border-indigo-400 font-semibold text-lg">
+                İlkokul (1-4. Sınıf)
+              </div>
+            </label>
+            <label class="flex-1">
+              <input type="radio" name="grade" value="ortaokul" [checked]="gradeLevel() === 'ortaokul'" (change)="gradeLevel.set('ortaokul')" class="sr-only peer">
+              <div class="p-4 text-center rounded-lg border-2 cursor-pointer transition-all peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 hover:border-indigo-400 font-semibold text-lg">
+                Ortaokul (5-8. Sınıf)
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Theme Selection -->
+        <div>
+           <label class="text-xl font-semibold text-gray-700 mb-3 block">2. Hikaye Teması Seç</label>
+           <div class="grid grid-cols-3 md:grid-cols-6 gap-3">
+              @for(theme of storyThemes; track theme.id) {
+                <button (click)="selectedTheme.set(theme.id)"
+                        class="p-3 rounded-lg font-semibold transition-all duration-200 border-2 flex flex-col items-center justify-center gap-1"
+                        [class]="theme.color"
+                        [class.border-indigo-500]="selectedTheme() === theme.id"
+                        [class.ring-2]="selectedTheme() === theme.id"
+                        [class.ring-indigo-300]="selectedTheme() === theme.id"
+                        [class.border-transparent]="selectedTheme() !== theme.id">
+                    <span class="text-3xl">{{ theme.icon }}</span>
+                    <span>{{ theme.name }}</span>
+                </button>
+              }
+           </div>
         </div>
       </div>
 
@@ -49,6 +71,7 @@
     <app-activity-display
         [activity]="generatedActivity()!"
         topic="disleksi" 
+        [subTopicId]="'review'"
         [initialAnswers]="null"
         [feedbackSettings]="feedbackSettings()"
         (nextActivity)="reset()"

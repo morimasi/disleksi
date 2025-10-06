@@ -2,6 +2,19 @@ import { SubTopicId, Topic } from "./activity.model";
 
 export type AvatarItemCategory = 'head' | 'eyes' | 'neck' | 'accessory';
 
+export interface DailyChallenge {
+  subTopicId: SubTopicId;
+  topic: Topic;
+  title: string;
+  description: string;
+}
+
+export interface ActivityRecord {
+    date: string; // 'YYYY-MM-DD'
+    subTopicId: SubTopicId;
+    topic: Topic;
+}
+
 export interface StudentProfile {
     level: number;
     points: number;
@@ -9,6 +22,11 @@ export interface StudentProfile {
     unlockedBadgeIds: string[];
     unlockedAvatarItemIds: string[];
     equippedItemIds: string[];
+    currentStreak: number;
+    lastActivityDate: string | null; // Stored as 'YYYY-MM-DD'
+    dailyChallengeCompleted: boolean;
+    lastChallengeDate: string | null; // Stored as 'YYYY-MM-DD'
+    activityHistory: ActivityRecord[];
 }
 
 export interface Badge {

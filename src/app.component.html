@@ -15,6 +15,14 @@
   </div>
 }
 
+@if(levelUpInfo(); as info) {
+    <app-level-up-modal 
+        [level]="info.level"
+        [rewards]="info.rewards"
+        (close)="closeLevelUpModal()"
+    ></app-level-up-modal>
+}
+
 @if(showAvatarCustomizer()) {
   <app-avatar-customizer 
     [unlockedItemIds]="gamificationService.studentProfile().unlockedAvatarItemIds"
@@ -25,9 +33,9 @@
 }
 
 @if(showLogin()) {
-  <div class="min-h-screen bg-gray-100 flex flex-col justify-center items-center p-4">
+  <div class="min-h-screen bg-gradient-to-br from-indigo-50 via-blue-50 to-slate-50 flex flex-col justify-center items-center p-4">
     <div class="w-full max-w-md">
-      <div class="bg-white rounded-xl shadow-xl border border-gray-200 p-8 sm:p-12 text-center">
+      <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl border border-slate-200 p-8 sm:p-12 text-center">
         <h1 class="text-4xl sm:text-5xl font-bold text-gray-800 tracking-tight">Öğrenme Köprüsü</h1>
         <p class="mt-3 text-lg text-gray-500">Platforma Hoş Geldiniz</p>
         
@@ -48,7 +56,7 @@
             <p class="text-red-600 text-sm font-semibold animate-fade-in">{{ loginError() }}</p>
           }
 
-          <button (click)="handleAdminLogin()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+          <button (click)="handleAdminLogin()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition-transform transform active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
             Giriş Yap
           </button>
         </div>
@@ -63,7 +71,7 @@
             </div>
           </div>
            <div class="mt-4">
-             <button (click)="continueAsStudent()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+             <button (click)="continueAsStudent()" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition-transform transform active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                 Öğrenci Olarak Devam Et
              </button>
           </div>
@@ -197,12 +205,12 @@
   </div>
 } @else {
   <!-- Student View -->
-  <div class="relative min-h-screen bg-[rgb(var(--c-page-bg))] p-4 sm:p-6 lg:p-8">
+  <div class="relative min-h-screen bg-[rgb(var(--c-page-bg))]">
     
-    <div class="absolute top-4 right-4 z-10 no-print accessibility-container">
+    <div class="absolute top-4 right-4 z-40 no-print accessibility-container">
       <button (click)="toggleAccessibilityMenu()" class="p-2 bg-[rgba(var(--c-card-bg),0.8)] backdrop-blur-sm rounded-full shadow-md hover:bg-[rgb(var(--c-card-bg))] transition-colors duration-200" aria-label="Erişilebilirlik ayarlarını aç">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.096 2.572-1.065z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066 2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.096 2.572-1.065z"></path>
           <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
         </svg>
       </button>
@@ -306,42 +314,49 @@
       }
     </div>
 
-    <div class="max-w-5xl mx-auto">
-      <header class="flex flex-col sm:flex-row justify-between items-center mb-6 sm:mb-10">
+    <div class="max-w-5xl mx-auto p-4 sm:p-6 lg:p-8">
+       <header class="flex flex-col sm:flex-row justify-between items-center mb-6 sm:mb-10">
         <div class="text-center sm:text-left">
           <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[rgb(var(--c-text-primary))] tracking-tight">Öğrenme Köprüsü</h1>
           <p class="mt-2 text-lg text-[rgb(var(--c-text-secondary))]">Kişiselleştirilmiş öğrenme yolculuğuna hoş geldin!</p>
         </div>
-        <div class="mt-4 sm:mt-0 flex items-center bg-slate-200/80 p-1 rounded-full shadow-inner no-print">
+         <!-- Desktop Nav -->
+        <div class="hidden sm:flex mt-4 sm:mt-0 items-center bg-[rgba(var(--c-border),0.5)] p-1 rounded-full shadow-inner no-print">
+            @if(gamificationService.studentProfile().currentStreak > 0) {
+              <div class="flex items-center gap-1 font-bold text-orange-500 mr-2 sm:mr-4 animate-pop-in px-2" title="{{ gamificationService.studentProfile().currentStreak }} günlük seri!">
+                <span>{{ gamificationService.studentProfile().currentStreak }}</span>
+                <span class="text-xl">🔥</span>
+              </div>
+            }
             <button (click)="setView('activities')" 
                     class="py-2 px-6 rounded-full font-semibold transition-all"
                     [class.bg-white]="currentView() === 'activities'"
-                    [class.shadow]="currentView() === 'activities'"
-                    [class.text-indigo-600]="currentView() === 'activities'"
-                    [class.text-slate-600]="currentView() !== 'activities'">
+                    [class.shadow-md]="currentView() === 'activities'"
+                    [class.text-[rgb(var(--c-accent-600))]]="currentView() === 'activities'"
+                    [class.text-[rgb(var(--c-text-secondary))]]="currentView() !== 'activities'">
                 Etkinlikler
             </button>
             <button (click)="setView('5n1k')" 
                     class="py-2 px-6 rounded-full font-semibold transition-all"
                     [class.bg-white]="currentView() === '5n1k'"
-                    [class.shadow]="currentView() === '5n1k'"
-                    [class.text-indigo-600]="currentView() === '5n1k'"
-                    [class.text-slate-600]="currentView() !== '5n1k'">
+                    [class.shadow-md]="currentView() === '5n1k'"
+                    [class.text-[rgb(var(--c-accent-600))]]="currentView() === '5n1k'"
+                    [class.text-[rgb(var(--c-text-secondary))]]="currentView() !== '5n1k'">
                 5N1K
             </button>
             <button (click)="setView('profile')" 
                     class="py-2 px-6 rounded-full font-semibold transition-all"
                     [class.bg-white]="currentView() === 'profile'"
-                    [class.shadow]="currentView() === 'profile'"
-                    [class.text-indigo-600]="currentView() === 'profile'"
-                    [class.text-slate-600]="currentView() !== 'profile'">
+                    [class.shadow-md]="currentView() === 'profile'"
+                    [class.text-[rgb(var(--c-accent-600))]]="currentView() === 'profile'"
+                    [class.text-[rgb(var(--c-text-secondary))]]="currentView() !== 'profile'">
                 Profil
             </button>
         </div>
       </header>
 
       <!-- Main Content Area -->
-      <main>
+      <main class="pb-20 sm:pb-0">
         @if(currentView() === 'activities') {
             @if (selectedTopic() && selectedSubTopic() && !activeReviewActivity()) {
               <app-activity-generator 
@@ -349,8 +364,10 @@
                 [subTopic]="selectedSubTopic()!"
                 [customPrompts]="customPrompts()[selectedSubTopic()!.id]"
                 [feedbackSettings]="feedbackSettings()"
+                [isPracticeSession]="practiceModeSourceView() !== null"
                 (backToSubtopics)="resetToSubTopics()"
-                (activityCompleted)="updateProgress($event)">
+                (activityCompleted)="updateProgress($event)"
+                (practiceFinished)="handlePracticeFinished()">
               </app-activity-generator>
             } @else if (activeReviewActivity()) {
                 <div class="bg-white p-4 sm:p-8 rounded-2xl shadow-xl border border-gray-200 animate-fade-in">
@@ -367,6 +384,7 @@
                      <app-activity-display 
                         [activity]="activeReviewActivity()!"
                         [topic]="selectedTopic() || 'disleksi'"
+                        [subTopicId]="'review'"
                         [initialAnswers]="null"
                         [feedbackSettings]="feedbackSettings()"
                         (activitySuccess)="updateProgress($event)"
@@ -392,7 +410,7 @@
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       @for (sub of topicData.subTopics; track sub.id) {
-                        <button (click)="selectSubTopic(sub)" class="text-left bg-white/70 hover:bg-white p-4 rounded-lg shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 group">
+                        <button (click)="selectSubTopic(sub)" class="text-left bg-white/70 hover:bg-white p-4 rounded-lg shadow-sm hover:shadow-lg transition-all duration-300 transform active:scale-95 hover:-translate-y-1 group">
                            <div class="flex justify-between items-start">
                                <h3 class="font-bold text-lg text-[rgb(var(--c-text-primary))] group-hover:text-[rgb(var(--c-accent-600))] transition-colors">{{ sub.title }}</h3>
                                <!-- Star progress indicator -->
@@ -415,6 +433,30 @@
             } @else {
               <!-- Topic Selection -->
               <div class="space-y-6">
+                 <!-- Daily Challenge -->
+                @if(gamificationService.dailyChallenge(); as challenge) {
+                  <section class="relative p-6 rounded-2xl bg-gradient-to-r from-yellow-400 to-orange-500 text-white shadow-2xl overflow-hidden animate-fade-in transition-all"
+                           [class.animate-pulse-ring]="dailyChallengeReminder() && !gamificationService.studentProfile().dailyChallengeCompleted">
+                    <div class="absolute -right-8 -top-8 text-white/10 text-9xl">🏆</div>
+                    <div class="relative z-10">
+                      <h2 class="text-xs font-bold uppercase tracking-widest">GÜNLÜK GÖREV</h2>
+                      <h3 class="text-2xl font-extrabold mt-1">{{ challenge.title }}</h3>
+                      <p class="mt-2 text-yellow-50 max-w-2xl">{{ challenge.description }}</p>
+                      <div class="mt-5">
+                        @if(gamificationService.studentProfile().dailyChallengeCompleted) {
+                          <div class="inline-flex items-center gap-2 bg-white/20 text-white font-bold py-2 px-5 rounded-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
+                            <span>Bugün için tamamlandı!</span>
+                          </div>
+                        } @else {
+                          <button (click)="startDailyChallenge()" class="bg-white text-orange-600 font-bold py-2 px-5 rounded-full transition-transform transform active:scale-95 hover:scale-105 shadow-md">
+                            Görevi Başlat
+                          </button>
+                        }
+                      </div>
+                    </div>
+                  </section>
+                }
                   <!-- Search Bar -->
                 <div class="relative">
                     <input type="text" [value]="searchQuery()" (input)="searchQuery.set($any($event.target).value)" placeholder="Bir konu veya etkinlik ara..." class="w-full pl-10 pr-4 py-3 text-lg border-2 border-slate-300 rounded-full focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow shadow-sm hover:shadow-md">
@@ -437,23 +479,24 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   @for (key of topicKeys(); track key) {
                     @let topic = topicsDataSignal()[key];
-                    <button (click)="selectTopic(key)" [class]="'relative p-6 rounded-2xl shadow-lg border-2 text-left transition-all duration-300 transform hover:scale-105 hover:shadow-2xl ' + topic.colorClasses.border + ' ' + topic.colorClasses.bg">
-                      <div class="flex items-center gap-4">
-                        <div [innerHTML]="topic.icon | safeHtml"></div>
-                        <div>
-                          <h2 class="text-xl font-bold text-[rgb(var(--c-text-primary))]">{{ topic.title }}</h2>
+                    <div (click)="selectTopic(key)" [class]="'relative group p-6 rounded-2xl overflow-hidden text-left transition-all duration-300 transform active:scale-95 hover:-translate-y-1 hover:shadow-2xl cursor-pointer shadow-lg ' + topic.colorClasses.bg">
+                      <div class="absolute -right-8 -top-8 text-[rgba(var(--c-text-primary),0.05)] text-8xl group-hover:scale-110 transition-transform duration-500" [innerHTML]="topic.icon | safeHtml"></div>
+                      <div class="relative">
+                        <h2 class="text-xl font-bold text-[rgb(var(--c-text-primary))]">{{ topic.title }}</h2>
+                        <p class="mt-2 text-[rgb(var(--c-text-secondary))] min-h-[5rem]">{{ topic.description }}</p>
+                        
+                        @let progress = getTopicProgress(key);
+                        <div class="mt-4">
+                          <div class="flex justify-between items-center mb-1">
+                              <span class="text-sm font-semibold text-[rgb(var(--c-text-secondary))]">İlerleme</span>
+                              <span class="text-sm font-bold" [class]="'text-[rgb(var(--c-topic-' + key + '-500))]'">{{ progress.percentage }}%</span>
+                          </div>
+                          <div class="w-full bg-black/10 rounded-full h-2.5">
+                            <div class="h-2.5 rounded-full transition-all duration-500" [class]="topic.colorClasses.accent" [style.width.%]="progress.percentage"></div>
+                          </div>
                         </div>
                       </div>
-                      <p class="mt-2 text-[rgb(var(--c-text-secondary))]">{{ topic.description }}</p>
-                      
-                      <!-- Progress Bar -->
-                      @let progress = getTopicProgress(key);
-                      <div class="absolute bottom-4 left-6 right-6">
-                          <div class="w-full bg-black/10 rounded-full h-2">
-                            <div class="h-2 rounded-full" [class]="topic.colorClasses.accent" [style.width.%]="progress.percentage"></div>
-                          </div>
-                      </div>
-                    </button>
+                    </div>
                   }
                 </div>
               </div>
@@ -463,13 +506,13 @@
             <app-five-w-one-h></app-five-w-one-h>
         }
         @if(currentView() === 'profile') {
-          <div class="bg-gradient-to-br from-[rgb(var(--c-dashboard-bg-from))] via-[rgb(var(--c-dashboard-bg-via))] to-[rgb(var(--c-dashboard-bg-to))] rounded-2xl p-0 -m-2 sm:-m-4 animate-fade-in font-sans">
-            <div class="max-w-6xl mx-auto printable-area p-2 sm:p-4">
-              <header class="flex items-center justify-between mb-8 no-print">
+          <div class="bg-gradient-to-br from-[rgb(var(--c-dashboard-bg-from))] via-[rgb(var(--c-dashboard-bg-via))] to-[rgb(var(--c-dashboard-bg-to))] rounded-2xl p-0 -m-4 sm:-m-6 lg:-m-8 animate-fade-in font-sans">
+            <div class="max-w-6xl mx-auto printable-area p-4 sm:p-6 lg:p-8">
+              <header class="flex flex-col sm:flex-row items-center justify-between mb-8 no-print">
                 <h1 class="text-3xl sm:text-4xl font-bold text-[rgb(var(--c-text-primary))] tracking-tight">
                   Profil
                 </h1>
-                <button (click)="downloadPdfReport()" [disabled]="isGeneratingPdf()" class="flex items-center bg-[rgb(var(--c-accent-500))] hover:bg-[rgb(var(--c-accent-600))] text-white font-semibold py-2 px-4 rounded-full transition-all duration-300 shadow-md disabled:bg-opacity-70 disabled:cursor-wait">
+                <button (click)="downloadPdfReport()" [disabled]="isGeneratingPdf()" class="flex mt-4 sm:mt-0 items-center bg-[rgb(var(--c-accent-500))] hover:bg-[rgb(var(--c-accent-600))] text-white font-semibold py-2 px-4 rounded-full transition-all duration-300 shadow-md disabled:bg-opacity-70 disabled:cursor-wait">
                     @if (isGeneratingPdf()) {
                       <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -484,57 +527,106 @@
               </header>
               <div class="print-header hidden"><h1>Başarı Raporu</h1></div>
         
-              <main class="mt-8 space-y-8">
-                <!-- Gamification Header -->
-                <section class="bg-[rgba(var(--c-card-bg),0.6)] backdrop-blur-md rounded-2xl shadow-lg p-6 border border-white/50">
-                  @let levelInfo = gamificationService.currentLevelInfo();
-                  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-                    <!-- Level & Avatar -->
-                    <div class="flex items-center gap-4">
-                      <button (click)="showAvatarCustomizer.set(true)" class="relative group">
-                        <div class="w-20 h-20 rounded-full bg-gradient-to-br from-[rgb(var(--c-accent-500))] to-[rgb(var(--c-accent-600))] flex items-center justify-center text-4xl shadow-lg transition-transform transform group-hover:scale-110">
-                            <div class="relative w-12 h-12 flex items-center justify-center">
-                              <span class="text-5xl leading-none">🦉</span>
-                              @for(item of equippedAvatarItems(); track item.id) {
-                                <span class="absolute text-2xl"
-                                      [class.top-[-10px]]="item.category === 'head'"
-                                      [class.top-[10px]]="item.category === 'eyes'"
-                                      [class.bottom-[-5px]]="item.category === 'neck'"
-                                      [class.bottom-[-8px]]="item.category === 'accessory'"
-                                      [class.right-[-8px]]="item.id === 'avatar_accessory_rocket'"
-                                      [style.transform]="item.id === 'avatar_hat_wizard' ? 'translateX(-4px) translateY(-2px) rotate(-15deg)' : ''"
-                                      [style.fontSize]="item.id === 'avatar_hat_wizard' ? '30px' : ''">
-                                  {{ item.icon }}
-                                </span>
-                              }
-                            </div>
-                        </div>
-                        <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs font-semibold px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                            Özelleştir
-                        </div>
-                      </button>
-                      <div>
-                        <span class="font-bold text-[rgb(var(--c-accent-600))]">SEVİYE {{ levelInfo.level }}</span>
-                        <p class="text-2xl font-bold text-[rgb(var(--c-text-primary))]">{{ levelInfo.points }} Puan</p>
-                      </div>
-                    </div>
-                    <!-- XP Bar -->
-                    <div class="md:col-span-2">
-                      <div class="flex justify-between text-sm font-semibold text-[rgb(var(--c-text-secondary))] mb-1">
-                        <span>Seviye {{ levelInfo.level }}</span>
-                        <span>Seviye {{ levelInfo.level + 1 }}</span>
-                      </div>
-                      <div class="w-full bg-gray-200/70 rounded-full h-5 shadow-inner relative">
-                        <div class="bg-gradient-to-r from-yellow-400 to-orange-500 h-5 rounded-full transition-all duration-500" [style.width.%]="levelInfo.progressPercentage"></div>
-                        <span class="absolute inset-0 text-center text-sm font-bold text-white/80 flex items-center justify-center drop-shadow-sm">{{ levelInfo.pointsToNextLevel > 0 ? `${levelInfo.pointsToNextLevel} puan kaldı` : 'Maksimum Seviye!'}}</span>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-        
+              <main class="mt-8">
                 <!-- Main Dashboard Grid -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                  <div class="lg:col-span-2 space-y-8">
+                   <!-- Side Panel for Profile, Badges, etc. (Moved up for mobile-first) -->
+                  <div class="lg:order-2 space-y-8">
+                     <!-- Gamification Header -->
+                    <section class="bg-[rgba(var(--c-card-bg),0.6)] backdrop-blur-md rounded-2xl shadow-lg p-6 border border-white/50 text-center">
+                        @let levelInfo = gamificationService.currentLevelInfo();
+                        
+                        <!-- Avatar -->
+                        <button (click)="showAvatarCustomizer.set(true)" class="relative group mx-auto w-32 h-32 no-print">
+                            <div class="w-full h-full rounded-full bg-gradient-to-br from-[rgb(var(--c-accent-500))] to-[rgb(var(--c-accent-600))] flex items-center justify-center text-4xl shadow-lg transition-transform transform group-hover:scale-110">
+                                <div class="relative w-24 h-24 flex items-center justify-center">
+                                    <span class="text-[90px] leading-none">🦉</span>
+                                    @for(item of equippedAvatarItems(); track item.id) {
+                                      <span class="absolute text-4xl"
+                                            [class.top-[-15px]]="item.category === 'head'"
+                                            [class.top-[20px]]="item.category === 'eyes'"
+                                            [class.bottom-[-10px]]="item.category === 'neck'"
+                                            [class.bottom-[-15px]]="item.category === 'accessory'"
+                                            [class.right-[-15px]]="item.id === 'avatar_accessory_rocket'"
+                                            [style.transform]="item.id === 'avatar_hat_wizard' ? 'translateX(-6px) translateY(-3px) rotate(-15deg)' : ''"
+                                            [style.fontSize]="item.id === 'avatar_hat_wizard' ? '50px' : ''">
+                                        {{ item.icon }}
+                                      </span>
+                                    }
+                                </div>
+                            </div>
+                            <div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                               <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
+                            </div>
+                        </button>
+                        
+                        <!-- Points and Level -->
+                        <h3 class="text-3xl font-bold text-[rgb(var(--c-text-primary))] mt-4">{{ levelInfo.points }} Puan</h3>
+                        <p class="font-bold text-[rgb(var(--c-accent-600))]">SEVİYE {{ levelInfo.level }}</p>
+
+                        <!-- XP Bar -->
+                        <div class="max-w-md mx-auto mt-4">
+                          <div class="flex justify-between text-sm font-semibold text-[rgb(var(--c-text-secondary))] mb-1">
+                            <span>Sv. {{ levelInfo.level }}</span>
+                            <span>{{ levelInfo.pointsToNextLevel > 0 ? `${levelInfo.pointsToNextLevel}p kaldı` : 'Maksimum Seviye!'}}</span>
+                            <span>Sv. {{ levelInfo.level + 1 }}</span>
+                          </div>
+                          <div class="w-full bg-gray-200/70 rounded-full h-5 shadow-inner relative">
+                            <div class="bg-gradient-to-r from-yellow-400 to-orange-500 h-5 rounded-full transition-all duration-500" [style.width.%]="levelInfo.progressPercentage"></div>
+                          </div>
+                        </div>
+                    </section>
+
+                    <!-- Weekly Activity -->
+                    <section class="bg-[rgba(var(--c-card-bg),0.6)] backdrop-blur-md rounded-2xl shadow-lg p-6 border border-white/50 no-print">
+                      <h2 class="text-2xl font-bold text-[rgb(var(--c-text-primary))] mb-1">Haftalık Aktivite</h2>
+                      <div class="mt-4">
+                          <div class="flex justify-between text-sm text-[rgb(var(--c-text-secondary))]">
+                              <span>Son 7 Gün</span>
+                              <span class="font-semibold">{{ weeklyActivityReport().totalThisWeek }} etkinlik</span>
+                          </div>
+                          <!-- Chart container -->
+                          @let report = weeklyActivityReport();
+                          <div class="mt-2 h-32 flex items-end justify-between gap-2 border-b border-[rgb(var(--c-border))] pb-2">
+                              @for(day of report.chartData; track $index) {
+                                  <div class="flex-1 flex flex-col items-center justify-end gap-1 group h-full">
+                                      <div class="w-full bg-[rgba(var(--c-accent-500),0.2)] hover:bg-[rgba(var(--c-accent-500),0.4)] rounded-t-md transition-all duration-200" 
+                                           [style.height.%]="(day.count / report.maxCount) * 100"
+                                           [title]="day.count + ' etkinlik'"></div>
+                                      <span class="text-xs font-semibold text-[rgb(var(--c-text-muted))]">{{ day.day }}</span>
+                                  </div>
+                              }
+                          </div>
+                          <div class="mt-3">
+                              <p class="text-sm font-semibold text-[rgb(var(--c-text-secondary))]">En Çok Çalışılan Alan</p>
+                              <p class="font-bold text-lg text-[rgb(var(--c-accent-700))]">{{ report.mostPracticedTopic }}</p>
+                          </div>
+                      </div>
+                    </section>
+
+                    <!-- Badges -->
+                    <section class="bg-[rgba(var(--c-card-bg),0.6)] backdrop-blur-md rounded-2xl shadow-lg p-6 border border-white/50 print-section">
+                      <h2 class="text-2xl font-bold text-[rgb(var(--c-text-primary))] mb-4 print-section-title">🏅 Rozetlerin</h2>
+                      @if (gamificationService.unlockedBadges().length > 0) {
+                        <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                          @for(badge of gamificationService.unlockedBadges(); track badge.id) {
+                            <div class="group relative text-center bg-slate-100/50 p-3 rounded-lg flex flex-col items-center justify-center aspect-square" [title]="badge.name">
+                              <span class="text-5xl drop-shadow-md">{{ badge.icon }}</span>
+                              <p class="text-xs font-semibold text-[rgb(var(--c-text-secondary))] mt-1 truncate w-full">{{ badge.name }}</p>
+                               <div class="absolute bottom-full mb-2 w-48 p-2 bg-slate-800 text-white text-sm rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                                {{ badge.description }}
+                                <div class="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-slate-800"></div>
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      } @else {
+                        <p class="text-[rgb(var(--c-text-muted))] italic">Etkinlikleri tamamlayarak yeni rozetler kazan!</p>
+                      }
+                    </section>
+                  </div>
+
+                  <div class="lg:col-span-2 lg:order-1 space-y-8">
                     <!-- Topic Mastery Charts -->
                     <section class="bg-[rgba(var(--c-card-bg),0.6)] backdrop-blur-md rounded-2xl shadow-lg p-6 border border-white/50 print-section">
                       <h2 class="text-2xl font-bold text-[rgb(var(--c-text-primary))] mb-4 print-section-title">Alan Ustalığı</h2>
@@ -587,7 +679,20 @@
                             @if (areasForImprovement().length > 0) {
                              <ul class="space-y-2">
                                @for(sub of areasForImprovement().slice(0, 5); track sub.id) {
-                                 <li class="bg-yellow-100/70 text-yellow-800 font-semibold p-2 rounded-md print-list-item">{{ sub.title }}</li>
+                                 <li class="print-list-item">
+                                   <button (click)="startPractice(sub)" class="w-full text-left bg-yellow-100/70 hover:bg-yellow-100/90 text-yellow-800 font-semibold p-2 rounded-md flex justify-between items-center transition-colors">
+                                      <span>{{ sub.title }}</span>
+                                      <div class="flex text-yellow-500" title="{{ progressData()[sub.id] || 0 }} / 3 Yıldız">
+                                          @for(i of [1,2,3]; track i) {
+                                              @if((progressData()[sub.id] || 0) >= i) {
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                                              } @else {
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-300" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                                              }
+                                          }
+                                      </div>
+                                   </button>
+                                 </li>
                                }
                              </ul>
                            } @else {
@@ -597,42 +702,6 @@
                       </div>
                     </section>
                   </div>
-        
-                  <!-- Side Panel for Badges and Rewards -->
-                  <div class="space-y-8">
-                    <!-- Badges -->
-                    <section class="bg-[rgba(var(--c-card-bg),0.6)] backdrop-blur-md rounded-2xl shadow-lg p-6 border border-white/50 print-section">
-                      <h2 class="text-2xl font-bold text-[rgb(var(--c-text-primary))] mb-4 print-section-title">🏅 Rozetlerin</h2>
-                      @if (gamificationService.unlockedBadges().length > 0) {
-                        <div class="flex flex-wrap gap-4">
-                          @for(badge of gamificationService.unlockedBadges(); track badge.id) {
-                            <div class="text-center" [title]="badge.name + ': ' + badge.description">
-                              <span class="text-4xl drop-shadow-md">{{ badge.icon }}</span>
-                              <p class="text-xs font-semibold text-[rgb(var(--c-text-secondary))] mt-1">{{ badge.name }}</p>
-                            </div>
-                          }
-                        </div>
-                      } @else {
-                        <p class="text-[rgb(var(--c-text-muted))] italic">Etkinlikleri tamamlayarak yeni rozetler kazan!</p>
-                      }
-                    </section>
-                    <!-- Rewards -->
-                     <section class="bg-[rgba(var(--c-card-bg),0.6)] backdrop-blur-md rounded-2xl shadow-lg p-6 border border-white/50 print-section">
-                      <h2 class="text-2xl font-bold text-[rgb(var(--c-text-primary))] mb-4 print-section-title">🎁 Ödüllerin</h2>
-                       @if (gamificationService.unlockedAvatarItems().length > 0) {
-                          <div class="flex flex-wrap gap-4">
-                            @for(item of gamificationService.unlockedAvatarItems(); track item.id) {
-                              <div class="text-center" [title]="item.name">
-                                <span class="text-4xl drop-shadow-md">{{ item.icon }}</span>
-                                <p class="text-xs font-semibold text-[rgb(var(--c-text-secondary))] mt-1">{{ item.name }}</p>
-                              </div>
-                            }
-                          </div>
-                        } @else {
-                           <p class="text-[rgb(var(--c-text-muted))] italic">Puan kazanarak baykuşun için yeni eşyaların kilidini aç!</p>
-                        }
-                    </section>
-                  </div>
                 </div>
               </main>
             </div>
@@ -640,5 +709,21 @@
         }
       </main>
     </div>
+
+    <!-- Mobile Bottom Nav -->
+    <nav class="sm:hidden fixed bottom-0 left-0 right-0 bg-[rgba(var(--c-card-bg),0.9)] backdrop-blur-sm border-t border-[rgb(var(--c-border))] p-1 flex justify-around items-center z-30 shadow-t-lg no-print">
+        <button (click)="setView('activities')" class="flex flex-col items-center justify-center w-full p-2 rounded-lg transition-colors" [class.text-[rgb(var(--c-accent-600))]]="currentView() === 'activities'" [class.text-[rgb(var(--c-text-secondary))]]="currentView() !== 'activities'">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 14l9-5-9-5-9 5 9 5z" /><path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222 4 2.222V20M1.222 11.222L12 17l10.778-5.778" /></svg>
+            <span class="text-xs font-bold">Etkinlikler</span>
+        </button>
+        <button (click)="setView('5n1k')" class="flex flex-col items-center justify-center w-full p-2 rounded-lg transition-colors" [class.text-[rgb(var(--c-accent-600))]]="currentView() === '5n1k'" [class.text-[rgb(var(--c-text-secondary))]]="currentView() !== '5n1k'">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+            <span class="text-xs font-bold">5N1K</span>
+        </button>
+        <button (click)="setView('profile')" class="flex flex-col items-center justify-center w-full p-2 rounded-lg transition-colors" [class.text-[rgb(var(--c-accent-600))]]="currentView() === 'profile'" [class.text-[rgb(var(--c-text-secondary))]]="currentView() !== 'profile'">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            <span class="text-xs font-bold">Profil</span>
+        </button>
+    </nav>
   </div>
 }

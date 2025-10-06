@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { GoogleGenAI, Type } from '@google/genai';
-import { Activity, GradeLevel, Topic, SubTopic, isWordScramble, isSimpleMath, isMultipleChoice, isOrdering, isDragDropMatch, isFillInTheBlanks, isTrueFalse, isVisualMatch, isMatchingPairs, isSequencingEvents, isInteractiveStory, isSentenceCompletion, isAuditoryDictation, isVisualArithmetic, MultipleChoiceProblem } from '../models/activity.model';
-import { ACTIVITY_CONFIGS } from './activity-config';
+import { Activity, GradeLevel, Topic, SubTopic, isWordScramble, isSimpleMath, isMultipleChoice, isOrdering, isDragDropMatch, isFillInTheBlanks, isTrueFalse, isVisualMatch, isMatchingPairs, isSequencingEvents, isInteractiveStory, isSentenceCompletion, isAuditoryDictation, isVisualArithmetic, MultipleChoiceProblem, FiveWOneHStoryActivity, isSpatialRelations, isReadingAloudCoach } from '../models/activity.model';
+import { ACTIVITY_CONFIGS, fiveWOneHStorySchema } from './activity-config';
 
 
 @Injectable({
@@ -37,7 +37,7 @@ export class GeminiService {
         const problem = activity.data.problems[problemIndex];
         problemContext = `Soru Tipi: Matematik Problemi\nSoru: "${problem.question}".`;
         correctAnswerInfo = `Doğru cevap: "${problem.answer}".`;
-    } else if (isMultipleChoice(activity) || isVisualMatch(activity)) {
+    } else if (isMultipleChoice(activity) || isVisualMatch(activity) || isSpatialRelations(activity)) {
         const problem = activity.data.problems[problemIndex];
         problemContext = `Soru Tipi: Çoktan Seçmeli\nSoru: "${problem.question}"\nSeçenekler: ${problem.options.join(', ')}.`;
         correctAnswerInfo = `Doğru cevap: "${problem.correctAnswer}".`;
@@ -87,7 +87,7 @@ export class GeminiService {
     const prompt = `Bir öğrencinin "${topic}" kategorisindeki en çok zorlandığı alanlar şunlardır: ${subTopicTitles}. Bu alanların her birinden birer tane olmak üzere, toplamda 5 soruluk karma bir 'çoktan seçmeli' etkinlik oluştur. Sorular çeşitli ve ilgi çekici olmalıdır. Yanıtı, Çoktan Seçmeli Etkinlik şemasına uyan geçerli bir JSON nesnesi olarak döndür. İçerik dili Türkçe olmalıdır.`;
 
     try {
-        const config = ACTIVITY_CONFIGS[topic].subtopics['reading-fluency']; // Using a representative multiple-choice schema
+        const config = ACTIVITY_CONFIGS[topic].subtopics['reading-comprehension']; // Using a representative multiple-choice schema
         if (!config) throw new Error("Config not found for schema.");
         
         const response = await this.ai.models.generateContent({
@@ -125,7 +125,7 @@ export class GeminiService {
     } else if (isSimpleMath(activity)) {
       const problem = activity.data.problems[problemIndex];
       problemContext = `Soru Tipi: Matematik Problemi\nSoru: "${problem.question}".`;
-    } else if (isMultipleChoice(activity) || isVisualMatch(activity)) {
+    } else if (isMultipleChoice(activity) || isVisualMatch(activity) || isSpatialRelations(activity)) {
       const problem = activity.data.problems[problemIndex];
       problemContext = `Soru Tipi: Çoktan Seçmeli\nSoru: "${problem.question}"\nSeçenekler: ${problem.options.join(', ')}.`;
     } else if (isOrdering(activity)) {
@@ -155,7 +155,7 @@ export class GeminiService {
     } else if (isSentenceCompletion(activity)) {
         const problem = activity.data.prompts[problemIndex];
         problemContext = `Soru Tipi: Cümle Tamamlama\nCümle başlangıcı: "${problem}".`;
-    } else if (isInteractiveStory(activity)) {
+    } else if (isInteractiveStory(activity) || isReadingAloudCoach(activity)) {
         return "Bu etkinlik türü için ipucu özelliği bulunmuyor.";
     }
 
@@ -176,52 +176,40 @@ export class GeminiService {
     }
   }
   
-  async generate5W1HActivity(gradeLevel: GradeLevel): Promise<Activity> {
+  async generateImageForStory(story: string): Promise<string | undefined> {
+    if (!this.ai) {
+      throw new Error('Gemini AI client is not initialized.');
+    }
+    try {
+        const imagePrompt = `A vibrant and colorful children's book illustration depicting the following scene: ${story.substring(0, 200)}. Style: whimsical, friendly, digital painting.`;
+        const imageResponse = await this.ai.models.generateImages({
+            model: 'imagen-3.0-generate-002',
+            prompt: imagePrompt,
+            config: {
+                numberOfImages: 1,
+                outputMimeType: 'image/jpeg',
+                aspectRatio: '16:9',
+            },
+        });
+        
+        if (imageResponse.generatedImages[0]?.image?.imageBytes) {
+            const base64ImageBytes = imageResponse.generatedImages[0].image.imageBytes;
+            return `data:image/jpeg;base64,${base64ImageBytes}`;
+        }
+        return undefined;
+    } catch (error) {
+        console.error('Error generating story image:', error);
+        return undefined;
+    }
+  }
+
+  async generate5W1HActivity(gradeLevel: GradeLevel, theme: string): Promise<Activity> {
     if (!this.ai) {
       throw new Error('Gemini AI client is not initialized.');
     }
 
-    const prompt = `Generate a complete 'five-w-one-h-story' activity in Turkish for a '${gradeLevel}' student. The activity needs a title, instructions, and a data object containing a short story (3-4 paragraphs), exactly 6 comprehension questions (one for each 5N1K category with concise answers from the text), and exactly 2 inference/reasoning questions. Respond ONLY with a valid JSON object that conforms to the provided schema. All content must be in Turkish.`;
-
-    const responseSchema = {
-      type: Type.OBJECT,
-      properties: {
-        title: { type: Type.STRING, description: 'A fun title for the activity in Turkish (e.g., "Kayıp Uçurtmanın Gizemi").' },
-        instructions: { type: Type.STRING, description: 'Simple instructions for the child in Turkish (e.g., "Hikayeyi oku ve soruları cevapla!").' },
-        activityType: { type: Type.STRING, description: "Must be 'five-w-one-h-story'." },
-        data: {
-          type: Type.OBJECT,
-          properties: {
-            story: { type: Type.STRING, description: 'The generated short story in Turkish.' },
-            comprehensionQuestions: {
-              type: Type.ARRAY,
-              description: 'An array of exactly 6 questions based on the story, one for each 5N1K category.',
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  question: { type: Type.STRING, description: 'The 5N1K question in Turkish (e.g., "Hikayedeki ana karakter kimdi?").' },
-                  answer: { type: Type.STRING, description: 'The concise answer to the question, based on the story.' }
-                },
-                required: ['question', 'answer']
-              }
-            },
-            inferenceQuestions: {
-                type: Type.ARRAY,
-                description: 'An array of 2 questions that require inference or reasoning.',
-                items: {
-                    type: Type.OBJECT,
-                    properties: {
-                        question: { type: Type.STRING, description: 'The inference question in Turkish (e.g., "Sence karakter neden böyle davrandı?").' }
-                    },
-                    required: ['question']
-                }
-            }
-          },
-          required: ['story', 'comprehensionQuestions', 'inferenceQuestions']
-        }
-      },
-      required: ['title', 'instructions', 'activityType', 'data']
-    };
+    const themeInstruction = theme === 'random' ? '' : ` The story should be in the '${theme}' genre.`;
+    const prompt = `Generate a complete 'five-w-one-h-story' activity in Turkish for a '${gradeLevel}' student.${themeInstruction} The activity needs a title, instructions, a brief hint, and a data object containing a short story (3-4 paragraphs), exactly 6 comprehension questions (one for each 5N1K category with concise answers and a simple hint), and exactly 2 inference/reasoning questions. Respond ONLY with a valid JSON object that conforms to the provided schema. All content must be in Turkish.`;
 
     try {
       const response = await this.ai.models.generateContent({
@@ -229,14 +217,120 @@ export class GeminiService {
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
-          responseSchema: responseSchema,
+          responseSchema: fiveWOneHStorySchema,
         },
       });
       const jsonStr = response.text.trim();
-      return JSON.parse(jsonStr) as Activity;
+      const activity = JSON.parse(jsonStr) as FiveWOneHStoryActivity;
+
+      const imageUrl = await this.generateImageForStory(activity.data.story);
+      if (imageUrl) {
+        activity.data.imageUrl = imageUrl;
+      }
+
+      return activity;
     } catch (error) {
       console.error('Error generating 5N1K story activity:', error);
       throw new Error('Hikaye etkinliği oluşturulamadı. Lütfen tekrar deneyin.');
+    }
+  }
+
+  async checkComprehensionAnswer(story: string, question: string, correctAnswer: string, userAnswer: string): Promise<{ isCorrect: boolean; feedback: string; }> {
+    if (!this.ai) throw new Error('AI client not initialized.');
+    
+    const prompt = `You are a helpful and patient Turkish teaching assistant for primary school students with learning difficulties. A student is answering a reading comprehension question.
+    Their answers might be simple or phrased differently. Your task is to check if their answer is semantically correct, even if it's not a word-for-word match with the expected answer. Consider synonyms and alternative correct phrasings.
+
+    - Story: "${story}"
+    - Question: "${question}"
+    - Expected Answer: "${correctAnswer}"
+    - Student's Answer: "${userAnswer}"
+
+    Analyze the student's answer. Is it correct in meaning?
+    Provide brief, encouraging, and simple feedback in Turkish.
+    Respond ONLY with a valid JSON object in the format: { "isCorrect": boolean, "feedback": "your feedback in Turkish" }`;
+    
+    try {
+        const response = await this.ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+            config: {
+                responseMimeType: 'application/json',
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        isCorrect: { type: Type.BOOLEAN },
+                        feedback: { type: Type.STRING }
+                    },
+                    required: ['isCorrect', 'feedback']
+                }
+            }
+        });
+        return JSON.parse(response.text.trim());
+    } catch (error) {
+        console.error('Error checking comprehension answer:', error);
+        return { isCorrect: false, feedback: 'Cevabını kontrol ederken bir sorun oluştu.' };
+    }
+  }
+
+  async evaluateInferenceAnswer(story: string, question: string, userAnswer: string): Promise<string> {
+    if (!this.ai) throw new Error('AI client not initialized.');
+    
+    const prompt = `You are a positive and encouraging teaching assistant. A student is answering an inference question about a story.
+    Story: "${story}".
+    Question: "${question}".
+    Student's Answer: "${userAnswer}".
+    Provide 1-2 sentences of encouraging feedback in Turkish. Do not say if the answer is right or wrong. Instead, praise their thinking and perhaps suggest another way to look at it to deepen their understanding. The response should be only the feedback text.`;
+    
+    try {
+        const response = await this.ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt
+        });
+        return response.text.trim();
+    } catch (error) {
+        console.error('Error evaluating inference answer:', error);
+        return 'Harika bir düşünce! Bu konuda daha fazla ne söyleyebilirsin?';
+    }
+  }
+
+  async evaluateReadingFluency(originalText: string, studentTranscript: string): Promise<{ feedback: string; incorrectWords: string[] }> {
+    if (!this.ai) throw new Error('AI client not initialized.');
+
+    const prompt = `You are a gentle and encouraging Turkish reading coach for a primary school student with dyslexia.
+    The student read a text aloud. Compare the original text with the transcript of what they said.
+    - Identify words the student missed, mispronounced, or stumbled on.
+    - Provide very simple, positive, and encouraging feedback in one or two sentences. Focus on what they did well, and gently point out one or two things to practice. Do not be harsh or overly critical.
+    - List the specific words that were incorrect.
+
+    Original Text: "${originalText}"
+    Student's Transcript: "${studentTranscript}"
+
+    Respond ONLY with a valid JSON object in the format: { "feedback": "your feedback in Turkish", "incorrectWords": ["word1", "word2"] }`;
+
+    try {
+        const response = await this.ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+            config: {
+                responseMimeType: 'application/json',
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        feedback: { type: Type.STRING },
+                        incorrectWords: {
+                            type: Type.ARRAY,
+                            items: { type: Type.STRING }
+                        }
+                    },
+                    required: ['feedback', 'incorrectWords']
+                }
+            }
+        });
+        return JSON.parse(response.text.trim());
+    } catch (error) {
+        console.error('Error evaluating reading fluency:', error);
+        return { feedback: 'Geri bildirim oluşturulurken bir hata oluştu.', incorrectWords: [] };
     }
   }
 
@@ -280,7 +374,9 @@ export class GeminiService {
             diskalkuli: 'a math-focused adventure about solving puzzles in a treasure hunt or managing a magical potion shop',
             disgrafi: 'a writing-focused adventure about completing a story, writing a ship\'s log, or creating a spell'
         };
-        activityDescription = activityDescription.replace('THEME_PLACEHOLDER', themes[topic]);
+        // This logic won't work for 'mekansal-farkindalik'. It's okay, interactive stories are not in that topic.
+        const theme = themes[topic as 'disleksi' | 'diskalkuli' | 'disgrafi'];
+        activityDescription = activityDescription.replace('THEME_PLACEHOLDER', theme);
     }
 
     const prompt = `You are an expert in creating engaging educational activities for children with learning difficulties. Generate an activity for a Turkish-speaking '${gradeLevel}' student with ${topic}. Specifically, this activity should focus on the sub-topic: '${subTopic.title}'. The activity is ${activityDescription}. Also, include a 'hint' field containing a single, brief, encouraging, and informative tip or 'did you know?' fact in Turkish related to the topic and sub-topic, suitable for a child. This hint should be no more than one or two sentences. Please respond ONLY with a valid JSON object that conforms to the provided schema. The language of the content must be Turkish.`;
@@ -297,6 +393,33 @@ export class GeminiService {
 
         const jsonStr = response.text.trim();
         const activity = JSON.parse(jsonStr) as Activity;
+
+        if (isSpatialRelations(activity)) {
+            for (const problem of activity.data.problems) {
+                try {
+                    const imageResponse = await this.ai.models.generateImages({
+                        model: 'imagen-3.0-generate-002',
+                        prompt: `A simple, colorful, clear illustration for a children's activity. Style: cartoon, friendly, clean background. Scene: ${problem.imagePrompt}`,
+                        config: {
+                            numberOfImages: 1,
+                            outputMimeType: 'image/jpeg',
+                            aspectRatio: '1:1',
+                        },
+                    });
+
+                    if (imageResponse.generatedImages[0]?.image?.imageBytes) {
+                        const base64ImageBytes = imageResponse.generatedImages[0].image.imageBytes;
+                        problem.imageUrl = `data:image/jpeg;base64,${base64ImageBytes}`;
+                    } else {
+                        problem.imageUrl = ''; 
+                        console.warn(`Image generation failed for prompt: ${problem.imagePrompt}`);
+                    }
+                } catch(imgError) {
+                     problem.imageUrl = '';
+                     console.error(`Error generating image for prompt: ${problem.imagePrompt}`, imgError);
+                }
+            }
+        }
 
         // Defensive check: If a custom prompt was used, ensure only that prompt is in the final activity data.
         if (subTopic.id === 'creative-writing-prompts' && options.customPrompt) {

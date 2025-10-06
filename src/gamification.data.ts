@@ -120,7 +120,8 @@ export const ALL_BADGES: Badge[] = [
         name: 'Hız Canavarı',
         description: 'Akıcı Okuma konusunda ustalaştın.',
         icon: '💨',
-        unlockCondition: { type: 'masterSubTopic', value: 'reading-fluency' }
+// FIX: Corrected invalid SubTopicId from 'reading-fluency' to 'reading-aloud-coach'.
+        unlockCondition: { type: 'masterSubTopic', value: 'reading-aloud-coach' }
     },
     {
         id: 'badge_master_letter_sound',

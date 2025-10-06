@@ -3,6 +3,7 @@ import { Activity, GradeLevel, SubTopic, Topic, SubTopicId } from '../../models/
 import { GeminiService } from '../../services/gemini.service';
 import { ActivityDisplayComponent } from '../activity-display/activity-display.component';
 import { FeedbackSettings } from '../../app.component';
+import { SkeletonLoaderComponent } from '../skeleton-loader/skeleton-loader.component';
 
 type Difficulty = 'easy' | 'medium' | 'hard';
 
@@ -10,16 +11,18 @@ type Difficulty = 'easy' | 'medium' | 'hard';
   selector: 'app-activity-generator',
   templateUrl: './activity-generator.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ActivityDisplayComponent],
+  imports: [ActivityDisplayComponent, SkeletonLoaderComponent],
 })
 export class ActivityGeneratorComponent {
   topic = input.required<Topic>();
   subTopic = input.required<SubTopic>();
   feedbackSettings = input.required<FeedbackSettings>();
   customPrompts = input<string[] | undefined>();
+  isPracticeSession = input<boolean>(false);
   
   backToSubtopics = output<void>();
-  activityCompleted = output<{ subTopicId: SubTopicId; successRate: number, correctAnswers: number, totalQuestions: number }>();
+  activityCompleted = output<{ subTopicId: SubTopicId | 'review'; topic: Topic; successRate: number, correctAnswers: number, totalQuestions: number }>();
+  practiceFinished = output<void>();
 
   private geminiService = inject(GeminiService);
 
@@ -41,24 +44,28 @@ export class ActivityGeneratorComponent {
   
   onActivitySuccess(event: { subTopicId: SubTopicId | 'review'; successRate: number, correctAnswers: number, totalQuestions: number }): void {
     this.activityCompleted.emit({ 
-      // FIX: Cast subTopic id to SubTopicId as this component doesn't handle 'review' activities.
-      subTopicId: this.subTopic().id as SubTopicId, 
+      subTopicId: event.subTopicId, 
+      topic: this.topic(),
       successRate: event.successRate,
       correctAnswers: event.correctAnswers,
       totalQuestions: event.totalQuestions
     });
   }
 
+  onPracticeSessionFinished(): void {
+    this.practiceFinished.emit();
+  }
+
   async generateActivity(): Promise<void> {
     this.loading.set(true);
     this.error.set(null);
-    this.activityWrapperVisible.set(false); // Start fade-out
-
+    
+    // If an activity already exists, we are generating a new one.
+    // The skeleton loader will be shown instead of the old activity.
     if (this.activity()) {
-        // Wait for fade-out animation to complete before fetching new data
-        await new Promise(resolve => setTimeout(resolve, 300));
+      this.activity.set(null);
     }
-
+    
     const options: { customPrompt?: string; difficulty?: Difficulty; problemCount?: number } = {};
     const subTopicId = this.subTopic().id;
     const prompts = this.customPrompts();
@@ -73,11 +80,10 @@ export class ActivityGeneratorComponent {
     }
     
     try {
+      // Add a small delay to make the skeleton loader visible and feel responsive
+      await new Promise(resolve => setTimeout(resolve, 300));
       const generatedActivity = await this.geminiService.generateActivity(this.topic(), this.subTopic(), this.gradeLevel(), options);
       this.activity.set(generatedActivity);
-       // Let the view update before starting the fade-in
-      await Promise.resolve();
-      this.activityWrapperVisible.set(true);
     } catch (e: any) {
       this.error.set(e.message || 'Bir hata oluştu. Lütfen tekrar deneyin.');
       this.activity.set(null); // Clear activity on error
