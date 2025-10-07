@@ -415,7 +415,8 @@ export class ActivityDisplayComponent implements OnDestroy {
   undo(index: number): void {
     if (!this.canUndo(index)) return;
 
-    this.historyIndex.update(i => ({ ...i, [index]: i[index] - 1 }));
+    // FIX: Use non-null assertion. The `canUndo` guard ensures `i[index]` is a number.
+    this.historyIndex.update(i => ({ ...i, [index]: i[index]! - 1 }));
     const previousValue = this.history()[index][this.historyIndex()[index]];
 
     this.userAnswers.update(answers => {
@@ -429,7 +430,8 @@ export class ActivityDisplayComponent implements OnDestroy {
   redo(index: number): void {
     if (!this.canRedo(index)) return;
 
-    this.historyIndex.update(i => ({ ...i, [index]: i[index] + 1 }));
+    // FIX: Use non-null assertion. The `canRedo` guard ensures `i[index]` is a number.
+    this.historyIndex.update(i => ({ ...i, [index]: i[index]! + 1 }));
     const nextValue = this.history()[index][this.historyIndex()[index]];
 
     this.userAnswers.update(answers => {
@@ -704,6 +706,52 @@ export class ActivityDisplayComponent implements OnDestroy {
       }
     }
   }
+
+  public getOptionClasses(problemIndex: number, option: string, correctAnswer: string): string {
+    const baseClasses = 'w-full text-left p-4 border-2 rounded-lg text-lg font-medium transition-all duration-200 transform active:scale-95 disabled:cursor-not-allowed flex justify-between items-center';
+    
+    const userAnswer = this.userAnswers()[problemIndex];
+    const isSelected = userAnswer === option;
+    const isCorrect = option === correctAnswer;
+
+    if (this.showFeedback()) {
+        if (isCorrect) {
+            // Highlight correct answer in green
+            return `${baseClasses} bg-green-500 border-green-600 text-white animate-pop-in`;
+        }
+        if (isSelected && !isCorrect) {
+            // User's incorrect selection in red
+            return `${baseClasses} bg-red-500 border-red-600 text-white animate-shake`;
+        }
+        // Other incorrect options are faded
+        return `${baseClasses} bg-slate-100 border-slate-200 text-slate-500 opacity-60 pointer-events-none`;
+    }
+
+    if (isSelected) {
+        const topic = this.topic();
+        // Fallback for mekansal-farkindalik which is not in the CSS variables
+        if (topic === 'mekansal-farkindalik') {
+             return `${baseClasses} bg-pink-500 border-pink-500 text-white`;
+        }
+        // Using the progress color for selected background and border color for border
+        return `${baseClasses} ${this.topicColors().progress} ${this.topicColors().border} text-white`;
+    }
+
+    // Default state
+    return `${baseClasses} bg-white border-slate-300 hover:border-indigo-400 text-slate-700`;
+  }
+  
+  public getOrderItemButtonClasses(problemIndex: number, item: string): string {
+    const baseClasses = 'p-3 text-center rounded-lg border-2 transition-all duration-200 transform active:scale-95 disabled:cursor-not-allowed text-slate-700 font-medium';
+
+    if (this.isItemSelected(problemIndex, item)) {
+        // This is a fallback for the source buttons. The @if in the template should hide them.
+        return `${baseClasses} bg-slate-200 border-slate-300 text-slate-400 pointer-events-none`;
+    }
+
+    // Default state for an unselected item button.
+    return `${baseClasses} bg-white border-slate-300 hover:border-indigo-400 hover:bg-indigo-50`;
+  }
   
   // --- INTERACTIVE STORY METHODS ---
   selectStoryChoice(choice: InteractiveStoryChoice) {
@@ -886,13 +934,22 @@ export class ActivityDisplayComponent implements OnDestroy {
     }
   }
 
+  goToPreviousParagraph(): void {
+    if (this.currentParagraphIndex() > 0) {
+      this.currentParagraphIndex.update(i => i - 1);
+    }
+  }
+
   finishReadingActivity(): void {
     const activity = this.displayActivity();
     if (!activity || !isReadingAloudCoach(activity)) return;
     
     const totalParagraphs = activity.data.paragraphs.length;
     const allFeedback = this.readingFeedback();
-    const incorrectWordsCount = Object.values(allFeedback).reduce((acc, val) => acc + (val?.incorrectWords.length || 0), 0);
+    const incorrectWordsCount = Object.values(allFeedback).reduce((acc, val) => {
+        const feedbackItem = val as { feedback: string; incorrectWords: string[] } | null;
+        return acc + (feedbackItem?.incorrectWords.length || 0);
+    }, 0);
     
     // Consider the activity a "success" if it's completed, maybe with a penalty for many errors.
     // For now, completion is success.

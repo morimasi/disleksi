@@ -62,7 +62,7 @@ export class AppComponent {
   // --- Admin & Login State ---
   showLogin = signal(true);
   isAdmin = signal(false);
-  isSidebarOpen = signal(false); // For mobile admin menu
+  
   loginCredentials = signal({ username: '', password: '' });
   loginError = signal<string | null>(null);
 
@@ -71,6 +71,13 @@ export class AppComponent {
   isGeneratingPdf = signal(false);
   showAvatarCustomizer = signal(false);
 
+  // Navigation items for the new top navbar
+  navItems = [
+    {id: 'activities', name: 'Etkinlikler', icon: 'M12 14l9-5-9-5-9 5 9 5z M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222 4 2.222V20M1.222 11.222L12 17l10.778-5.778'}, 
+    {id: '5n1k', name: '5N1K', icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253'},
+    {id: 'profile', name: 'Profil', icon: 'M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z'}
+  ];
+  
   // --- Dynamic Content Management ---
   private readonly topicsStorageKey = 'ogrenmeKoprusuTopicsData';
   topicsDataSignal: WritableSignal<Record<Topic, any>>;
@@ -583,9 +590,10 @@ export class AppComponent {
   }
 
   onDocumentClick(event: MouseEvent): void {
+    const target = event.target as Node;
     if (this.isAccessibilityMenuOpen()) {
       const container = this.elementRef.nativeElement.querySelector('.accessibility-container');
-      if (container && !container.contains(event.target as Node)) {
+      if (container && !container.contains(target)) {
         this.isAccessibilityMenuOpen.set(false);
       }
     }

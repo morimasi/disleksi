@@ -6,6 +6,7 @@ import { FeedbackSettings } from '../../app.component';
 import { SkeletonLoaderComponent } from '../skeleton-loader/skeleton-loader.component';
 
 type Difficulty = 'easy' | 'medium' | 'hard';
+type ReadingTheme = 'animals' | 'space' | 'nature' | 'fairy-tale';
 
 @Component({
   selector: 'app-activity-generator',
@@ -33,6 +34,14 @@ export class ActivityGeneratorComponent {
   error = signal<string | null>(null);
   difficulty: WritableSignal<Difficulty> = signal('medium');
   problemCount = signal<3 | 5 | 7>(5);
+  readingTheme = signal<ReadingTheme>('animals');
+
+  readingThemes: {id: ReadingTheme, name: string, icon: string}[] = [
+    { id: 'animals', name: 'Hayvanlar', icon: '🐾' },
+    { id: 'space', name: 'Uzay', icon: '🚀' },
+    { id: 'nature', name: 'Doğa', icon: '🌳' },
+    { id: 'fairy-tale', name: 'Masallar', icon: ' castle' },
+  ];
 
   topicTitle = computed(() => {
     switch (this.topic()) {
@@ -66,7 +75,7 @@ export class ActivityGeneratorComponent {
       this.activity.set(null);
     }
     
-    const options: { customPrompt?: string; difficulty?: Difficulty; problemCount?: number } = {};
+    const options: { customPrompt?: string; difficulty?: Difficulty; problemCount?: number; readingTheme?: ReadingTheme } = {};
     const subTopicId = this.subTopic().id;
     const prompts = this.customPrompts();
 
@@ -77,6 +86,10 @@ export class ActivityGeneratorComponent {
     if (subTopicId === 'basic-arithmetic') {
         options.difficulty = this.difficulty();
         options.problemCount = this.problemCount();
+    }
+    
+    if (subTopicId === 'reading-aloud-coach') {
+      options.readingTheme = this.readingTheme();
     }
     
     try {

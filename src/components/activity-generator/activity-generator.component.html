@@ -32,6 +32,23 @@
             </label>
           </div>
         </div>
+        
+        @if (subTopic().id === 'reading-aloud-coach') {
+           <div class="animate-fade-in">
+              <label class="text-lg font-semibold text-gray-700 mb-2 block text-center sm:text-left">Okuma Konusu Seçin</label>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                 @for(theme of readingThemes; track theme.id) {
+                    <label>
+                      <input type="radio" name="readingTheme" [value]="theme.id" [checked]="readingTheme() === theme.id" (change)="readingTheme.set(theme.id)" class="sr-only peer">
+                      <div class="p-3 text-center rounded-lg border-2 cursor-pointer transition-all active:scale-95 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 hover:border-blue-400 font-semibold">
+                        <span class="text-2xl">{{ theme.icon }}</span>
+                        <p>{{ theme.name }}</p>
+                      </div>
+                    </label>
+                 }
+              </div>
+          </div>
+        }
   
         @if (subTopic().id === 'basic-arithmetic') {
           <div class="animate-fade-in">

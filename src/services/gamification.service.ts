@@ -55,7 +55,10 @@ export class GamificationService {
     constructor() {
         this.studentProfile = signal(this.loadProfile());
         this.checkForNewDay();
-        this.generateDailyChallenge();
+        // This will be called in checkForNewDay if needed
+        if (!this.dailyChallenge()) {
+            this.generateDailyChallenge();
+        }
     }
 
     private loadProfile(): StudentProfile {
@@ -65,6 +68,7 @@ export class GamificationService {
                 const profile = JSON.parse(savedProfile);
                 // Ensure new fields exist for backward compatibility
                 if (!profile.completedActivities) profile.completedActivities = 0;
+                if (!profile.unlockedAvatarItemIds) profile.unlockedAvatarItemIds = [];
                 if (!profile.equippedItemIds) profile.equippedItemIds = [];
                 if (!profile.currentStreak) profile.currentStreak = 0;
                 if (!profile.lastActivityDate) profile.lastActivityDate = null;
@@ -116,7 +120,7 @@ export class GamificationService {
         if (lastChallengeDate !== today) {
             updatedProfile.dailyChallengeCompleted = false;
             updatedProfile.lastChallengeDate = today;
-            this.generateDailyChallenge();
+            this.generateDailyChallenge(); // Regenerate for the new day
             needsUpdate = true;
         }
 
@@ -140,17 +144,11 @@ export class GamificationService {
         }
     }
 
-    // FIX: Corrected type error by ensuring daily challenges are only generated from subtopics with a valid `SubTopicId`.
     generateDailyChallenge(): void {
-        const today = this.getTodayDateString();
-        // Generate only if it's for a new day.
-        if (this.studentProfile().lastChallengeDate === today && this.dailyChallenge()) {
-            return;
-        }
-
         const allSubTopics: { topic: Topic; subTopicId: SubTopicId; title: string }[] = [];
         (Object.keys(TOPICS_DATA) as Topic[]).forEach(topicKey => {
             TOPICS_DATA[topicKey].subTopics.forEach(subTopic => {
+                // Exclude activities that are not suitable for a quick daily challenge
                 if (subTopic.id !== 'interactive-story' && subTopic.id !== 'word-explorer' && subTopic.id !== 'creative-writing-prompts' && subTopic.id !== 'review') {
                     allSubTopics.push({ topic: topicKey, subTopicId: subTopic.id, title: subTopic.title });
                 }
@@ -162,14 +160,16 @@ export class GamificationService {
             return;
         }
 
-        const randomIndex = Math.floor(Math.random() * allSubTopics.length);
+        // Simple pseudo-random logic based on date to keep the challenge same for the whole day for a user
+        const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
+        const randomIndex = dayOfYear % allSubTopics.length;
         const challengeInfo = allSubTopics[randomIndex];
         
         const newChallenge: DailyChallenge = {
             topic: challengeInfo.topic,
             subTopicId: challengeInfo.subTopicId,
             title: challengeInfo.title,
-            description: `"${TOPICS_DATA[challengeInfo.topic].title}" kategorisinden bir etkinlik.`
+            description: `Bugünkü görev: "${TOPICS_DATA[challengeInfo.topic].title}" kategorisinden bir etkinlik tamamla.`
         };
 
         this.dailyChallenge.set(newChallenge);
@@ -208,8 +208,6 @@ export class GamificationService {
     }
 
     recordActivityCompletion(subTopicId: SubTopicId | 'review', topic: Topic): { streakUpdated: boolean, newStreak: number } {
-      // FIX: The type guard `subTopicId !== 'review'` was not being correctly inferred inside the signal's `update` closure.
-      // Capturing the narrowed type in a new constant before the closure ensures the correct type is used.
       if (subTopicId !== 'review') {
         const activitySubTopicId = subTopicId;
         this.studentProfile.update(profile => {
@@ -265,6 +263,7 @@ export class GamificationService {
             const newlyUnlockedItems = ALL_AVATAR_ITEMS.filter(item => 
                 !profile.unlockedAvatarItemIds.includes(item.id) &&
                 item.unlockCondition.type === 'points' &&
+                oldPoints < item.unlockCondition.value && // check against old points
                 newPoints >= item.unlockCondition.value
             );
             newItems = newlyUnlockedItems;
@@ -274,12 +273,14 @@ export class GamificationService {
                 !profile.unlockedBadgeIds.includes(badge.id) &&
                 badge.unlockCondition.type === 'points' &&
                 typeof badge.unlockCondition.value === 'number' &&
+                oldPoints < badge.unlockCondition.value &&
                 newPoints >= badge.unlockCondition.value
             );
              const newlyUnlockedBadgesByActivityCount = ALL_BADGES.filter(badge =>
                 !profile.unlockedBadgeIds.includes(badge.id) &&
                 badge.unlockCondition.type === 'activitiesCompleted' &&
                 typeof badge.unlockCondition.value === 'number' &&
+                (profile.completedActivities || 0) < badge.unlockCondition.value &&
                 newCompletedActivities >= badge.unlockCondition.value
             );
             newBadges.push(...newlyUnlockedBadgesByPoints, ...newlyUnlockedBadgesByActivityCount);

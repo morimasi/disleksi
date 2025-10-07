@@ -3,6 +3,7 @@ import { GoogleGenAI, Type } from '@google/genai';
 import { Activity, GradeLevel, Topic, SubTopic, isWordScramble, isSimpleMath, isMultipleChoice, isOrdering, isDragDropMatch, isFillInTheBlanks, isTrueFalse, isVisualMatch, isMatchingPairs, isSequencingEvents, isInteractiveStory, isSentenceCompletion, isAuditoryDictation, isVisualArithmetic, MultipleChoiceProblem, FiveWOneHStoryActivity, isSpatialRelations, isReadingAloudCoach } from '../models/activity.model';
 import { ACTIVITY_CONFIGS, fiveWOneHStorySchema } from './activity-config';
 
+const TURKISH_TUTOR_SYSTEM_INSTRUCTION = "Senin adın 'Bilge Baykuş'. Öğrenme güçlüğü çeken çocuklar için sıcak, motive edici ve basit bir tonda konuşan, arkadaş canlısı bir Türk eğitim asistanısın. Tüm yanıtların yalnızca Türkçe olmalıdır. Asla bir robot gibi konuşma.";
 
 @Injectable({
   providedIn: 'root',
@@ -68,7 +69,7 @@ export class GeminiService {
             model: 'gemini-2.5-flash',
             contents: prompt,
             config: {
-              systemInstruction: "Senin adın 'Bilge Baykuş'. Öğrenme güçlüğü çeken çocuklar için sıcak, motive edici ve basit bir tonda konuşan, arkadaş canlısı bir eğitim asistanısın. Asla bir robot gibi konuşma.",
+              systemInstruction: TURKISH_TUTOR_SYSTEM_INSTRUCTION,
             }
         });
         return response.text.trim();
@@ -94,6 +95,7 @@ export class GeminiService {
             model: 'gemini-2.5-flash',
             contents: prompt,
             config: {
+                systemInstruction: TURKISH_TUTOR_SYSTEM_INSTRUCTION,
                 responseMimeType: 'application/json',
                 responseSchema: config.schema,
             },
@@ -166,7 +168,7 @@ export class GeminiService {
             model: 'gemini-2.5-flash',
             contents: prompt,
             config: {
-              systemInstruction: "You are a friendly and helpful teaching assistant for a child. Your language is Turkish. You are encouraging and simple in your explanations.",
+              systemInstruction: TURKISH_TUTOR_SYSTEM_INSTRUCTION,
             }
         });
         return response.text.trim();
@@ -208,14 +210,23 @@ export class GeminiService {
       throw new Error('Gemini AI client is not initialized.');
     }
 
-    const themeInstruction = theme === 'random' ? '' : ` The story should be in the '${theme}' genre.`;
-    const prompt = `Generate a complete 'five-w-one-h-story' activity in Turkish for a '${gradeLevel}' student.${themeInstruction} The activity needs a title, instructions, a brief hint, and a data object containing a short story (3-4 paragraphs), exactly 6 comprehension questions (one for each 5N1K category with concise answers and a simple hint), and exactly 2 inference/reasoning questions. Respond ONLY with a valid JSON object that conforms to the provided schema. All content must be in Turkish.`;
+    let gradeLevelInstruction = '';
+    if (gradeLevel === 'ortaokul') {
+        gradeLevelInstruction = `The story should be complex and engaging, using richer vocabulary and varied sentence structures (including compound and complex sentences) suitable for a middle school student (grades 5-8). The plot can have more details, character development, or a simple twist. Comprehension questions should be clear, but inference questions should require deeper thinking about character motivations, themes, or consequences. The story should be around 4-5 paragraphs.`;
+    } else { // ilkokul
+        gradeLevelInstruction = `The story should be simple, creative, and clear, using accessible language and shorter sentences suitable for a primary school student (grades 1-4). The plot should be straightforward and easy to follow with a clear beginning, middle, and end. All questions should be direct and clear. The story should be around 3-4 paragraphs.`;
+    }
+
+    const themeInstruction = theme === 'random' ? 'The story can be about any fun topic.' : ` The story must be in the '${theme}' genre.`;
+
+    const prompt = `Generate a complete, creative, and unique 'five-w-one-h-story' activity in Turkish for a '${gradeLevel}' student. ${gradeLevelInstruction}${themeInstruction} The activity needs a title, instructions, a brief hint, and a data object. The data object must contain: a story, exactly 6 comprehension questions (one for each 5W1H/5N1K category: Kim, Ne, Nerede, Ne Zaman, Nasıl, Neden) with concise answers and a simple hint for each, and exactly 2 inference/reasoning questions. Respond ONLY with a valid JSON object that conforms to the provided schema. All content must be in Turkish.`;
 
     try {
       const response = await this.ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: prompt,
         config: {
+          systemInstruction: TURKISH_TUTOR_SYSTEM_INSTRUCTION,
           responseMimeType: 'application/json',
           responseSchema: fiveWOneHStorySchema,
         },
@@ -238,7 +249,7 @@ export class GeminiService {
   async checkComprehensionAnswer(story: string, question: string, correctAnswer: string, userAnswer: string): Promise<{ isCorrect: boolean; feedback: string; }> {
     if (!this.ai) throw new Error('AI client not initialized.');
     
-    const prompt = `You are a helpful and patient Turkish teaching assistant for primary school students with learning difficulties. A student is answering a reading comprehension question.
+    const prompt = `A student is answering a reading comprehension question.
     Their answers might be simple or phrased differently. Your task is to check if their answer is semantically correct, even if it's not a word-for-word match with the expected answer. Consider synonyms and alternative correct phrasings.
 
     - Story: "${story}"
@@ -247,14 +258,15 @@ export class GeminiService {
     - Student's Answer: "${userAnswer}"
 
     Analyze the student's answer. Is it correct in meaning?
-    Provide brief, encouraging, and simple feedback in Turkish.
-    Respond ONLY with a valid JSON object in the format: { "isCorrect": boolean, "feedback": "your feedback in Turkish" }`;
+    Provide brief, encouraging, and simple feedback.
+    Respond ONLY with a valid JSON object in the format: { "isCorrect": boolean, "feedback": "your feedback" }`;
     
     try {
         const response = await this.ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,
             config: {
+                systemInstruction: TURKISH_TUTOR_SYSTEM_INSTRUCTION,
                 responseMimeType: 'application/json',
                 responseSchema: {
                     type: Type.OBJECT,
@@ -276,16 +288,19 @@ export class GeminiService {
   async evaluateInferenceAnswer(story: string, question: string, userAnswer: string): Promise<string> {
     if (!this.ai) throw new Error('AI client not initialized.');
     
-    const prompt = `You are a positive and encouraging teaching assistant. A student is answering an inference question about a story.
+    const prompt = `A student is answering an inference question about a story.
     Story: "${story}".
     Question: "${question}".
     Student's Answer: "${userAnswer}".
-    Provide 1-2 sentences of encouraging feedback in Turkish. Do not say if the answer is right or wrong. Instead, praise their thinking and perhaps suggest another way to look at it to deepen their understanding. The response should be only the feedback text.`;
+    Provide 1-2 sentences of encouraging feedback. Do not say if the answer is right or wrong. Instead, praise their thinking and perhaps suggest another way to look at it to deepen their understanding. The response should be only the feedback text.`;
     
     try {
         const response = await this.ai.models.generateContent({
             model: 'gemini-2.5-flash',
-            contents: prompt
+            contents: prompt,
+            config: {
+                systemInstruction: TURKISH_TUTOR_SYSTEM_INSTRUCTION
+            }
         });
         return response.text.trim();
     } catch (error) {
@@ -297,8 +312,7 @@ export class GeminiService {
   async evaluateReadingFluency(originalText: string, studentTranscript: string): Promise<{ feedback: string; incorrectWords: string[] }> {
     if (!this.ai) throw new Error('AI client not initialized.');
 
-    const prompt = `You are a gentle and encouraging Turkish reading coach for a primary school student with dyslexia.
-    The student read a text aloud. Compare the original text with the transcript of what they said.
+    const prompt = `The student read a text aloud. Compare the original text with the transcript of what they said.
     - Identify words the student missed, mispronounced, or stumbled on.
     - Provide very simple, positive, and encouraging feedback in one or two sentences. Focus on what they did well, and gently point out one or two things to practice. Do not be harsh or overly critical.
     - List the specific words that were incorrect.
@@ -306,13 +320,14 @@ export class GeminiService {
     Original Text: "${originalText}"
     Student's Transcript: "${studentTranscript}"
 
-    Respond ONLY with a valid JSON object in the format: { "feedback": "your feedback in Turkish", "incorrectWords": ["word1", "word2"] }`;
+    Respond ONLY with a valid JSON object in the format: { "feedback": "your feedback", "incorrectWords": ["word1", "word2"] }`;
 
     try {
         const response = await this.ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,
             config: {
+                systemInstruction: TURKISH_TUTOR_SYSTEM_INSTRUCTION,
                 responseMimeType: 'application/json',
                 responseSchema: {
                     type: Type.OBJECT,
@@ -335,7 +350,7 @@ export class GeminiService {
   }
 
 
-  async generateActivity(topic: Topic, subTopic: SubTopic, gradeLevel: GradeLevel, options: { customPrompt?: string; difficulty?: 'easy' | 'medium' | 'hard'; problemCount?: number } = {}): Promise<Activity> {
+  async generateActivity(topic: Topic, subTopic: SubTopic, gradeLevel: GradeLevel, options: { customPrompt?: string; difficulty?: 'easy' | 'medium' | 'hard'; problemCount?: number, readingTheme?: string } = {}): Promise<Activity> {
     if (!this.ai) {
         throw new Error('Gemini AI client is not initialized. Check API Key.');
     }
@@ -378,6 +393,16 @@ export class GeminiService {
         const theme = themes[topic as 'disleksi' | 'diskalkuli' | 'disgrafi'];
         activityDescription = activityDescription.replace('THEME_PLACEHOLDER', theme);
     }
+    
+    if (subTopic.id === 'reading-aloud-coach' && options.readingTheme) {
+      const themeMap = {
+        animals: 'hayvanlar',
+        space: 'uzay',
+        nature: 'doğa',
+        'fairy-tale': 'masallar'
+      }
+      activityDescription += ` The topic of the text should be about ${themeMap[options.readingTheme as keyof typeof themeMap]}.`;
+    }
 
     const prompt = `You are an expert in creating engaging educational activities for children with learning difficulties. Generate an activity for a Turkish-speaking '${gradeLevel}' student with ${topic}. Specifically, this activity should focus on the sub-topic: '${subTopic.title}'. The activity is ${activityDescription}. Also, include a 'hint' field containing a single, brief, encouraging, and informative tip or 'did you know?' fact in Turkish related to the topic and sub-topic, suitable for a child. This hint should be no more than one or two sentences. Please respond ONLY with a valid JSON object that conforms to the provided schema. The language of the content must be Turkish.`;
 
@@ -386,6 +411,7 @@ export class GeminiService {
             model: 'gemini-2.5-flash',
             contents: prompt,
             config: {
+                systemInstruction: TURKISH_TUTOR_SYSTEM_INSTRUCTION,
                 responseMimeType: 'application/json',
                 responseSchema: responseSchema,
             },
@@ -395,7 +421,7 @@ export class GeminiService {
         const activity = JSON.parse(jsonStr) as Activity;
 
         if (isSpatialRelations(activity)) {
-            for (const problem of activity.data.problems) {
+            const imageGenerationPromises = activity.data.problems.map(async (problem) => {
                 try {
                     const imageResponse = await this.ai.models.generateImages({
                         model: 'imagen-3.0-generate-002',
@@ -418,7 +444,8 @@ export class GeminiService {
                      problem.imageUrl = '';
                      console.error(`Error generating image for prompt: ${problem.imagePrompt}`, imgError);
                 }
-            }
+            });
+            await Promise.all(imageGenerationPromises);
         }
 
         // Defensive check: If a custom prompt was used, ensure only that prompt is in the final activity data.
@@ -429,15 +456,15 @@ export class GeminiService {
         return activity;
     } catch (error) {
         console.error('Error generating activity:', error);
-        throw new Error('Failed to generate activity. Please check your API key and network connection.');
+        throw new Error('Etkinlik oluşturulamadı. Lütfen tekrar deneyin.');
     }
   }
 
   // --- Word Explorer Methods ---
   async getWordDefinition(word: string): Promise<string> {
     if (!this.ai) throw new Error('AI client not initialized.');
-    const prompt = `Explain the meaning of the Turkish word '${word}' in a very simple, single sentence suitable for a 7-year-old child. Speak like a friendly owl character.`;
-    const response = await this.ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
+    const prompt = `Explain the meaning of the Turkish word '${word}' in a very simple, single sentence suitable for a 7-year-old child.`;
+    const response = await this.ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt, config: { systemInstruction: TURKISH_TUTOR_SYSTEM_INSTRUCTION } });
     return response.text.trim();
   }
 
@@ -448,6 +475,7 @@ export class GeminiService {
         model: 'gemini-2.5-flash',
         contents: prompt,
         config: {
+            systemInstruction: TURKISH_TUTOR_SYSTEM_INSTRUCTION,
             responseMimeType: 'application/json',
             responseSchema: {
                 type: Type.OBJECT,
@@ -467,7 +495,7 @@ export class GeminiService {
   async getWordSynonym(word: string): Promise<string> {
     if (!this.ai) throw new Error('AI client not initialized.');
     const prompt = `What is a common Turkish synonym for the word '${word}'? If there isn't a good one, respond with 'Uygun bir eş anlamlısı bulunamadı.'. Respond with ONLY the synonym or the message.`;
-    const response = await this.ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
+    const response = await this.ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt, config: { systemInstruction: TURKISH_TUTOR_SYSTEM_INSTRUCTION } });
     return response.text.trim();
   }
 
@@ -493,6 +521,7 @@ export class GeminiService {
         model: 'gemini-2.5-flash',
         contents: prompt,
         config: {
+            systemInstruction: TURKISH_TUTOR_SYSTEM_INSTRUCTION,
             responseMimeType: 'application/json',
             responseSchema: {
                 type: Type.OBJECT,

@@ -87,7 +87,7 @@
 
               <div class="mt-6 flex justify-between items-center no-print">
                 @if(currentParagraphIndex() > 0) {
-                   <button (click)="currentParagraphIndex.update(i => i - 1)" class="bg-white hover:bg-slate-100 text-slate-700 font-bold py-2 px-4 rounded-full border border-slate-300 transition-colors">Önceki Paragraf</button>
+                   <button (click)="goToPreviousParagraph()" class="bg-white hover:bg-slate-100 text-slate-700 font-bold py-2 px-4 rounded-full border border-slate-300 transition-colors">Önceki Paragraf</button>
                 } @else {
                   <div></div>
                 }
@@ -101,7 +101,7 @@
             </div>
           }
           @case ('spatial-relations') {
-            @for (problem of activity.data.problems; track $index) {
+            @for (problem of activity.data.problems; track problem.question) {
               <div class="p-4 sm:p-5 bg-white shadow-md rounded-lg question-card animate-fade-in" [style.animation-delay]="$index * 100 + 'ms'">
                 <div class="flex items-center mb-4">
                   <span [class]="'question-number font-bold rounded-full h-8 w-8 flex items-center justify-center mr-4 flex-shrink-0 ' + topicColors().questionNumberBg + ' ' + topicColors().questionNumberText">{{ $index + 1 }}</span>
@@ -131,18 +131,16 @@
                     <div class="w-full md:w-1/2 space-y-3">
                         @for (option of problem.options; track option) {
                           <button (click)="selectAnswer($index, option)" [disabled]="showFeedback()" 
-                                  class="w-full text-left p-4 border-2 rounded-lg text-lg font-medium transition-all duration-200 transform active:scale-95 disabled:cursor-not-allowed"
-                                  [class]="userAnswers()[$index] === option ? topicColors().border + ' ring-2 ' + topicColors().border : 'border-slate-300'"
-                                  [class.hover:border-slate-400]="userAnswers()[$index] !== option"
-                                  [class.bg-green-100]="showFeedback() && answerStatuses()[$index] === 'correct' && userAnswers()[$index] === option"
-                                  [class.border-green-500]="showFeedback() && answerStatuses()[$index] === 'correct' && userAnswers()[$index] === option"
-                                  [class.bg-red-100]="showFeedback() && answerStatuses()[$index] === 'incorrect' && userAnswers()[$index] === option"
-                                  [class.border-red-500]="showFeedback() && answerStatuses()[$index] === 'incorrect' && userAnswers()[$index] === option"
-                                  [class.animate-pop-in]="showFeedback() && answerStatuses()[$index] === 'correct' && option === problem.correctAnswer"
-                                  [class.animate-shake]="showFeedback() && answerStatuses()[$index] === 'incorrect' && userAnswers()[$index] === option"
-                          >
-                            <span class="mr-3">{{ option }}</span>
-                            @if(showFeedback() && option === problem.correctAnswer) {<span class="text-green-600 font-bold">(Doğru)</span>}
+                                  [class]="getOptionClasses($index, option, problem.correctAnswer)">
+                            <span>{{ option }}</span>
+                            @if(showFeedback()) {
+                              @if(option === problem.correctAnswer) {
+                                <span class="text-2xl">✅</span>
+                              }
+                              @if(userAnswers()[$index] === option && option !== problem.correctAnswer) {
+                                <span class="text-2xl">❌</span>
+                              }
+                            }
                           </button>
                         }
                     </div>
@@ -369,7 +367,7 @@
             }
           }
           @case ('word-scramble') {
-            @for (word of activity.data.words; track $index) {
+            @for (word of activity.data.words; track word.scrambled) {
               <div class="p-4 sm:p-5 bg-white shadow-md rounded-lg question-card animate-fade-in" [style.animation-delay]="$index * 100 + 'ms'">
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
                   <span [class]="'question-number font-bold rounded-full h-8 w-8 flex items-center justify-center mr-0 sm:mr-4 flex-shrink-0 ' + topicColors().questionNumberBg + ' ' + topicColors().questionNumberText">{{ $index + 1 }}</span>
@@ -433,7 +431,7 @@
             }
           }
           @case ('simple-math') {
-            @for (problem of activity.data.problems; track $index) {
+            @for (problem of activity.data.problems; track problem.question) {
               <div class="p-4 sm:p-5 bg-white shadow-md rounded-lg question-card animate-fade-in" [style.animation-delay]="$index * 100 + 'ms'">
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
                   <span [class]="'question-number font-bold rounded-full h-8 w-8 flex items-center justify-center mr-0 sm:mr-4 flex-shrink-0 ' + topicColors().questionNumberBg + ' ' + topicColors().questionNumberText">{{ $index + 1 }}</span>
@@ -499,7 +497,7 @@
             }
           }
           @case ('visual-arithmetic') {
-            @for (problem of activity.data.problems; track $index) {
+            @for (problem of activity.data.problems; track problem.visualQuestion) {
               <div class="p-4 sm:p-5 bg-white shadow-md rounded-lg question-card animate-fade-in" [style.animation-delay]="$index * 100 + 'ms'">
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
                   <span [class]="'question-number font-bold rounded-full h-8 w-8 flex items-center justify-center mr-0 sm:mr-4 flex-shrink-0 ' + topicColors().questionNumberBg + ' ' + topicColors().questionNumberText">{{ $index + 1 }}</span>
