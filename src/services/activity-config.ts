@@ -15,7 +15,7 @@ const readingAloudCoachSchema = {
             properties: {
                 paragraphs: {
                     type: Type.ARRAY,
-                    description: 'An array of 2-3 short paragraphs of an engaging, grade-appropriate story or text in Turkish.',
+                    description: 'An array of 5-7 short paragraphs of an engaging, grade-appropriate story or text in Turkish.',
                     items: { type: Type.STRING },
                 },
             },
@@ -55,7 +55,7 @@ const visualArithmeticSchema = {
             properties: {
                 problems: {
                     type: Type.ARRAY,
-                    description: 'An array of 3 to 5 visual arithmetic problem objects.',
+                    description: 'An array of 15 to 25 visual arithmetic problem objects.',
                     items: {
                         type: Type.OBJECT,
                         properties: {
@@ -84,7 +84,7 @@ const auditoryDictationSchema = {
             properties: {
                 problems: {
                     type: Type.ARRAY,
-                    description: 'An array of 5 dictation problem objects.',
+                    description: 'An array of 25 dictation problem objects.',
                     items: {
                         type: Type.OBJECT,
                         properties: {
@@ -114,7 +114,7 @@ const matchingPairsSchema = {
                 column2Title: { type: Type.STRING, description: "The title for the second column (e.g., 'Anlamı')." },
                 pairs: {
                     type: Type.ARRAY,
-                    description: 'An array of 4 to 6 objects, each representing a correct pair.',
+                    description: 'An array of 20 to 25 objects, each representing a correct pair.',
                     items: {
                         type: Type.OBJECT,
                         properties: {
@@ -143,14 +143,14 @@ const sequencingEventsSchema = {
             properties: {
                 problems: {
                     type: Type.ARRAY,
-                    description: 'An array of 1 to 2 sequencing problem objects.',
+                    description: 'An array of 3 to 5 sequencing problem objects.',
                     items: {
                         type: Type.OBJECT,
                         properties: {
                             scenario: { type: Type.STRING, description: "The context or title for the sequence (e.g., 'Hikayeyi sırala')." },
                             events: {
                                 type: Type.ARRAY,
-                                description: 'An array of 3-5 strings representing events in a jumbled order.',
+                                description: 'An array of 5-7 strings representing events in a jumbled order.',
                                 items: { type: Type.STRING }
                             },
                             correctOrder: {
@@ -181,7 +181,7 @@ const orderingSchema = {
       properties: {
         problems: {
           type: Type.ARRAY,
-          description: 'An array of 3 to 5 ordering problem objects.',
+          description: 'An array of 15 to 25 ordering problem objects.',
           items: {
             type: Type.OBJECT,
             properties: {
@@ -219,7 +219,7 @@ const dragDropMatchSchema = {
             properties: {
                 problems: {
                     type: Type.ARRAY,
-                    description: 'An array of 3 to 5 drag-and-drop problem objects.',
+                    description: 'An array of 15 to 25 drag-and-drop problem objects.',
                     items: {
                         type: Type.OBJECT,
                         properties: {
@@ -253,7 +253,7 @@ const fillInTheBlanksSchema = {
             properties: {
                 problems: {
                     type: Type.ARRAY,
-                    description: 'An array of 3 to 5 fill-in-the-blank problem objects.',
+                    description: 'An array of 15 to 25 fill-in-the-blank problem objects.',
                     items: {
                         type: Type.OBJECT,
                         properties: {
@@ -282,7 +282,7 @@ const trueFalseSchema = {
             properties: {
                 problems: {
                     type: Type.ARRAY,
-                    description: 'An array of 3 to 5 true/false problem objects.',
+                    description: 'An array of 15 to 25 true/false problem objects.',
                     items: {
                         type: Type.OBJECT,
                         properties: {
@@ -311,7 +311,7 @@ const sentenceCompletionSchema = {
       properties: {
         prompts: {
           type: Type.ARRAY,
-          description: 'An array of 3 sentence starter strings.',
+          description: 'An array of 15 sentence starter strings.',
           items: {
             type: Type.STRING,
           },
@@ -335,7 +335,7 @@ const sentenceCompletionSchema = {
             properties: {
                 problems: {
                     type: Type.ARRAY,
-                    description: 'An array of 5 multiple-choice problem objects.',
+                    description: 'An array of 25 multiple-choice problem objects.',
                     items: {
                         type: Type.OBJECT,
                         properties: {
@@ -369,7 +369,7 @@ const simpleMathSchema = {
             properties: {
                 problems: {
                     type: Type.ARRAY,
-                    description: 'An array of 3 to 5 math problem objects, depending on the sub-topic.',
+                    description: 'An array of 15 to 25 math problem objects, depending on the sub-topic.',
                     items: {
                         type: Type.OBJECT,
                         properties: {
@@ -398,7 +398,7 @@ const wordScrambleSchema = {
             properties: {
                 words: {
                     type: Type.ARRAY,
-                    description: 'An array of 5 word objects.',
+                    description: 'An array of 25 word objects.',
                     items: {
                         type: Type.OBJECT,
                         properties: {
@@ -427,7 +427,7 @@ const visualMatchSchema = {
             properties: {
                 problems: {
                     type: Type.ARRAY,
-                    description: 'An array of 5 visual matching problem objects.',
+                    description: 'An array of 25 visual matching problem objects.',
                     items: {
                         type: Type.OBJECT,
                         properties: {
@@ -589,7 +589,7 @@ export const spatialRelationsSchema = {
             properties: {
                 problems: {
                     type: Type.ARRAY,
-                    description: 'An array of 3 to 5 spatial relations problem objects.',
+                    description: 'An array of 15 to 25 spatial relations problem objects.',
                     items: {
                         type: Type.OBJECT,
                         properties: {
@@ -625,31 +625,31 @@ export const ACTIVITY_CONFIGS: Record<Topic, { subtopics: Partial<Record<SubTopi
         subtopics: {
             'phonological-awareness': {
                 schema: trueFalseSchema,
-                description: "a 'Phonological Awareness' true/false activity with 5 questions. Questions should focus on identifying rhyming Turkish words (e.g., 'The word *masa* rhymes with *kasa*.'), counting syllables (e.g., '*Kelebek* has 3 syllables.'), or identifying initial/final sounds (e.g., 'The word *kapı* starts with the 'k' sound.'). Some statements should be true, some false. The 'isCorrect' field must reflect the statement's truthfulness."
+                description: "a 'Phonological Awareness' true/false activity with 25 questions. Questions should focus on identifying rhyming Turkish words (e.g., 'The word *masa* rhymes with *kasa*.'), counting syllables (e.g., '*Kelebek* has 3 syllables.'), or identifying initial/final sounds (e.g., 'The word *kapı* starts with the 'k' sound.'). Some statements should be true, some false. The 'isCorrect' field must reflect the statement's truthfulness."
             },
             'letter-sound': {
                 schema: auditoryDictationSchema,
-                description: "an 'Auditory Dictation' activity to strengthen letter-sound relationships. Provide 5 common, phonetically regular Turkish words appropriate for the student's grade level. The user will hear the word and must type it correctly."
+                description: "an 'Auditory Dictation' activity to strengthen letter-sound relationships. Provide 25 common, phonetically regular Turkish words appropriate for the student's grade level. The user will hear the word and must type it correctly."
             },
             'auditory-dictation': {
                 schema: auditoryDictationSchema,
-                description: "an 'Auditory Dictation' activity to strengthen letter-sound relationships. Provide 5 common, phonetically regular Turkish words appropriate for primary school students. The user will hear the word and must type it correctly."
+                description: "an 'Auditory Dictation' activity with 25 questions. Provide common, phonetically regular Turkish words appropriate for primary school students. The user will hear the word and must type it correctly."
             },
             'reading-aloud-coach': {
                 schema: readingAloudCoachSchema,
-                description: "a 'Reading Aloud Coach' activity. Generate a short, engaging, and grade-appropriate story or informative text in Turkish, split into 2-3 paragraphs."
+                description: "a 'Reading Aloud Coach' activity. Generate a short, engaging, and grade-appropriate story or informative text in Turkish, split into 5-7 paragraphs."
             },
             'reading-comprehension': {
                 schema: sequencingEventsSchema,
-                description: "a 'Sequencing Events' activity. The scenario should be about a short, simple story. The events should be 3-5 key plot points from the story that need to be put in chronological order."
+                description: "a 'Sequencing Events' activity. The scenario should be about a short, simple story. The events should be 5-7 key plot points from the story that need to be put in chronological order."
             },
             'visual-processing': {
                 schema: dragDropMatchSchema,
-                description: "a 'Visual Processing' drag-and-drop activity with 5 problems. For each problem, the 'prompt' must be a simple Turkish sentence with a word missing, represented by a double underscore '__'. The 'options' should be an array of 3-4 words including the correct word for the sentence ('correctAnswer') and visually similar distractors. Distractors should be created by transposing letters (e.g., 've' for 'ev'), or using visually similar letters (e.g., 'd' for 'b'). The 'correctAnswer' must be the correctly spelled word that fits the context of the sentence."
+                description: "a 'Visual Processing' drag-and-drop activity with 25 problems. For each problem, the 'prompt' must be a simple Turkish sentence with a word missing, represented by a double underscore '__'. The 'options' should be an array of 3-4 words including the correct word for the sentence ('correctAnswer') and visually similar distractors. Distractors should be created by transposing letters (e.g., 've' for 'ev'), or using visually similar letters (e.g., 'd' for 'b'). The 'correctAnswer' must be the correctly spelled word that fits the context of the sentence."
             },
             'vocabulary-morphology': {
                 schema: matchingPairsSchema,
-                description: "a 'Vocabulary and Morphology' matching pairs activity. Column 1 should contain 5 Turkish root words, and Column 2 should contain their corresponding suffixes or prefixes that form a new, common word (e.g., item1: 'göz', item2: '-lük')."
+                description: "a 'Vocabulary and Morphology' matching pairs activity. Column 1 should contain 20-25 Turkish root words, and Column 2 should contain their corresponding suffixes or prefixes that form a new, common word (e.g., item1: 'göz', item2: '-lük')."
             },
             'spelling-patterns': {
                 schema: fillInTheBlanksSchema,
@@ -657,7 +657,7 @@ export const ACTIVITY_CONFIGS: Record<Topic, { subtopics: Partial<Record<SubTopi
             },
             'working-memory-sequencing': {
                 schema: orderingSchema,
-                description: "a 'Working Memory and Sequencing' ordering activity. The 'question' should be 'Öğeleri doğru sıraya diz.'. The 'items' should be a jumbled array of 3-5 simple Turkish words, numbers, or letters. The 'correctOrder' should be the logically ordered version (e.g., alphabetical, numerical)."
+                description: "a 'Working Memory and Sequencing' ordering activity. The 'question' should be 'Öğeleri doğru sıraya diz.'. The 'items' should be a jumbled array of 5-7 simple Turkish words, numbers, or letters. The 'correctOrder' should be the logically ordered version (e.g., alphabetical, numerical)."
             },
             'interactive-story': {
                 schema: interactiveStorySchema,
@@ -670,22 +670,22 @@ export const ACTIVITY_CONFIGS: Record<Topic, { subtopics: Partial<Record<SubTopi
         },
         fallback: {
             schema: wordScrambleSchema,
-            description: "a 'word scramble' game where jumbled letters must be rearranged to form a correct Turkish word. Provide 5 words appropriate for the grade level and sub-topic."
+            description: "a 'word scramble' game where jumbled letters must be rearranged to form a correct Turkish word. Provide 25 words appropriate for the grade level and sub-topic."
         }
     },
     'diskalkuli': {
         subtopics: {
             'number-sense': {
                 schema: visualArithmeticSchema,
-                description: "a 'Visual Arithmetic' activity for number sense. Provide 5 problems using emojis to represent simple addition or comparison concepts. For example, the 'visualQuestion' could be '🍎🍎🍎 + 🍎' and the 'answer' should be '4'. Keep numbers small (under 10)."
+                description: "a 'Visual Arithmetic' activity for number sense. Provide 15-25 problems using emojis to represent simple addition or comparison concepts. For example, the 'visualQuestion' could be '🍎🍎🍎 + 🍎' and the 'answer' should be '4'. Keep numbers small (under 10)."
             },
             'visual-arithmetic': {
                 schema: visualArithmeticSchema,
-                description: "a 'Visual Arithmetic' activity. Provide 5 problems using emojis to represent simple addition, subtraction or multiplication. For example, the 'visualQuestion' could be '🍎🍎🍎 + 🍎' and the 'answer' should be '4'. Keep numbers appropriate for the grade level."
+                description: "a 'Visual Arithmetic' activity. Provide 15-25 problems using emojis to represent simple addition, subtraction or multiplication. For example, the 'visualQuestion' could be '🍎🍎🍎 + 🍎' and the 'answer' should be '4'. Keep numbers appropriate for the grade level."
             },
             'basic-arithmetic': {
                 schema: simpleMathSchema,
-                description: "a set of 5 simple arithmetic problems (addition, subtraction, multiplication, division) appropriate for the grade level. Ensure a mix of operations if possible. Questions and answers must be in Turkish."
+                description: "a set of 25 simple arithmetic problems (addition, subtraction, multiplication, division) appropriate for the grade level. Ensure a mix of operations if possible. Questions and answers must be in Turkish."
             },
             'problem-solving': {
                 schema: sequencingEventsSchema,
@@ -693,27 +693,27 @@ export const ACTIVITY_CONFIGS: Record<Topic, { subtopics: Partial<Record<SubTopi
             },
             'math-symbols': {
                 schema: matchingPairsSchema,
-                description: "a 'Math Symbols' matching pairs activity. Column 1 should have 5 math symbols (e.g., '+', '>', '=') and Column 2 should have their Turkish names (e.g., 'Artı', 'Büyüktür', 'Eşittir')."
+                description: "a 'Math Symbols' matching pairs activity. Column 1 should have 20-25 math symbols (e.g., '+', '>', '=') and Column 2 should have their Turkish names (e.g., 'Artı', 'Büyüktür', 'Eşittir')."
             },
             'time-measurement': {
                 schema: multipleChoiceSchema,
-                description: "an activity about time and measurement. Create 5 simple multiple-choice questions. Examples: '1 metre kaç santimetredir?', 'Saat 2'den bir saat sonra saat kaç olur?', or 'Hangisi daha ağırdır: bir fil mi, bir kedi mi?'. Provide a question, 3 options, and a correct answer for each. Questions and answers must be in Turkish."
+                description: "an activity about time and measurement. Create 25 simple multiple-choice questions. Examples: '1 metre kaç santimetredir?', 'Saat 2'den bir saat sonra saat kaç olur?', or 'Hangisi daha ağırdır: bir fil mi, bir kedi mi?'. Provide a question, 3 options, and a correct answer for each. Questions and answers must be in Turkish."
             },
             'spatial-reasoning': {
                 schema: multipleChoiceSchema,
-                description: "a 'Spatial Reasoning' multiple-choice activity with 5 questions. The 'question' should ask to identify shapes, complete a visual pattern, or understand relative positions (e.g., 'Resimdeki masanın solunda ne var?'). The options should be simple words or phrases."
+                description: "a 'Spatial Reasoning' multiple-choice activity with 25 questions. The 'question' should ask to identify shapes, complete a visual pattern, or understand relative positions (e.g., 'Resimdeki masanın solunda ne var?'). The options should be simple words or phrases."
             },
             'estimation-skills': {
                 schema: multipleChoiceSchema,
-                description: "an 'Estimation Skills' multiple-choice activity with 5 questions. The 'question' should ask to estimate a quantity (e.g., 'Bu kavanozda yaklaşık kaç bilye var?') or choose the answer closest to a calculation result (e.g., '28 + 71 işleminin sonucu hangisine en yakındır?'). Provide plausible options."
+                description: "an 'Estimation Skills' multiple-choice activity with 25 questions. The 'question' should ask to estimate a quantity (e.g., 'Bu kavanozda yaklaşık kaç bilye var?') or choose the answer closest to a calculation result (e.g., '28 + 71 işleminin sonucu hangisine en yakındır?'). Provide plausible options."
             },
             'fractions-decimals': {
                 schema: multipleChoiceSchema,
-                description: "a 'Fractions and Decimals' multiple-choice activity with 5 questions. Create questions that involve comparing simple fractions (e.g., 'Hangisi daha büyüktür: 1/2 mi, 1/4 mü?'), converting fractions to decimals, or identifying visual representations of fractions. Provide a question, 3-4 options, and a correct answer for each."
+                description: "a 'Fractions and Decimals' multiple-choice activity with 25 questions. Create questions that involve comparing simple fractions (e.g., 'Hangisi daha büyüktür: 1/2 mi, 1/4 mü?'), converting fractions to decimals, or identifying visual representations of fractions. Provide a question, 3-4 options, and a correct answer for each."
             },
             'visual-number-representation': {
                 schema: visualMatchSchema,
-                description: "a 'Visual Number Representation' visual matching activity with 5 problems. For each problem, the 'question' is a number string (e.g., '7'). The 'options' should be 3-4 short, descriptive strings of illustrated objects (e.g., '7 Sarı Civciv', '5 Kırmızı Top', '3 Yeşil Elma'). The 'correctAnswer' must be the string that correctly matches the number in the question. Use a variety of simple objects like fruits, animals, or toys."
+                description: "a 'Visual Number Representation' visual matching activity with 25 problems. For each problem, the 'question' is a number string (e.g., '7'). The 'options' should be 3-4 short, descriptive strings of illustrated objects (e.g., '7 Sarı Civciv', '5 Kırmızı Top', '3 Yeşil Elma'). The 'correctAnswer' must be the string that correctly matches the number in the question. Use a variety of simple objects like fruits, animals, or toys."
             },
             'interactive-story': {
                 schema: interactiveStorySchema,
@@ -722,14 +722,14 @@ export const ACTIVITY_CONFIGS: Record<Topic, { subtopics: Partial<Record<SubTopi
         },
         fallback: {
             schema: simpleMathSchema,
-            description: "a set of 5 simple arithmetic problems appropriate for the sub-topic. Questions and answers must be in Turkish."
+            description: "a set of 25 simple arithmetic problems appropriate for the sub-topic. Questions and answers must be in Turkish."
         }
     },
     'disgrafi': {
         subtopics: {
             'punctuation-grammar': {
                 schema: trueFalseSchema,
-                description: "a 'Punctuation and Grammar' true/false activity with 5 problems. For each problem, create a simple Turkish sentence as the 'statement'. Some statements should have correct punctuation and grammar, and some should have a common error (e.g., missing capital letter, missing period). The 'isCorrect' field must be a boolean representing whether the statement is grammatically correct. Example statement: 'ali okula gitti.' (isCorrect: false). Another example: 'Ayşe, topu Ali'ye attı.' (isCorrect: true)."
+                description: "a 'Punctuation and Grammar' true/false activity with 25 problems. For each problem, create a simple Turkish sentence as the 'statement'. Some statements should have correct punctuation and grammar, and some should have a common error (e.g., missing capital letter, missing period). The 'isCorrect' field must be a boolean representing whether the statement is grammatically correct. Example statement: 'ali okula gitti.' (isCorrect: false). Another example: 'Ayşe, topu Ali'ye attı.' (isCorrect: true)."
             },
             'letter-form-recognition': {
                 schema: visualMatchSchema,
@@ -741,19 +741,19 @@ export const ACTIVITY_CONFIGS: Record<Topic, { subtopics: Partial<Record<SubTopi
             },
             'fine-motor-skills': {
                  schema: sentenceCompletionSchema,
-                 description: "a set of 'sentence completion' prompts designed to be very short and simple to encourage the physical act of writing/typing without high cognitive load. Provide 3 very simple prompts like 'En sevdiğim renk...' or 'Bugün hava...'."
+                 description: "a set of 'sentence completion' prompts designed to be very short and simple to encourage the physical act of writing/typing without high cognitive load. Provide 15 very simple prompts like 'En sevdiğim renk...' or 'Bugün hava...'."
             },
             'sentence-construction': {
                  schema: sentenceCompletionSchema,
-                 description: "a set of 'sentence completion' prompts for practicing advanced sentence construction. Generate 3 highly varied and creative prompts that encourage building complex sentences. The prompts must include different structures, such as introductory phrases (e.g., 'Güneşli bir günde...'), dependent clauses starting with conjunctions like 'çünkü' or 'eğer' (e.g., 'Çünkü çok yorgundu, ...'), or prompts that require compound elements to complete. The goal is to push the student to build longer, more structured, and grammatically diverse sentences suitable for their grade level."
+                 description: "a set of 'sentence completion' prompts for practicing advanced sentence construction. Generate 15 highly varied and creative prompts that encourage building complex sentences. The prompts must include different structures, such as introductory phrases (e.g., 'Güneşli bir günde...'), dependent clauses starting with conjunctions like 'çünkü' or 'eğer' (e.g., 'Çünkü çok yorgundu, ...'), or prompts that require compound elements to complete. The goal is to push the student to build longer, more structured, and grammatically diverse sentences suitable for their grade level."
             },
             'creative-writing-prompts': {
                 schema: sentenceCompletionSchema,
-                description: "a set of 'creative writing' prompts. Provide 3 imaginative, open-ended sentence starters that encourage storytelling and creativity. For example: 'Eğer hayvanlarla konuşabilseydim, ilk soracağım şey...', or 'Gizemli kutuyu açtığımda içinden...'."
+                description: "a set of 'creative writing' prompts. Provide 15 imaginative, open-ended sentence starters that encourage storytelling and creativity. For example: 'Eğer hayvanlarla konuşabilseydim, ilk soracağım şey...', or 'Gizemli kutuyu açtığımda içinden...'."
             },
             'keyboarding-skills': {
                 schema: sentenceCompletionSchema,
-                description: "a set of 'keyboarding skills' practice prompts. Provide 3 short, simple Turkish sentences that are easy to type. The purpose is not sentence construction, but to provide text for typing practice. For example: 'Ali ata bak.', or 'Hızlı tilki, tembel köpeğin üzerinden atlar.'"
+                description: "a set of 'keyboarding skills' practice prompts. Provide 15 short, simple Turkish sentences that are easy to type. The purpose is not sentence construction, but to provide text for typing practice. For example: 'Ali ata bak.', or 'Hızlı tilki, tembel köpeğin üzerinden atlar.'"
             },
             'interactive-story': {
                 schema: interactiveStorySchema,
@@ -762,7 +762,7 @@ export const ACTIVITY_CONFIGS: Record<Topic, { subtopics: Partial<Record<SubTopi
         },
         fallback: {
             schema: sentenceCompletionSchema,
-            description: "a set of 'sentence completion' prompts to encourage writing, related to the sub-topic. Provide 3 creative and simple prompts."
+            description: "a set of 'sentence completion' prompts to encourage writing, related to the sub-topic. Provide 15 creative and simple prompts."
         }
     },
     'mekansal-farkindalik': {

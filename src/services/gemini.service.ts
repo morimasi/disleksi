@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { GoogleGenAI, Type } from '@google/genai';
+import { GoogleGenAI, Type, Chat } from '@google/genai';
 import { Activity, GradeLevel, Topic, SubTopic, isWordScramble, isSimpleMath, isMultipleChoice, isOrdering, isDragDropMatch, isFillInTheBlanks, isTrueFalse, isVisualMatch, isMatchingPairs, isSequencingEvents, isInteractiveStory, isSentenceCompletion, isAuditoryDictation, isVisualArithmetic, MultipleChoiceProblem, FiveWOneHStoryActivity, isSpatialRelations, isReadingAloudCoach } from '../models/activity.model';
 import { ACTIVITY_CONFIGS, fiveWOneHStorySchema } from './activity-config';
 
@@ -10,6 +10,8 @@ const TURKISH_TUTOR_SYSTEM_INSTRUCTION = "Senin adın 'Bilge Baykuş'. Öğrenme
 })
 export class GeminiService {
   private ai: GoogleGenAI | null = null;
+  private chat: Chat | null = null;
+  private chatSystemInstruction = `${TURKISH_TUTOR_SYSTEM_INSTRUCTION} Sen aynı zamanda arkadaş canlısı bir sohbet robotusun. Ana hedefin öğrencilere öğrenme güçlüklerinde yardımcı olmak, ama aynı zamanda arkadaşça ve teşvik edici sohbetler de yapabilirsin. Cevaplarını kısa ve bir çocuğun anlayabileceği kadar basit tut.`;
 
   constructor() {
     const apiKey = process.env.API_KEY;
@@ -18,6 +20,45 @@ export class GeminiService {
     } else {
       console.error('API Key not found. Please set the API_KEY environment variable.');
     }
+  }
+
+  // --- Chatbot Methods ---
+  public startChatSession() {
+      if (!this.ai) {
+          throw new Error('Gemini AI client not initialized.');
+      }
+      if (!this.chat) {
+          this.chat = this.ai.chats.create({
+              model: 'gemini-2.5-flash',
+              config: {
+                  systemInstruction: this.chatSystemInstruction,
+              },
+          });
+      }
+  }
+
+  public async *sendMessageStream(message: string): AsyncGenerator<string> {
+      if (!this.chat) {
+          this.startChatSession();
+      }
+      if (!this.chat) { // Still null, means AI is not initialized
+          yield 'Üzgünüm, sohbet özelliği şu anda kullanılamıyor.';
+          return;
+      }
+
+      try {
+          const responseStream = await this.chat.sendMessageStream({ message });
+          for await (const chunk of responseStream) {
+              yield chunk.text;
+          }
+      } catch (error) {
+          console.error('Error sending chat message:', error);
+          yield 'Üzgünüm, bir hata oluştu. Lütfen tekrar dene.';
+      }
+  }
+
+  public resetChatSession(): void {
+      this.chat = null;
   }
 
   async generatePedagogicalFeedback(activity: Activity, problemIndex: number, userAnswer: string | string[] | null): Promise<string> {

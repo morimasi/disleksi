@@ -14,6 +14,7 @@ import { FiveWOneHComponent } from './components/five-w-one-h/five-w-one-h.compo
 import { LevelUpModalComponent } from './components/level-up-modal/level-up-modal.component';
 import { Badge, AvatarItem } from './models/gamification.model';
 import { SkeletonLoaderComponent } from './components/skeleton-loader/skeleton-loader.component';
+import { ChatbotComponent } from './components/chatbot/chatbot.component';
 
 type FontSize = 'sm' | 'base' | 'lg';
 const fontSizes: FontSize[] = ['sm', 'base', 'lg'];
@@ -48,7 +49,7 @@ export const themes: { id: Theme, name: string, color: string }[] = [
   selector: 'app-root',
   templateUrl: './app.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ActivityGeneratorComponent, ActivityDisplayComponent, SafeHtmlPipe, AvatarCustomizerComponent, FiveWOneHComponent, LevelUpModalComponent, SkeletonLoaderComponent],
+  imports: [ActivityGeneratorComponent, ActivityDisplayComponent, SafeHtmlPipe, AvatarCustomizerComponent, FiveWOneHComponent, LevelUpModalComponent, SkeletonLoaderComponent, ChatbotComponent],
   host: {
     '(document:click)': 'onDocumentClick($event)',
   },

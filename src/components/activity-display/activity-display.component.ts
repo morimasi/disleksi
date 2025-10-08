@@ -161,7 +161,8 @@ export class ActivityDisplayComponent implements OnDestroy {
   canRedo(index: number): boolean {
     const hist = this.history()[index];
     const idx = this.historyIndex()[index];
-    return hist != null && idx < hist.length - 1;
+    // FIX: Add a null check for idx to satisfy strict null checks.
+    return hist != null && idx != null && idx < hist.length - 1;
   }
 
   private stickers = ['🌟', '🏆', '🎉', '👍', '🚀', '🧠', '💡', '✅', '🎯', '🥇'];
@@ -415,9 +416,10 @@ export class ActivityDisplayComponent implements OnDestroy {
   undo(index: number): void {
     if (!this.canUndo(index)) return;
 
-    // FIX: Use non-null assertion. The `canUndo` guard ensures `i[index]` is a number.
-    this.historyIndex.update(i => ({ ...i, [index]: i[index]! - 1 }));
-    const previousValue = this.history()[index][this.historyIndex()[index]];
+    // FIX: Use type assertion as type guard doesn't narrow inside closure.
+    this.historyIndex.update(i => ({ ...i, [index]: (i[index] as number) - 1 }));
+    // FIX: Add non-null assertion as index is guaranteed to exist.
+    const previousValue = this.history()[index][this.historyIndex()[index]!];
 
     this.userAnswers.update(answers => {
         const newAnswers = [...answers];
@@ -427,12 +429,15 @@ export class ActivityDisplayComponent implements OnDestroy {
     this.answersChanged.emit(this.userAnswers());
   }
 
+  // FIX: Re-added a type assertion that was necessary due to TS limitations with type guards and closures.
   redo(index: number): void {
     if (!this.canRedo(index)) return;
 
-    // FIX: Use non-null assertion. The `canRedo` guard ensures `i[index]` is a number.
-    this.historyIndex.update(i => ({ ...i, [index]: i[index]! + 1 }));
-    const nextValue = this.history()[index][this.historyIndex()[index]];
+    // FIX: Add type assertion to resolve TypeScript error when incrementing history index.
+    // The canRedo() check ensures that i[index] is a number here.
+    this.historyIndex.update(i => ({ ...i, [index]: (i[index] as number) + 1 }));
+    // FIX: Add non-null assertion as index is guaranteed to exist.
+    const nextValue = this.history()[index][this.historyIndex()[index]!];
 
     this.userAnswers.update(answers => {
         const newAnswers = [...answers];
@@ -946,7 +951,8 @@ export class ActivityDisplayComponent implements OnDestroy {
     
     const totalParagraphs = activity.data.paragraphs.length;
     const allFeedback = this.readingFeedback();
-    const incorrectWordsCount = Object.values(allFeedback).reduce((acc, val) => {
+    // FIX: Explicitly type the accumulator `acc` to `number` to avoid potential type inference issues.
+    const incorrectWordsCount = Object.values(allFeedback).reduce((acc: number, val) => {
         const feedbackItem = val as { feedback: string; incorrectWords: string[] } | null;
         return acc + (feedbackItem?.incorrectWords.length || 0);
     }, 0);

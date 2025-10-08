@@ -196,12 +196,12 @@
     body * {
       visibility: hidden;
       box-shadow: none !important;
-      border: none !important;
       color: #000 !important;
-      background: transparent !important;
     }
     .printable-area, .printable-area * {
       visibility: visible;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
     }
     .printable-area {
       position: absolute;

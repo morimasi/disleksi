@@ -33,7 +33,7 @@ export class ActivityGeneratorComponent {
   loading = signal<boolean>(false);
   error = signal<string | null>(null);
   difficulty: WritableSignal<Difficulty> = signal('medium');
-  problemCount = signal<3 | 5 | 7>(5);
+  problemCount = signal<15 | 25 | 35>(25);
   readingTheme = signal<ReadingTheme>('animals');
 
   readingThemes: {id: ReadingTheme, name: string, icon: string}[] = [
