@@ -37,12 +37,13 @@ interface SearchResult {
   subTopic: SubTopic;
 }
 
-export type Theme = 'bridge' | 'forest' | 'ocean' | 'sunset';
+export type Theme = 'bridge' | 'forest' | 'ocean' | 'sunset' | 'dark';
 export const themes: { id: Theme, name: string, color: string }[] = [
     { id: 'bridge', name: 'Köprü', color: 'bg-indigo-500' },
     { id: 'forest', name: 'Orman', color: 'bg-green-500' },
     { id: 'ocean', name: 'Okyanus', color: 'bg-cyan-500' },
     { id: 'sunset', name: 'Gün Batımı', color: 'bg-orange-500' },
+    { id: 'dark', name: 'Karanlık', color: 'bg-slate-800' },
 ];
 
 @Component({

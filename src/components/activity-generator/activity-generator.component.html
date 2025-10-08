@@ -1,12 +1,12 @@
-<div class="bg-white p-4 sm:p-8 rounded-2xl shadow-xl border border-gray-200 animate-fade-in">
+<div class="bg-[rgb(var(--c-card-bg))] p-4 sm:p-8 rounded-2xl shadow-xl border border-[rgb(var(--c-border))] animate-fade-in">
   <div class="flex items-center justify-between mb-6 no-print">
-    <button (click)="goBack()" class="flex items-center text-gray-600 hover:text-indigo-600 transition-colors duration-200 font-semibold">
+    <button (click)="goBack()" class="flex items-center text-[rgb(var(--c-text-secondary))] hover:text-indigo-600 transition-colors duration-200 font-semibold">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
         <path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
       </svg>
       Geri
     </button>
-    <h2 class="text-xl sm:text-2xl font-bold text-gray-800 text-center">{{ subTopic().title }}</h2>
+    <h2 class="text-xl sm:text-2xl font-bold text-[rgb(var(--c-text-primary))] text-center">{{ subTopic().title }}</h2>
     <div class="w-16"></div> <!-- Spacer -->
   </div>
 
@@ -16,17 +16,17 @@
     @if (!activity()) {
       <div class="space-y-6 no-print">
         <div>
-          <label class="text-lg font-semibold text-gray-700 mb-2 block text-center sm:text-left">Seviye Seçin</label>
+          <label class="text-lg font-semibold text-[rgb(var(--c-text-secondary))] mb-2 block text-center sm:text-left">Seviye Seçin</label>
           <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
             <label class="flex-1">
               <input type="radio" name="grade" value="ilkokul" [checked]="gradeLevel() === 'ilkokul'" (change)="gradeLevel.set('ilkokul')" class="sr-only peer">
-              <div class="p-4 text-center rounded-lg border-2 cursor-pointer transition-all active:scale-95 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 hover:border-indigo-400 font-semibold">
+              <div class="p-4 text-center rounded-lg border-2 border-[rgb(var(--c-border))] text-[rgb(var(--c-text-secondary))] cursor-pointer transition-all active:scale-95 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 hover:border-indigo-400 font-semibold">
                 İlkokul (1-4. Sınıf)
               </div>
             </label>
             <label class="flex-1">
               <input type="radio" name="grade" value="ortaokul" [checked]="gradeLevel() === 'ortaokul'" (change)="gradeLevel.set('ortaokul')" class="sr-only peer">
-              <div class="p-4 text-center rounded-lg border-2 cursor-pointer transition-all active:scale-95 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 hover:border-indigo-400 font-semibold">
+              <div class="p-4 text-center rounded-lg border-2 border-[rgb(var(--c-border))] text-[rgb(var(--c-text-secondary))] cursor-pointer transition-all active:scale-95 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 hover:border-indigo-400 font-semibold">
                 Ortaokul (5-8. Sınıf)
               </div>
             </label>
@@ -35,12 +35,12 @@
         
         @if (subTopic().id === 'reading-aloud-coach') {
            <div class="animate-fade-in">
-              <label class="text-lg font-semibold text-gray-700 mb-2 block text-center sm:text-left">Okuma Konusu Seçin</label>
+              <label class="text-lg font-semibold text-[rgb(var(--c-text-secondary))] mb-2 block text-center sm:text-left">Okuma Konusu Seçin</label>
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                  @for(theme of readingThemes; track theme.id) {
                     <label>
                       <input type="radio" name="readingTheme" [value]="theme.id" [checked]="readingTheme() === theme.id" (change)="readingTheme.set(theme.id)" class="sr-only peer">
-                      <div class="p-3 text-center rounded-lg border-2 cursor-pointer transition-all active:scale-95 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 hover:border-blue-400 font-semibold">
+                      <div class="p-3 text-center rounded-lg border-2 border-[rgb(var(--c-border))] text-[rgb(var(--c-text-secondary))] cursor-pointer transition-all active:scale-95 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 hover:border-blue-400 font-semibold">
                         <span class="text-2xl">{{ theme.icon }}</span>
                         <p>{{ theme.name }}</p>
                       </div>
@@ -52,36 +52,36 @@
   
         @if (subTopic().id === 'basic-arithmetic') {
           <div class="animate-fade-in">
-              <label class="text-lg font-semibold text-gray-700 mb-2 block text-center sm:text-left">Zorluk Seçin</label>
+              <label class="text-lg font-semibold text-[rgb(var(--c-text-secondary))] mb-2 block text-center sm:text-left">Zorluk Seçin</label>
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <label>
                       <input type="radio" name="difficulty" value="easy" [checked]="difficulty() === 'easy'" (change)="difficulty.set('easy')" class="sr-only peer">
-                      <div class="p-3 text-center rounded-lg border-2 cursor-pointer transition-all active:scale-95 peer-checked:bg-green-600 peer-checked:text-white peer-checked:border-green-600 hover:border-green-400 font-semibold">Kolay</div>
+                      <div class="p-3 text-center rounded-lg border-2 border-[rgb(var(--c-border))] text-[rgb(var(--c-text-secondary))] cursor-pointer transition-all active:scale-95 peer-checked:bg-green-600 peer-checked:text-white peer-checked:border-green-600 hover:border-green-400 font-semibold">Kolay</div>
                   </label>
                   <label>
                       <input type="radio" name="difficulty" value="medium" [checked]="difficulty() === 'medium'" (change)="difficulty.set('medium')" class="sr-only peer">
-                      <div class="p-3 text-center rounded-lg border-2 cursor-pointer transition-all active:scale-95 peer-checked:bg-yellow-500 peer-checked:text-white peer-checked:border-yellow-500 hover:border-yellow-400 font-semibold">Orta</div>
+                      <div class="p-3 text-center rounded-lg border-2 border-[rgb(var(--c-border))] text-[rgb(var(--c-text-secondary))] cursor-pointer transition-all active:scale-95 peer-checked:bg-yellow-500 peer-checked:text-white peer-checked:border-yellow-500 hover:border-yellow-400 font-semibold">Orta</div>
                   </label>
                   <label>
                       <input type="radio" name="difficulty" value="hard" [checked]="difficulty() === 'hard'" (change)="difficulty.set('hard')" class="sr-only peer">
-                      <div class="p-3 text-center rounded-lg border-2 cursor-pointer transition-all active:scale-95 peer-checked:bg-red-600 peer-checked:text-white peer-checked:border-red-600 hover:border-red-400 font-semibold">Zor</div>
+                      <div class="p-3 text-center rounded-lg border-2 border-[rgb(var(--c-border))] text-[rgb(var(--c-text-secondary))] cursor-pointer transition-all active:scale-95 peer-checked:bg-red-600 peer-checked:text-white peer-checked:border-red-600 hover:border-red-400 font-semibold">Zor</div>
                   </label>
               </div>
           </div>
           <div class="animate-fade-in" style="animation-delay: 100ms;">
-              <label class="text-lg font-semibold text-gray-700 mb-2 block text-center sm:text-left">Soru Sayısı</label>
+              <label class="text-lg font-semibold text-[rgb(var(--c-text-secondary))] mb-2 block text-center sm:text-left">Soru Sayısı</label>
               <div class="grid grid-cols-3 gap-3">
                   <label>
                       <input type="radio" name="problemCount" value="15" [checked]="problemCount() === 15" (change)="problemCount.set(15)" class="sr-only peer">
-                      <div class="p-3 text-center rounded-lg border-2 cursor-pointer transition-all active:scale-95 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 hover:border-indigo-400 font-semibold">15 Soru</div>
+                      <div class="p-3 text-center rounded-lg border-2 border-[rgb(var(--c-border))] text-[rgb(var(--c-text-secondary))] cursor-pointer transition-all active:scale-95 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 hover:border-indigo-400 font-semibold">15 Soru</div>
                   </label>
                   <label>
                       <input type="radio" name="problemCount" value="25" [checked]="problemCount() === 25" (change)="problemCount.set(25)" class="sr-only peer">
-                      <div class="p-3 text-center rounded-lg border-2 cursor-pointer transition-all active:scale-95 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 hover:border-indigo-400 font-semibold">25 Soru</div>
+                      <div class="p-3 text-center rounded-lg border-2 border-[rgb(var(--c-border))] text-[rgb(var(--c-text-secondary))] cursor-pointer transition-all active:scale-95 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 hover:border-indigo-400 font-semibold">25 Soru</div>
                   </label>
                   <label>
                       <input type="radio" name="problemCount" value="35" [checked]="problemCount() === 35" (change)="problemCount.set(35)" class="sr-only peer">
-                      <div class="p-3 text-center rounded-lg border-2 cursor-pointer transition-all active:scale-95 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 hover:border-indigo-400 font-semibold">35 Soru</div>
+                      <div class="p-3 text-center rounded-lg border-2 border-[rgb(var(--c-border))] text-[rgb(var(--c-text-secondary))] cursor-pointer transition-all active:scale-95 peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 hover:border-indigo-400 font-semibold">35 Soru</div>
                   </label>
               </div>
           </div>

@@ -729,7 +729,7 @@ export class ActivityDisplayComponent implements OnDestroy {
             return `${baseClasses} bg-red-500 border-red-600 text-white animate-shake`;
         }
         // Other incorrect options are faded
-        return `${baseClasses} bg-slate-100 border-slate-200 text-slate-500 opacity-60 pointer-events-none`;
+        return `${baseClasses} bg-[rgba(var(--c-page-bg),0.8)] border-[rgb(var(--c-border))] text-[rgb(var(--c-text-muted))] opacity-60 pointer-events-none`;
     }
 
     if (isSelected) {
@@ -743,7 +743,7 @@ export class ActivityDisplayComponent implements OnDestroy {
     }
 
     // Default state
-    return `${baseClasses} bg-white border-slate-300 hover:border-indigo-400 text-slate-700`;
+    return `${baseClasses} bg-[rgb(var(--c-card-bg))] border-[rgb(var(--c-border))] hover:border-indigo-400 text-[rgb(var(--c-text-primary))]`;
   }
   
   public getOrderItemButtonClasses(problemIndex: number, item: string): string {

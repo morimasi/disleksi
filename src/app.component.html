@@ -80,7 +80,7 @@
     </div>
   </div>
 } @else if (isAdmin()) {
-  <div class="min-h-screen bg-slate-100">
+  <div class="min-h-screen bg-[rgb(var(--c-page-bg))] text-[rgb(var(--c-text-primary))]">
     <header class="sticky top-0 z-30 bg-slate-800 text-white shadow-lg no-print">
       <div class="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
@@ -105,19 +105,19 @@
     <!-- Main Content -->
     <main class="max-w-screen-xl mx-auto p-4 sm:p-8">
       <div class="flex items-center justify-between mb-8">
-          <h2 class="text-3xl font-bold text-slate-800">İçerik Yönetimi</h2>
+          <h2 class="text-3xl font-bold text-[rgb(var(--c-text-primary))]">İçerik Yönetimi</h2>
       </div>
 
       <div class="space-y-8">
         @for(topicKey of topicKeys(); track topicKey) {
           @let topic = topicsDataSignal()[topicKey];
-          <section class="bg-white p-6 rounded-xl shadow-lg border border-slate-200">
+          <section class="bg-[rgb(var(--c-card-bg))] p-6 rounded-xl shadow-lg border border-[rgb(var(--c-border))]">
             <!-- Topic Header -->
-            <div class="flex justify-between items-center pb-4 border-b border-slate-200">
+            <div class="flex justify-between items-center pb-4 border-b border-[rgb(var(--c-border))]">
               @if(editingState()[topicKey]) {
                 <div class="flex-grow space-y-2">
-                  <input type="text" [value]="editingState()[topicKey]!.title" (input)="updateEditingContent(topicKey, 'title', $event)" class="w-full text-2xl font-bold text-slate-800 p-2 border border-indigo-300 rounded-md">
-                  <input type="text" [value]="editingState()[topicKey]!.description" (input)="updateEditingContent(topicKey, 'description', $event)" class="w-full text-slate-500 p-2 border border-slate-300 rounded-md">
+                  <input type="text" [value]="editingState()[topicKey]!.title" (input)="updateEditingContent(topicKey, 'title', $event)" class="w-full text-2xl font-bold text-[rgb(var(--c-text-primary))] p-2 border border-indigo-300 rounded-md bg-transparent">
+                  <input type="text" [value]="editingState()[topicKey]!.description" (input)="updateEditingContent(topicKey, 'description', $event)" class="w-full text-[rgb(var(--c-text-secondary))] p-2 border border-[rgb(var(--c-border))] rounded-md bg-transparent">
                 </div>
                 <div class="flex items-center space-x-2 ml-4">
                     <button (click)="saveEdit(topicKey, false)" class="p-2 bg-green-100 text-green-700 rounded-full hover:bg-green-200"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg></button>
@@ -125,10 +125,10 @@
                 </div>
               } @else {
                 <div>
-                  <h3 class="text-2xl font-bold text-slate-800">{{ topic.title }}</h3>
-                  <p class="text-slate-500">{{ topic.description }}</p>
+                  <h3 class="text-2xl font-bold text-[rgb(var(--c-text-primary))]">{{ topic.title }}</h3>
+                  <p class="text-[rgb(var(--c-text-secondary))]">{{ topic.description }}</p>
                 </div>
-                <button (click)="startEditing(topicKey, {title: topic.title, description: topic.description})" class="flex items-center text-sm font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 py-2 px-4 rounded-lg transition-colors">
+                <button (click)="startEditing(topicKey, {title: topic.title, description: topic.description})" class="flex items-center text-sm font-semibold bg-[rgba(var(--c-page-bg),0.8)] hover:bg-[rgba(var(--c-page-bg),1)] text-[rgb(var(--c-text-secondary))] py-2 px-4 rounded-lg transition-colors">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L16.732 3.732z" /></svg>
                   Düzenle
                 </button>
@@ -137,12 +137,12 @@
             <!-- SubTopics -->
             <div class="mt-4 space-y-2">
               @for(subTopic of topic.subTopics; track subTopic.id) {
-                  <div class="flex flex-col justify-between items-start p-3 rounded-lg hover:bg-slate-50 group">
+                  <div class="flex flex-col justify-between items-start p-3 rounded-lg hover:bg-[rgba(var(--c-page-bg),0.5)] group">
                     <div class="flex justify-between items-center w-full">
                       @if(editingState()[subTopic.id]) {
                       <div class="flex-grow space-y-1">
-                        <input type="text" [value]="editingState()[subTopic.id]!.title" (input)="updateEditingContent(subTopic.id, 'title', $event)" class="w-full font-semibold text-slate-700 p-1 border border-indigo-300 rounded-md">
-                        <input type="text" [value]="editingState()[subTopic.id]!.description" (input)="updateEditingContent(subTopic.id, 'description', $event)" class="w-full text-sm text-slate-500 p-1 border border-slate-300 rounded-md">
+                        <input type="text" [value]="editingState()[subTopic.id]!.title" (input)="updateEditingContent(subTopic.id, 'title', $event)" class="w-full font-semibold text-[rgb(var(--c-text-secondary))] p-1 border border-indigo-300 rounded-md bg-transparent">
+                        <input type="text" [value]="editingState()[subTopic.id]!.description" (input)="updateEditingContent(subTopic.id, 'description', $event)" class="w-full text-sm text-[rgb(var(--c-text-muted))] p-1 border border-[rgb(var(--c-border))] rounded-md bg-transparent">
                       </div>
                       <div class="flex items-center space-x-2 ml-4">
                         <button (click)="saveEdit(subTopic.id, true, topicKey)" class="p-2 bg-green-100 text-green-700 rounded-full hover:bg-green-200"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg></button>
@@ -150,22 +150,22 @@
                       </div>
                       } @else {
                       <div>
-                        <h4 class="font-semibold text-slate-700">{{ subTopic.title }}</h4>
-                        <p class="text-sm text-slate-500">{{ subTopic.description }}</p>
+                        <h4 class="font-semibold text-[rgb(var(--c-text-secondary))]">{{ subTopic.title }}</h4>
+                        <p class="text-sm text-[rgb(var(--c-text-muted))]">{{ subTopic.description }}</p>
                       </div>
-                      <button (click)="startEditing(subTopic.id, {title: subTopic.title, description: subTopic.description})" class="flex items-center text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 py-1 px-3 rounded-md transition-colors opacity-0 group-hover:opacity-100">
+                      <button (click)="startEditing(subTopic.id, {title: subTopic.title, description: subTopic.description})" class="flex items-center text-xs font-semibold bg-[rgba(var(--c-page-bg),0.8)] hover:bg-[rgba(var(--c-page-bg),1)] text-[rgb(var(--c-text-secondary))] py-1 px-3 rounded-md transition-colors opacity-0 group-hover:opacity-100">
                           <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L16.732 3.732z" /></svg>
                           Düzenle
                       </button>
                       }
                     </div>
                     @if(subTopic.id === 'creative-writing-prompts') {
-                    <div class="mt-4 pt-3 border-t border-slate-200 w-full animate-fade-in">
-                        <h5 class="font-semibold text-slate-600 mb-2">Özel Cümle Başlangıçları</h5>
+                    <div class="mt-4 pt-3 border-t border-[rgb(var(--c-border))] w-full animate-fade-in">
+                        <h5 class="font-semibold text-[rgb(var(--c-text-secondary))] mb-2">Özel Cümle Başlangıçları</h5>
                         <div class="space-y-2 max-h-48 overflow-y-auto pr-2">
                             @for(prompt of customPrompts()[subTopic.id] || []; track $index) {
-                                <div class="flex justify-between items-center bg-indigo-50 p-2 rounded-md">
-                                    <p class="text-sm text-indigo-800">{{ prompt }}</p>
+                                <div class="flex justify-between items-center bg-indigo-500/10 p-2 rounded-md">
+                                    <p class="text-sm text-indigo-300">{{ prompt }}</p>
                                     <button (click)="removeCustomPrompt(subTopic.id, $index)" class="p-1 bg-red-100 text-red-600 rounded-full hover:bg-red-200 flex-shrink-0">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                                     </button>
@@ -173,10 +173,10 @@
                             }
                         </div>
                           @if((customPrompts()[subTopic.id] || []).length === 0) {
-                            <p class="text-sm text-slate-400 italic">Henüz özel başlangıç eklenmedi.</p>
+                            <p class="text-sm text-[rgb(var(--c-text-muted))] italic">Henüz özel başlangıç eklenmedi.</p>
                           }
                         <div class="flex gap-2 mt-3">
-                            <input type="text" [value]="newPrompt()" (input)="newPrompt.set($any($event.target).value)" placeholder="Yeni bir başlangıç ekle..." class="flex-grow p-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
+                            <input type="text" [value]="newPrompt()" (input)="newPrompt.set($any($event.target).value)" placeholder="Yeni bir başlangıç ekle..." class="flex-grow p-2 border border-[rgb(var(--c-border))] rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition bg-transparent">
                             <button (click)="addCustomPrompt(subTopic.id)" class="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold px-4 py-2 rounded-md text-sm transition-transform transform hover:scale-105">Ekle</button>
                         </div>
                     </div>
@@ -193,12 +193,12 @@
   <!-- Student View -->
   <div class="min-h-screen bg-[rgb(var(--c-page-bg))] text-[rgb(var(--c-text-primary))]">
     <!-- Top Navbar -->
-    <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-sm border-b border-[rgb(var(--c-border))] shadow-sm no-print">
+    <header class="sticky top-0 z-40 bg-[rgba(var(--c-card-bg),0.8)] backdrop-blur-sm border-b border-[rgb(var(--c-border))] shadow-sm no-print">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
           <!-- Left: Brand -->
           <div class="flex items-center">
-            <h1 class="text-xl font-bold text-indigo-600">Öğrenme Köprüsü</h1>
+            <h1 class="text-xl font-bold text-[rgb(var(--c-accent-600))]">Öğrenme Köprüsü</h1>
           </div>
           
           <!-- Center: Desktop Nav Links -->
@@ -209,7 +209,7 @@
                          [class.text-indigo-600]="currentView() === view.id"
                          [class.bg-indigo-100]="currentView() === view.id"
                          [class.text-slate-600]="currentView() !== view.id"
-                         [class.hover:bg-slate-100]="currentView() !== view.id"
+                         [class.hover:bg-[rgba(var(--c-text-primary),0.05)]]="currentView() !== view.id"
                          [class.hover:text-slate-800]="currentView() !== view.id">
                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" [attr.d]="view.icon" /></svg>
                      <span>{{ view.name }}</span>
@@ -244,24 +244,24 @@
                             }
                         </div>
                    </div>
-                   <div class="absolute -bottom-1 -right-1 bg-white rounded-full px-1.5 py-0.5 text-xs font-bold text-slate-700 shadow-md">{{ gamificationService.currentLevelInfo().level }}</div>
+                   <div class="absolute -bottom-1 -right-1 bg-[rgb(var(--c-card-bg))] rounded-full px-1.5 py-0.5 text-xs font-bold text-[rgb(var(--c-text-secondary))] shadow-md">{{ gamificationService.currentLevelInfo().level }}</div>
                 </div>
              </button>
               <!-- Accessibility Menu -->
               <div class="relative accessibility-container">
-                  <button (click)="toggleAccessibilityMenu()" class="p-2 rounded-full hover:bg-slate-200/60 transition-colors duration-200" aria-label="Erişilebilirlik ayarlarını aç">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <button (click)="toggleAccessibilityMenu()" class="p-2 rounded-full hover:bg-[rgba(var(--c-text-primary),0.1)] transition-colors duration-200" aria-label="Erişilebilirlik ayarlarını aç">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[rgb(var(--c-text-secondary))]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066 2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.096 2.572-1.065z"></path>
                       <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                     </svg>
                   </button>
                   @if (isAccessibilityMenuOpen()) {
-                    <div class="absolute top-full right-0 mt-2 w-80 bg-white/90 backdrop-blur-sm rounded-lg shadow-xl p-4 animate-fade-in border border-gray-200">
+                    <div class="absolute top-full right-0 mt-2 w-80 bg-[rgba(var(--c-card-bg),0.9)] backdrop-blur-sm rounded-lg shadow-xl p-4 animate-fade-in border border-[rgb(var(--c-border))]">
                       <div class="space-y-4">
                         <div class="space-y-3">
-                            <h4 class="text-base text-gray-800 font-semibold">Görünüm</h4>
+                            <h4 class="text-base text-[rgb(var(--c-text-primary))] font-semibold">Görünüm</h4>
                             <div class="flex items-center justify-between">
-                            <span class="text-base text-gray-700">Tema</span>
+                            <span class="text-base text-[rgb(var(--c-text-secondary))]">Tema</span>
                               <div class="flex items-center gap-2">
                                 @for(theme of themes; track theme.id) {
                                   <button (click)="setTheme(theme.id)" [title]="theme.name" class="w-7 h-7 rounded-full transition-transform transform hover:scale-110" [class]="theme.color">
@@ -276,21 +276,21 @@
                                 }
                               </div>
                             </div>
-                            <hr class="border-gray-200/80">
+                            <hr class="border-[rgba(var(--c-border),0.8)]">
                           <div class="flex items-center justify-between">
-                            <span class="text-base text-gray-700 font-medium">Metin Boyutu</span>
+                            <span class="text-base text-[rgb(var(--c-text-secondary))] font-medium">Metin Boyutu</span>
                             <div class="flex items-center gap-1">
-                              <button (click)="decreaseFontSize()" [disabled]="isMinFontSize()" class="w-7 h-7 flex items-center justify-center bg-gray-200 rounded-full text-lg font-bold text-gray-600 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition" aria-label="Metin boyutunu azalt">
+                              <button (click)="decreaseFontSize()" [disabled]="isMinFontSize()" class="w-7 h-7 flex items-center justify-center bg-[rgba(var(--c-text-primary),0.1)] rounded-full text-lg font-bold text-[rgb(var(--c-text-secondary))] hover:bg-[rgba(var(--c-text-primary),0.2)] disabled:opacity-50 disabled:cursor-not-allowed transition" aria-label="Metin boyutunu azalt">
                                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>
                               </button>
-                              <span class="text-base font-semibold text-gray-800 w-16 text-center">{{ fontSizeLabel() }}</span>
-                              <button (click)="increaseFontSize()" [disabled]="isMaxFontSize()" class="w-7 h-7 flex items-center justify-center bg-gray-200 rounded-full text-lg font-bold text-gray-600 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition" aria-label="Metin boyutunu artır">
+                              <span class="text-base font-semibold text-[rgb(var(--c-text-primary))] w-16 text-center">{{ fontSizeLabel() }}</span>
+                              <button (click)="increaseFontSize()" [disabled]="isMaxFontSize()" class="w-7 h-7 flex items-center justify-center bg-[rgba(var(--c-text-primary),0.1)] rounded-full text-lg font-bold text-[rgb(var(--c-text-secondary))] hover:bg-[rgba(var(--c-text-primary),0.2)] disabled:opacity-50 disabled:cursor-not-allowed transition" aria-label="Metin boyutunu artır">
                                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd" /></svg>
                               </button>
                             </div>
                           </div>
                           <div class="flex items-center justify-between">
-                            <span class="text-base text-gray-700 font-medium">Disleksi Fontu</span>
+                            <span class="text-base text-[rgb(var(--c-text-secondary))] font-medium">Disleksi Fontu</span>
                             <button (click)="toggleDyslexiaFont()"
                                     class="relative inline-flex items-center h-6 rounded-full w-11 transition-colors"
                                     [class.bg-indigo-600]="isDyslexiaFontEnabled()"
@@ -301,12 +301,12 @@
                             </button>
                           </div>
                         </div>
-                        <hr class="border-gray-200/80">
+                        <hr class="border-[rgba(var(--c-border),0.8)]">
                         <div>
-                          <h4 class="text-base text-gray-800 font-semibold mb-3">Geri Bildirim</h4>
+                          <h4 class="text-base text-[rgb(var(--c-text-primary))] font-semibold mb-3">Geri Bildirim</h4>
                           <div class="space-y-3">
                             <div class="flex items-center justify-between">
-                                <span class="text-base text-gray-700 font-medium">Anında Geri Bildirim</span>
+                                <span class="text-base text-[rgb(var(--c-text-secondary))] font-medium">Anında Geri Bildirim</span>
                                 <button (click)="toggleFeedbackEnabled()"
                                         class="relative inline-flex items-center h-6 rounded-full w-11 transition-colors"
                                         [class.bg-indigo-600]="feedbackEnabled()"
@@ -318,30 +318,30 @@
                             </div>
                             @if(feedbackEnabled()) {
                                 <div class="space-y-2 animate-fade-in">
-                                    <span class="text-base text-gray-700 font-medium block">Geri Bildirim Süresi</span>
+                                    <span class="text-base text-[rgb(var(--c-text-secondary))] font-medium block">Geri Bildirim Süresi</span>
                                     <div class="grid grid-cols-3 gap-2">
                                         <button (click)="setFeedbackDuration('continuous')"
                                                 class="px-2 py-1 text-sm font-semibold rounded-md transition-colors"
                                                 [class.bg-indigo-600]="feedbackDuration() === 'continuous'"
                                                 [class.text-white]="feedbackDuration() === 'continuous'"
-                                                [class.bg-gray-200]="feedbackDuration() !== 'continuous'"
-                                                [class.text-gray-700]="feedbackDuration() !== 'continuous'">
+                                                [class.bg-[rgba(var(--c-text-primary),0.1)]]="feedbackDuration() !== 'continuous'"
+                                                [class.text-[rgb(var(--c-text-secondary))]]="feedbackDuration() !== 'continuous'">
                                             Sürekli
                                         </button>
                                         <button (click)="setFeedbackDuration(5)"
                                                 class="px-2 py-1 text-sm font-semibold rounded-md transition-colors"
                                                 [class.bg-indigo-600]="feedbackDuration() === 5"
                                                 [class.text-white]="feedbackDuration() === 5"
-                                                [class.bg-gray-200]="feedbackDuration() !== 5"
-                                                [class.text-gray-700]="feedbackDuration() !== 5">
+                                                [class.bg-[rgba(var(--c-text-primary),0.1)]]="feedbackDuration() !== 5"
+                                                [class.text-[rgb(var(--c-text-secondary))]]="feedbackDuration() !== 5">
                                             5 sn
                                         </button>
                                         <button (click)="setFeedbackDuration(10)"
                                                 class="px-2 py-1 text-sm font-semibold rounded-md transition-colors"
                                                 [class.bg-indigo-600]="feedbackDuration() === 10"
                                                 [class.text-white]="feedbackDuration() === 10"
-                                                [class.bg-gray-200]="feedbackDuration() !== 10"
-                                                [class.text-gray-700]="feedbackDuration() !== 10">
+                                                [class.bg-[rgba(var(--c-text-primary),0.1)]]="feedbackDuration() !== 10"
+                                                [class.text-[rgb(var(--c-text-secondary))]]="feedbackDuration() !== 10">
                                             10 sn
                                         </button>
                                     </div>
@@ -374,15 +374,15 @@
                   (practiceFinished)="handlePracticeFinished()">
                 </app-activity-generator>
               } @else if (activeReviewActivity()) {
-                  <div class="bg-white p-4 sm:p-8 rounded-2xl shadow-xl border border-gray-200 animate-fade-in">
+                  <div class="bg-[rgb(var(--c-card-bg))] p-4 sm:p-8 rounded-2xl shadow-xl border border-[rgb(var(--c-border))] animate-fade-in">
                       <div class="flex items-center justify-between mb-6 no-print">
-                          <button (click)="endReviewActivity()" class="flex items-center text-gray-600 hover:text-indigo-600 transition-colors duration-200 font-semibold">
+                          <button (click)="endReviewActivity()" class="flex items-center text-[rgb(var(--c-text-secondary))] hover:text-[rgb(var(--c-accent-600))] transition-colors duration-200 font-semibold">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                               <path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
                             </svg>
                             Ana Menü
                           </button>
-                          <h2 class="text-xl sm:text-2xl font-bold text-gray-800 text-center">Konu Tekrarı</h2>
+                          <h2 class="text-xl sm:text-2xl font-bold text-[rgb(var(--c-text-primary))] text-center">Konu Tekrarı</h2>
                           <div class="w-24"></div> <!-- Spacer -->
                       </div>
                         <app-activity-display 
@@ -414,7 +414,7 @@
                       </div>
                       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         @for (sub of topicData.subTopics; track sub.id) {
-                          <button (click)="selectSubTopic(sub)" class="text-left bg-white/70 hover:bg-white p-4 rounded-lg shadow-sm hover:shadow-lg transition-all duration-300 transform active:scale-95 hover:-translate-y-1 group">
+                          <button (click)="selectSubTopic(sub)" class="text-left bg-[rgba(var(--c-card-bg),0.7)] hover:bg-[rgb(var(--c-card-bg))] p-4 rounded-lg shadow-sm hover:shadow-lg transition-all duration-300 transform active:scale-95 hover:-translate-y-1 group">
                               <div class="flex justify-between items-start">
                                   <h3 class="font-bold text-lg text-[rgb(var(--c-text-primary))] group-hover:text-[rgb(var(--c-accent-600))] transition-colors">{{ sub.title }}</h3>
                                   <!-- Star progress indicator -->
@@ -463,17 +463,17 @@
                   }
                     <!-- Search Bar -->
                   <div class="relative">
-                      <input type="text" [value]="searchQuery()" (input)="searchQuery.set($any($event.target).value)" placeholder="Bir konu veya etkinlik ara..." class="w-full pl-10 pr-4 py-3 text-lg border-2 border-slate-300 rounded-full focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow shadow-sm hover:shadow-md">
+                      <input type="text" [value]="searchQuery()" (input)="searchQuery.set($any($event.target).value)" placeholder="Bir konu veya etkinlik ara..." class="w-full pl-10 pr-4 py-3 text-lg border-2 border-[rgb(var(--c-border))] rounded-full focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow shadow-sm hover:shadow-md bg-[rgb(var(--c-card-bg))]">
                       <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[rgb(var(--c-text-muted))]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                       </div>
       
                       @if(searchResults().length > 0) {
-                        <div class="absolute top-full left-0 mt-2 w-full bg-white rounded-xl shadow-lg border border-slate-200 z-10 max-h-80 overflow-y-auto animate-fade-in">
+                        <div class="absolute top-full left-0 mt-2 w-full bg-[rgb(var(--c-card-bg))] rounded-xl shadow-lg border border-[rgb(var(--c-border))] z-10 max-h-80 overflow-y-auto animate-fade-in">
                           @for(result of searchResults(); track result.subTopic.id) {
-                            <button (click)="selectSearchResult(result)" class="w-full text-left p-4 hover:bg-slate-100 transition-colors">
-                              <p class="font-semibold text-indigo-700">{{ result.subTopic.title }}</p>
-                              <p class="text-sm text-slate-500">{{ result.topic.title }}</p>
+                            <button (click)="selectSearchResult(result)" class="w-full text-left p-4 hover:bg-[rgba(var(--c-page-bg),0.8)] transition-colors">
+                              <p class="font-semibold text-indigo-400">{{ result.subTopic.title }}</p>
+                              <p class="text-sm text-[rgb(var(--c-text-secondary))]">{{ result.topic.title }}</p>
                             </button>
                           }
                         </div>
@@ -614,7 +614,7 @@
                         @if (gamificationService.unlockedBadges().length > 0) {
                           <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-3 lg:grid-cols-4 gap-4">
                             @for(badge of gamificationService.unlockedBadges(); track badge.id) {
-                              <div class="group relative text-center bg-slate-100/50 p-3 rounded-lg flex flex-col items-center justify-center aspect-square" [title]="badge.name">
+                              <div class="group relative text-center bg-[rgba(var(--c-page-bg),0.5)] p-3 rounded-lg flex flex-col items-center justify-center aspect-square" [title]="badge.name">
                                 <span class="text-5xl drop-shadow-md">{{ badge.icon }}</span>
                                 <p class="text-xs font-semibold text-[rgb(var(--c-text-secondary))] mt-1 truncate w-full">{{ badge.name }}</p>
                                   <div class="absolute bottom-full mb-2 w-48 p-2 bg-slate-800 text-white text-sm rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
@@ -638,7 +638,7 @@
                           @for(topicKey of topicKeys(); track topicKey) {
                             @let topic = topicsDataSignal()[topicKey];
                             @let progress = getTopicProgress(topicKey);
-                            <div class="p-3 rounded-lg hover:bg-slate-50/50">
+                            <div class="p-3 rounded-lg hover:bg-[rgba(var(--c-page-bg),0.5)]">
                               <div class="flex justify-between items-center mb-1">
                                 <span class="font-semibold text-[rgb(var(--c-text-secondary))]">{{ topic.title }}</span>
                                 <span class="text-sm font-bold" [class]="'text-[rgb(var(--c-topic-' + topicKey + '-500))]'">{{ progress.percentage }}%</span>
@@ -656,7 +656,7 @@
                                         <span>Konuları Tekrar Et</span>
                                     }
                                   </button>
-                              </div>
+                                </div>
                             </div>
                           }
                         </div>
@@ -715,15 +715,15 @@
     </main>
 
     <!-- Mobile Bottom Nav -->
-    <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-sm border-t border-[rgb(var(--c-border))]">
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[rgba(var(--c-card-bg),0.8)] backdrop-blur-sm border-t border-[rgb(var(--c-border))]">
       <div class="flex justify-around">
           @for(view of navItems; track view.id) {
               <button (click)="setView(view.id)" 
                       class="flex-1 flex flex-col items-center gap-1 py-2 text-xs font-medium transition-colors"
                       [class.text-indigo-600]="currentView() === view.id"
                       [class.bg-indigo-50]="currentView() === view.id"
-                      [class.text-slate-500]="currentView() !== view.id"
-                      [class.hover:bg-slate-100]="currentView() !== view.id">
+                      [class.text-[rgb(var(--c-text-muted))]]="currentView() !== view.id"
+                      [class.hover:bg-[rgba(var(--c-text-primary),0.05)]]="currentView() !== view.id">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" [attr.d]="view.icon" /></svg>
                   <span>{{ view.name }}</span>
               </button>
