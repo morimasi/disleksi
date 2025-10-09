@@ -5,6 +5,18 @@
   <title>Öğrenme Köprüsü</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+
+  <!-- Meta Tags for Social Sharing & SEO (Vercel Deployment Prep) -->
+  <meta name="description" content="An AI-powered application that generates interactive activities for primary and middle school students with dyslexia, dyscalculia, and dysgraphia.">
+  <meta property="og:title" content="Öğrenme Köprüsü">
+  <meta property="og:description" content="An AI-powered application that generates interactive activities for primary and middle school students with dyslexia, dyscalculia, and dysgraphia.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://i.imgur.com/ZfB7xT3.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Öğrenme Köprüsü">
+  <meta name="twitter:description" content="An AI-powered application that generates interactive activities for primary and middle school students with dyslexia, dyscalculia, and dysgraphia.">
+  <meta name="twitter:image" content="https://i.imgur.com/ZfB7xT3.png">
+
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.cdnfonts.com/css/opendyslexic" rel="stylesheet">
 <script type="importmap">
@@ -145,6 +157,8 @@
   }
   body {
     background-color: rgb(var(--c-page-bg));
+    color: rgb(var(--c-text-primary));
+    transition: background-color 300ms ease-in-out, color 300ms ease-in-out;
   }
   body.font-dyslexic {
     font-family: 'OpenDyslexic', sans-serif;
@@ -212,32 +226,71 @@
   }
 
   @media print {
+    /* --- General Print Reset --- */
     body {
-      background-color: #fff !important;
-      font-size: 12pt;
+        background-color: #ffffff !important;
+        font-size: 12pt;
+        margin: 0;
+        padding: 0;
     }
-    body * {
-      visibility: hidden;
-      box-shadow: none !important;
-      color: #000 !important;
-    }
-    .printable-area, .printable-area * {
-      visibility: visible;
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
-    }
-    .printable-area {
-      position: absolute;
-      left: 0;
-      top: 0;
-      width: 100%;
-      margin: 20px;
-      padding: 0;
-    }
+
+    /* Hide elements not intended for printing */
     .no-print {
-      display: none !important;
+        display: none !important;
     }
-    .print-header h1 {
+
+    /* --- Isolate Printable Area --- */
+    /* This is the core logic: hide everything first... */
+    body * {
+        visibility: hidden;
+        box-shadow: none !important;
+    }
+    
+    /* ...then reveal the printable area and its contents. */
+    .printable-area, .printable-area * {
+        visibility: visible;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    
+    /* Position the printable area to fill the page */
+    .printable-area {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 1cm !important; /* Add a sensible margin for printing */
+        border: none !important;
+    }
+
+    /* --- Activity-Specific Print Styling --- */
+    .printable-area .question-card {
+        background-color: #ffffff !important;
+        border: 1px solid #cccccc !important;
+        padding: 15px !important;
+        page-break-inside: avoid; /* Try to keep questions on one page */
+        margin-bottom: 15px;
+    }
+
+    .printable-area .question-number {
+       background-color: #f0f0f0 !important;
+       color: #000000 !important;
+       border: 1px solid #cccccc;
+    }
+    
+    .printable-area input, .printable-area textarea {
+       border: 1px solid #aaaaaa !important;
+       background-color: #f8f8f8 !important;
+    }
+
+    /* Ensure text is black for readability */
+    .printable-area, .printable-area p, .printable-area h3, .printable-area span, .printable-area div {
+        color: #000000 !important;
+    }
+
+    /* From original print styles for PDF report */
+     .print-header h1 {
         font-size: 24pt;
         font-weight: bold;
         text-align: center;
@@ -255,11 +308,11 @@
         margin-bottom: 10px;
      }
      .print-bar-chart-container .print-bar {
-        background-color: #e0e0e0 !important; /* Use a light grey for the bar background */
+        background-color: #e0e0e0 !important;
         border: 1px solid #000 !important;
      }
      .print-bar-chart-container .print-bar > div {
-        background-color: #555 !important; /* Use a dark grey for the progress */
+        background-color: #555 !important;
         color: #fff !important;
         text-align: center;
         font-weight: bold;

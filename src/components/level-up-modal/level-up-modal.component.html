@@ -1,5 +1,5 @@
 <div class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" (click)="handleClose()">
-  <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg text-center p-8 transform transition-all animate-pop-in" (click)="$event.stopPropagation()">
+  <div class="relative bg-[rgb(var(--c-card-bg))] rounded-2xl shadow-2xl w-full max-w-lg text-center p-8 transform transition-all animate-pop-in" (click)="$event.stopPropagation()">
     <!-- Confetti -->
     <div class="absolute inset-0 overflow-hidden pointer-events-none">
       @for(piece of confettiPieces(); track $index) {
@@ -11,8 +11,8 @@
     <h2 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 mt-4">
       Seviye Atladın!
     </h2>
-    <p class="text-5xl font-bold text-slate-800 mt-2">{{ level() }}</p>
-     <p class="text-lg text-slate-600 mt-4">
+    <p class="text-5xl font-bold text-[rgb(var(--c-text-primary))] mt-2">{{ level() }}</p>
+     <p class="text-lg text-[rgb(var(--c-text-secondary))] mt-4">
         @if(rewards().length > 0) {
             Harika ilerliyorsun! Yeni ödüllerin kilidini açtın:
         } @else {
@@ -21,16 +21,16 @@
     </p>
 
     @if (rewards().length > 0) {
-      <div class="mt-6 max-h-48 overflow-y-auto bg-slate-100/70 p-4 rounded-lg space-y-3">
+      <div class="mt-6 max-h-48 overflow-y-auto bg-[rgba(var(--c-page-bg),0.7)] p-4 rounded-lg space-y-3">
         @for(reward of rewards(); track reward.id) {
-          <div class="flex items-center gap-4 p-2 bg-white rounded-md shadow-sm animate-fade-in" [style.animation-delay]="$index * 100 + 'ms'">
+          <div class="flex items-center gap-4 p-2 bg-[rgb(var(--c-card-bg))] rounded-md shadow-sm animate-fade-in" [style.animation-delay]="$index * 100 + 'ms'">
             <span class="text-4xl">{{ reward.icon }}</span>
             <div class="text-left">
-              <p class="font-bold text-slate-700">{{ reward.name }}</p>
+              <p class="font-bold text-[rgb(var(--c-text-secondary))]">{{ reward.name }}</p>
               @if (isAvatarItem(reward)) {
-                <p class="text-sm text-slate-500">{{ categoryNames[reward.category] }}</p>
+                <p class="text-sm text-[rgb(var(--c-text-muted))]">{{ categoryNames[reward.category] }}</p>
               } @else {
-                <p class="text-sm text-slate-500">{{ reward.description }}</p>
+                <p class="text-sm text-[rgb(var(--c-text-muted))]">{{ reward.description }}</p>
               }
             </div>
           </div>

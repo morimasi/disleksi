@@ -83,9 +83,12 @@ export class ActivityGeneratorComponent {
         options.customPrompt = prompts[Math.floor(Math.random() * prompts.length)];
     }
     
-    if (subTopicId === 'basic-arithmetic') {
+    if (subTopicId === 'basic-arithmetic' || subTopicId === 'visual-number-representation') {
         options.difficulty = this.difficulty();
-        options.problemCount = this.problemCount();
+    }
+
+    if (subTopicId === 'basic-arithmetic') {
+      options.problemCount = this.problemCount();
     }
     
     if (subTopicId === 'reading-aloud-coach') {

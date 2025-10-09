@@ -50,7 +50,7 @@
           </div>
         }
   
-        @if (subTopic().id === 'basic-arithmetic') {
+        @if (subTopic().id === 'basic-arithmetic' || subTopic().id === 'visual-number-representation') {
           <div class="animate-fade-in">
               <label class="text-lg font-semibold text-[rgb(var(--c-text-secondary))] mb-2 block text-center sm:text-left">Zorluk Seçin</label>
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -68,6 +68,8 @@
                   </label>
               </div>
           </div>
+        }
+        @if (subTopic().id === 'basic-arithmetic') {
           <div class="animate-fade-in" style="animation-delay: 100ms;">
               <label class="text-lg font-semibold text-[rgb(var(--c-text-secondary))] mb-2 block text-center sm:text-left">Soru Sayısı</label>
               <div class="grid grid-cols-3 gap-3">

@@ -434,7 +434,7 @@ const visualMatchSchema = {
                             question: { type: Type.STRING, description: 'The number or concept to be represented, as a string (e.g., "7" or a word).' },
                             options: {
                                 type: Type.ARRAY,
-                                description: 'An array of 3-4 strings. These can be strings of repeated emojis to represent a quantity, or words that are visually similar.',
+                                description: 'An array of 3-5 strings based on difficulty. These can be strings of repeated emojis to represent a quantity, or words that are visually similar.',
                                 items: { type: Type.STRING }
                             },
                             correctAnswer: { type: Type.STRING, description: 'The correct string from the options array.' }
@@ -713,7 +713,7 @@ export const ACTIVITY_CONFIGS: Record<Topic, { subtopics: Partial<Record<SubTopi
             },
             'visual-number-representation': {
                 schema: visualMatchSchema,
-                description: "a 'Visual Number Representation' visual matching activity with 25 problems. For each problem, the 'question' is a number string (e.g., '7'). The 'options' should be 3-4 short, descriptive strings of illustrated objects (e.g., '7 Sarı Civciv', '5 Kırmızı Top', '3 Yeşil Elma'). The 'correctAnswer' must be the string that correctly matches the number in the question. Use a variety of simple objects like fruits, animals, or toys."
+                description: "a 'Visual Number Representation' visual matching activity with 25 problems. For each problem, the 'question' is a number string (e.g., '7'). The 'options' should be an array of strings representing quantities with emojis or descriptive text (e.g., '7 Sarı Civciv', '🍎🍎🍎🍎🍎', 'beş top'). The 'correctAnswer' must be the string that correctly matches the number in the question. The number of options should depend on the difficulty level (easy: 3, medium: 4, hard: 5)."
             },
             'interactive-story': {
                 schema: interactiveStorySchema,
@@ -769,20 +769,20 @@ export const ACTIVITY_CONFIGS: Record<Topic, { subtopics: Partial<Record<SubTopi
         subtopics: {
             'spatial-relations-positional': {
                 schema: spatialRelationsSchema,
-                description: "a 'spatial relations' activity focusing on positional concepts (on, under, inside, next to, between). The image prompts should describe simple scenes with 2-3 objects."
+                description: "a 'spatial relations' activity focusing on positional concepts (on, under, inside, next to, between, in front of, behind). The image prompts should describe creative and diverse scenes with 2-4 objects. Use a wide variety of objects (e.g., animals, furniture, food, toys) and colors. Example prompt: 'A happy cat sleeping inside a cardboard box, next to a tall green plant'."
             },
             'spatial-relations-directional': {
                 schema: spatialRelationsSchema,
-                description: "a 'spatial relations' activity focusing on directional concepts (right, left, above, below). The image prompts should describe simple scenes where object direction is key."
+                description: "a 'spatial relations' activity focusing on directional concepts (right, left, above, below). The image prompts should describe creative and diverse scenes where object direction and relation is key. Use a wide variety of objects and colors. Example prompt: 'A yellow car is to the left of a red fire hydrant. A blue bird is flying above the car'."
             },
             'spatial-relations-visual-discrimination': {
                 schema: spatialRelationsSchema,
-                description: "a 'spatial relations' activity for visual discrimination. The image prompts should describe scenes with multiple similar objects, and the question should ask to identify one based on its unique position or feature."
+                description: "a 'spatial relations' activity for visual discrimination. The image prompts should describe scenes with multiple similar objects, and the question should ask to identify one based on its unique position or feature. Use creative scenarios. Example prompt: 'Three teddy bears are sitting on a shelf. The middle teddy bear is wearing a blue bow tie'."
             }
         },
         fallback: {
             schema: spatialRelationsSchema,
-            description: "a general 'spatial relations' activity with a mix of positional and directional concepts."
+            description: "a general 'spatial relations' activity with a mix of positional and directional concepts. The image prompts must be creative and varied, using different objects, colors, and scenarios for each problem."
         }
     }
 };
