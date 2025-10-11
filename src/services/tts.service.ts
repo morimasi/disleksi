@@ -28,10 +28,6 @@ export class TtsService {
     if (text && text.trim() !== '') {
       const utterance = new SpeechSynthesisUtterance(text);
       
-      utterance.onerror = (event) => {
-        console.error('SpeechSynthesisUtterance.onerror', event);
-      };
-      
       // Try to find a Turkish voice
       let turkishVoice = this.voices.find(voice => voice.lang === 'tr-TR');
       if (!turkishVoice) {

@@ -1,3 +1,4 @@
+
 import { Injectable } from '@angular/core';
 import { GoogleGenAI, Chat, Type } from '@google/genai';
 import {
@@ -7,6 +8,7 @@ import {
   Topic,
   isSpatialRelations,
   FiveWOneHStoryActivity,
+  isPictureSequencingStoryteller,
 } from '../models/activity.model';
 import { StoryTheme } from '../components/five-w-one-h/five-w-one-h.component';
 import { ACTIVITY_CONFIGS, fiveWOneHStorySchema } from './activity-config';
@@ -64,7 +66,24 @@ export class GeminiService {
             const base64ImageBytes = imageResponse.generatedImages[0].image.imageBytes;
             problem.imageUrl = `data:image/jpeg;base64,${base64ImageBytes}`;
          }
+      } else if (isPictureSequencingStoryteller(parsedActivity)) {
+        for (const problem of parsedActivity.data.problems) {
+            const imageUrls = await Promise.all(
+                problem.imagePrompts.map(prompt => this.generateImageFromPrompt(prompt))
+            );
+
+            const originalImages = imageUrls.map((url, index) => ({ id: index, url }));
+            problem.correctOrder = originalImages.map(img => img.id);
+
+            // Fisher-Yates shuffle
+            for (let i = originalImages.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [originalImages[i], originalImages[j]] = [originalImages[j], originalImages[i]];
+            }
+            problem.images = originalImages;
+        }
       }
+
 
       return parsedActivity as Activity;
     } catch (error) {
@@ -73,32 +92,111 @@ export class GeminiService {
     }
   }
 
+  private getPersonaInstruction(subTopic: SubTopic): string {
+    switch (subTopic.id) {
+        // Math/Dyscalculia Personas
+        case 'number-sense':
+        case 'basic-arithmetic':
+        case 'problem-solving':
+        case 'math-symbols':
+        case 'time-measurement':
+        case 'estimation-skills':
+        case 'fractions-decimals':
+        case 'visual-arithmetic':
+        case 'number-grouping-practice':
+            return "a patient and encouraging math tutor who makes learning numbers fun and accessible by using clear, simple examples and visual aids.";
+
+        // Writing/Dysgraphia Personas
+        case 'handwriting-legibility':
+        case 'letter-formation':
+        case 'writing-speed':
+        case 'sentence-construction':
+        case 'punctuation-grammar':
+        case 'fine-motor-skills':
+        case 'writing-planning':
+        case 'creative-writing-prompts':
+        case 'keyboarding-skills':
+        case 'picture-sequencing-storyteller':
+            return "a creative and supportive writing assistant who inspires imagination and builds confidence in forming letters, words, and stories.";
+
+        // Reading/Dyslexia Personas
+        case 'phonological-awareness':
+        case 'letter-sound':
+        case 'reading-aloud-coach':
+        case 'reading-comprehension':
+        case 'vocabulary-morphology':
+        case 'spelling-patterns':
+        case 'working-memory-sequencing':
+        case 'auditory-dictation':
+        case 'word-explorer':
+            // FIX: Removed 'five-w-one-h-story' as it is not a valid SubTopicId.
+            // This activity is handled by a separate generation method.
+            return "an engaging literacy coach who makes the world of sounds, words, and stories exciting and understandable.";
+            
+        // Spatial & Visual Personas
+        case 'spatial-relations-positional':
+        case 'spatial-relations-directional':
+        case 'spatial-relations-visual-discrimination':
+        case 'spatial-reasoning':
+        case 'visual-processing':
+        case 'visual-number-representation':
+        case 'letter-form-recognition':
+            // FIX: Removed 'visual-match' as it is not a valid SubTopicId.
+            // Refactored by moving 'visual-number-representation' and 'letter-form-recognition' here
+            // as this persona is a better fit for those visually-oriented subtopics.
+            return "a playful visual and spatial guide who uses vivid imagery and clear examples to explain concepts of space, direction, shape, and visual details.";
+
+        // Default for interactive stories or fallbacks
+        case 'interactive-story':
+             return "a master storyteller who weaves educational concepts into captivating adventures.";
+
+        default:
+            // A sensible fallback that uses the pedagogical goal directly
+            return `an expert educator specializing in creating content that directly addresses the goal: "${subTopic.pedagogicalGoal}"`;
+    }
+  }
+
   async generateActivity(topic: Topic, subTopic: SubTopic, gradeLevel: GradeLevel, options: { customPrompt?: string; difficulty?: 'easy' | 'medium' | 'hard'; problemCount?: number; readingTheme?: string }): Promise<Activity> {
     const topicConfig = ACTIVITY_CONFIGS[topic];
     const activityConfig = topicConfig.subtopics[subTopic.id] || topicConfig.fallback;
+    const personaInstruction = this.getPersonaInstruction(subTopic);
 
-    let prompt = `Generate a JSON object for a Turkish learning activity for a '${gradeLevel}' student. The topic is '${topic}' and the sub-topic is '${subTopic.title}'. The activity should be: ${activityConfig.description}.`;
+    // New, expert-level prompt
+    let prompt = `You are an expert educational content creator. For this task, you will adopt a specific persona to generate the highest quality JSON object for a Turkish learning activity for students with learning disabilities.
+
+    **Your Persona:** Act as ${personaInstruction}. Your content should reflect this role.
+
+    **Target Audience:** A '${gradeLevel}' student diagnosed with '${topic}'.
+    **Area of Focus:** '${subTopic.title}'.
+    
+    **Core Pedagogical Goal:** ${subTopic.pedagogicalGoal}
+
+    **Activity Specification:**
+    - The activity must be structured as: ${activityConfig.description}.
+    - The content must be engaging, creative, and pedagogically sound, directly addressing the core goal and reflecting your assigned persona.
+    - All text must be in clear and simple Turkish.
+    `;
     
     if (options.customPrompt) {
-      prompt += ` Use this creative prompt as inspiration: "${options.customPrompt}".`;
+      prompt += `- Use this creative prompt as inspiration: "${options.customPrompt}".\n`;
     }
     if (options.difficulty) {
-      prompt += ` The difficulty level should be '${options.difficulty}'.`;
+      prompt += `- The difficulty level must be '${options.difficulty}'.\n`;
     }
 
     if (subTopic.id === 'visual-number-representation') {
         const optionCount = options.difficulty === 'easy' ? 3 : options.difficulty === 'hard' ? 5 : 4;
-        prompt += ` Each problem must have exactly ${optionCount} options.`;
+        prompt += `- Each problem must have exactly ${optionCount} options.\n`;
     }
 
     if (options.problemCount) {
-        prompt += ` The activity should contain exactly ${options.problemCount} problems.`;
+        prompt += `- The activity must contain exactly ${options.problemCount} problems.\n`;
     }
     if (options.readingTheme) {
-        prompt += ` The story theme should be about '${options.readingTheme}'.`;
+        prompt += `- The story theme must be about '${options.readingTheme}'.\n`;
     }
     
-    prompt += ` The response MUST be a valid JSON object matching the provided schema. Do not wrap the JSON in markdown.`;
+    prompt += `\nThe response MUST be a valid JSON object matching the provided schema. Do not output any text other than the JSON object itself. Do not wrap the JSON in markdown.`;
 
     return this.generateAndParseActivity(prompt, activityConfig.schema);
   }
@@ -213,6 +311,124 @@ export class GeminiService {
     } catch (error) {
         console.error('Error sending chat message:', error);
         yield 'Üzgünüm, bir hata oluştu. Lütfen tekrar deneyin.';
+    }
+  }
+
+  async generateHint(activityType: string, problem: any, correctAnswer: any): Promise<string> {
+    if (!this.ai) {
+      throw new Error('Gemini API client is not initialized.');
+    }
+    const prompt = `A primary school student in Turkey is stuck on a learning activity. Provide a short, simple, and encouraging hint in Turkish.
+    Do NOT give away the answer directly. Guide them to think about the problem.
+    The activity type is: ${activityType}.
+    The problem is: ${JSON.stringify(problem)}.
+    The correct answer is: ${JSON.stringify(correctAnswer)}.
+    
+    Respond with a JSON object containing a single key "hint". The hint should be a single sentence.`;
+
+    try {
+      const response = await this.ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              hint: { type: Type.STRING },
+            },
+            required: ['hint'],
+          },
+        },
+      });
+      const jsonString = response.text.replace(/^```json\s*|```\s*$/g, '').trim();
+      const parsed = JSON.parse(jsonString);
+      return parsed.hint;
+    } catch (error) {
+      console.error('Error generating hint:', error);
+      return 'Şu anda bir ipucu veremiyorum, ama denemeye devam et!';
+    }
+  }
+
+  async getIncorrectAnswerFeedback(activityType: string, problem: any, correctAnswer: any, userAnswer: any): Promise<string> {
+    if (!this.ai) {
+      throw new Error('Gemini API client is not initialized.');
+    }
+    const prompt = `A primary school student in Turkey answered a question incorrectly. Provide a short, simple, and encouraging explanation in Turkish about why their answer might be wrong.
+    Do NOT use harsh or negative language. Guide them towards the correct way of thinking without giving the answer.
+    The activity type is: ${activityType}.
+    The problem is: ${JSON.stringify(problem)}.
+    The correct answer is: ${JSON.stringify(correctAnswer)}.
+    The student's incorrect answer was: ${JSON.stringify(userAnswer)}.
+
+    Respond with a JSON object containing a single key "feedback". The feedback should be one or two encouraging sentences.`;
+
+    try {
+      const response = await this.ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              feedback: { type: Type.STRING },
+            },
+            required: ['feedback'],
+          },
+        },
+      });
+      const jsonString = response.text.replace(/^```json\s*|```\s*$/g, '').trim();
+      const parsed = JSON.parse(jsonString);
+      return parsed.feedback;
+    } catch (error) {
+      console.error('Error generating feedback:', error);
+      return 'Bu doğru değil. Tekrar denemek ister misin?';
+    }
+  }
+
+  async getSentenceFeedback(prompt: string, userSentence: string): Promise<string> {
+    if (!this.ai) {
+      throw new Error('Gemini API client is not initialized.');
+    }
+    const apiPrompt = `You are a friendly and encouraging Turkish language teacher for a primary school student. The student was given a sentence starter and completed it. Your task is to provide positive and constructive feedback.
+
+    Sentence Starter: "${prompt}"
+    Student's full sentence: "${userSentence}"
+
+    Evaluate the sentence based on:
+    1.  Grammatical correctness (Is it a valid Turkish sentence?).
+    2.  Creativity and relevance (Does it make sense and is it imaginative?).
+    
+    Your feedback should:
+    - Always start with a positive comment (e.g., "Harika bir cümle!", "Çok yaratıcı!").
+    - If there is a small grammatical error, gently point it out and suggest a correction. For example: "Cümlen çok güzel, sadece küçük bir düzeltme yapabiliriz: ...".
+    - Be short, simple, and encouraging.
+    - Be entirely in Turkish.
+
+    Respond with a JSON object containing a single key "feedback".`;
+
+    try {
+        const response = await this.ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: apiPrompt,
+            config: {
+                responseMimeType: 'application/json',
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        feedback: { type: Type.STRING },
+                    },
+                    required: ['feedback'],
+                },
+            },
+        });
+        const jsonString = response.text.replace(/^```json\s*|```\s*$/g, '').trim();
+        const parsed = JSON.parse(jsonString);
+        return parsed.feedback;
+    } catch (error) {
+        console.error('Error generating sentence feedback:', error);
+        return 'Harika bir cümle! Yazmaya devam et.'; // Fallback feedback
     }
   }
 }

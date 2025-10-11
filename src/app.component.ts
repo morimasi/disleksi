@@ -81,13 +81,13 @@ export class AppComponent {
   ];
   
   // --- Dynamic Content Management ---
-  private readonly topicsStorageKey = 'ogrenmeKoprusuTopicsData';
+  private readonly topicsStorageKey = 'oogEtkinlikUreticiTopicsData';
   topicsDataSignal: WritableSignal<Record<Topic, any>>;
   editingState = signal<Record<string, EditableContent>>({});
   
   // --- Custom Prompts Management ---
   customPrompts = signal<Partial<Record<SubTopicId, string[]>>>({});
-  private readonly customPromptsStorageKey = 'ogrenmeKoprusuCustomPrompts';
+  private readonly customPromptsStorageKey = 'oogEtkinlikUreticiCustomPrompts';
   newPrompt = signal('');
 
   // --- Notification System ---
@@ -147,7 +147,7 @@ export class AppComponent {
 
   // --- Progress Tracking ---
   progressData = signal<Partial<Record<SubTopicId, number>>>({});
-  private readonly progressStorageKey = 'ogrenmeKoprusuProgressData';
+  private readonly progressStorageKey = 'oogEtkinlikUreticiProgressData';
 
   strengths = computed(() => {
     const progress = this.progressData();
@@ -226,71 +226,75 @@ export class AppComponent {
   }
 
   updateProgress(event: { subTopicId: SubTopicId | 'review'; topic: Topic; successRate: number, correctAnswers: number, totalQuestions: number }): void {
-    if (event.subTopicId !== 'review') {
-      const subTopicId = event.subTopicId;
-      const currentStars = Number(this.progressData()[subTopicId] || 0);
+    // Only award points, stars, and streak for successful completions.
+    if (event.successRate >= 0.8) {
+      if (event.subTopicId !== 'review') {
+        const subTopicId = event.subTopicId;
+        const currentStars = Number(this.progressData()[subTopicId] || 0);
 
-      if (event.successRate >= 0.8 && currentStars < 3) {
-        const newStars = currentStars + 1;
-        this.progressData.update(data => ({
-          ...data,
-          [subTopicId]: newStars
-        }));
-        try {
-          localStorage.setItem(this.progressStorageKey, JSON.stringify(this.progressData()));
-        } catch (e) {
-          console.error('Could not save progress data to localStorage.', e);
+        // Update star progress
+        if (currentStars < 3) {
+          const newStars = currentStars + 1;
+          this.progressData.update(data => ({
+            ...data,
+            [subTopicId]: newStars
+          }));
+          try {
+            localStorage.setItem(this.progressStorageKey, JSON.stringify(this.progressData()));
+          } catch (e) {
+            console.error('Could not save progress data to localStorage.', e);
+          }
         }
-      }
 
-      const isPerfect = event.correctAnswers === event.totalQuestions;
-      const contextualBadges = this.gamificationService.checkContextualBadges(subTopicId, this.progressData(), this.topicsDataSignal(), isPerfect);
-      if (this.notifyOnBadgeUnlock()) {
-        [...contextualBadges].forEach(unlockable => {
-          this.showNotification(`Yeni Rozet: ${unlockable.name} ${unlockable.icon}`, 'achievement');
-        });
-      }
-    }
-    
-    // Add points
-    const pointsToAdd = event.correctAnswers * 10;
-    const activityBonus = event.successRate >= 0.8 ? 50 : 0;
-    const { newLevel, newItems, newBadges } = this.gamificationService.addPoints(pointsToAdd + activityBonus);
-
-    // Show LEVEL UP MODAL instead of toast for level ups
-    if (newLevel) {
-        this.levelUpInfo.set({ level: newLevel, rewards: [...newItems, ...newBadges] });
-    } else {
-        // If not leveling up, show individual item/badge notifications
+        // Check for contextual badges that might be unlocked by this completion
+        const isPerfect = event.correctAnswers === event.totalQuestions;
+        const contextualBadges = this.gamificationService.checkContextualBadges(subTopicId, this.progressData(), this.topicsDataSignal(), isPerfect);
         if (this.notifyOnBadgeUnlock()) {
-          [...newItems, ...newBadges].forEach(unlockable => {
-            this.showNotification(`Yeni Ödül: ${unlockable.name} ${unlockable.icon}`, 'achievement');
+          [...contextualBadges].forEach(unlockable => {
+            this.showNotification(`Yeni Rozet: ${unlockable.name} ${unlockable.icon}`, 'achievement');
           });
         }
-    }
-    
-    // Update streak and activity history
-    const streakResult = this.gamificationService.recordActivityCompletion(event.subTopicId, event.topic);
-    if (this.notifyOnStreak() && streakResult.streakUpdated && streakResult.newStreak > 1) {
-      this.showNotification(`${streakResult.newStreak} günlük seri! 🔥`, 'achievement');
-    }
+      }
+      
+      // Add points: base points for correct answers + a success bonus
+      const pointsToAdd = event.correctAnswers * 10;
+      const activityBonus = 50;
+      const { newLevel, newItems, newBadges } = this.gamificationService.addPoints(pointsToAdd + activityBonus);
 
-    // Check for daily challenge completion
-    const dailyChallenge = this.gamificationService.dailyChallenge();
-    if (dailyChallenge && event.subTopicId === dailyChallenge.subTopicId && !this.gamificationService.studentProfile().dailyChallengeCompleted) {
-        const challengeResult = this.gamificationService.completeDailyChallenge();
-        this.showNotification(`Günlük Görev Tamamlandı! +${challengeResult.points} Puan!`, 'achievement');
-        // Handle notifications for unlocks from the daily challenge bonus
-        if (challengeResult.newLevel) {
-          // If a level up happens from daily challenge, show the modal as well
-           this.levelUpInfo.set({ level: challengeResult.newLevel, rewards: [...challengeResult.newItems, ...challengeResult.newBadges] });
-        } else {
-            if (this.notifyOnBadgeUnlock()) {
-              [...challengeResult.newItems, ...challengeResult.newBadges].forEach(unlockable => {
-                this.showNotification(`Yeni Ödül: ${unlockable.name} ${unlockable.icon}`, 'achievement');
-              });
-            }
-        }
+      // Handle level-up notifications
+      if (newLevel) {
+          this.levelUpInfo.set({ level: newLevel, rewards: [...newItems, ...newBadges] });
+      } else {
+          // If not leveling up, show individual item/badge notifications
+          if (this.notifyOnBadgeUnlock()) {
+            [...newItems, ...newBadges].forEach(unlockable => {
+              this.showNotification(`Yeni Ödül: ${unlockable.name} ${unlockable.icon}`, 'achievement');
+            });
+          }
+      }
+      
+      // Update streak and activity history
+      const streakResult = this.gamificationService.recordActivityCompletion(event.subTopicId, event.topic);
+      if (this.notifyOnStreak() && streakResult.streakUpdated && streakResult.newStreak > 1) {
+        this.showNotification(`${streakResult.newStreak} günlük seri! 🔥`, 'achievement');
+      }
+
+      // Check for daily challenge completion
+      const dailyChallenge = this.gamificationService.dailyChallenge();
+      if (dailyChallenge && event.subTopicId === dailyChallenge.subTopicId && !this.gamificationService.studentProfile().dailyChallengeCompleted) {
+          const challengeResult = this.gamificationService.completeDailyChallenge();
+          this.showNotification(`Günlük Görev Tamamlandı! +${challengeResult.points} Puan!`, 'achievement');
+          // Handle notifications for unlocks from the daily challenge bonus
+          if (challengeResult.newLevel) {
+            this.levelUpInfo.set({ level: challengeResult.newLevel, rewards: [...challengeResult.newItems, ...challengeResult.newBadges] });
+          } else {
+              if (this.notifyOnBadgeUnlock()) {
+                [...challengeResult.newItems, ...challengeResult.newBadges].forEach(unlockable => {
+                  this.showNotification(`Yeni Ödül: ${unlockable.name} ${unlockable.icon}`, 'achievement');
+                });
+              }
+          }
+      }
     }
   }
 
@@ -316,23 +320,23 @@ export class AppComponent {
   isAccessibilityMenuOpen = signal(false);
   private elementRef = inject(ElementRef);
   isDyslexiaFontEnabled = signal<boolean>(false);
-  private readonly fontStorageKey = 'ogrenmeKoprusuFont';
+  private readonly fontStorageKey = 'oogEtkinlikUreticiFont';
   fontSize = signal<FontSize>('base');
-  private readonly fontSizeStorageKey = 'ogrenmeKoprusuFontSize';
+  private readonly fontSizeStorageKey = 'oogEtkinlikUreticiFontSize';
   feedbackEnabled = signal<boolean>(true);
   feedbackDuration = signal<FeedbackDuration>('continuous');
-  private readonly feedbackEnabledStorageKey = 'ogrenmeKoprusuFeedbackEnabled';
-  private readonly feedbackDurationStorageKey = 'ogrenmeKoprusuFeedbackDuration';
+  private readonly feedbackEnabledStorageKey = 'oogEtkinlikUreticiFeedbackEnabled';
+  private readonly feedbackDurationStorageKey = 'oogEtkinlikUreticiFeedbackDuration';
 
   // --- Gamification Settings ---
   notifyOnStreak = signal<boolean>(true);
   notifyOnBadgeUnlock = signal<boolean>(true);
   dailyChallengeReminder = signal<boolean>(true);
-  private readonly gamificationSettingsStorageKey = 'ogrenmeKoprusuGamificationSettings';
+  private readonly gamificationSettingsStorageKey = 'oogEtkinlikUreticiGamificationSettings';
 
 
   // Theming
-  private readonly themeStorageKey = 'ogrenmeKoprusuTheme';
+  private readonly themeStorageKey = 'oogEtkinlikUreticiTheme';
   themes = themes;
   activeTheme = signal<Theme>(this.loadTheme());
 

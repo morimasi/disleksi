@@ -18,6 +18,7 @@ import {
   FiveWOneHStoryActivity,
   SpatialRelationsActivity,
   ReadingAloudActivity,
+  PictureSequencingActivity,
 } from './activity.model';
 
 // Type guards to help TypeScript understand which activity type is being used.
@@ -91,4 +92,8 @@ export function isSpatialRelations(activity: Activity): activity is SpatialRelat
 
 export function isReadingAloudCoach(activity: Activity): activity is ReadingAloudActivity {
     return activity.activityType === 'reading-aloud-coach';
+}
+
+export function isPictureSequencingStoryteller(activity: Activity): activity is PictureSequencingActivity {
+    return activity.activityType === 'picture-sequencing-storyteller';
 }

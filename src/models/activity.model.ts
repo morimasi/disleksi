@@ -7,8 +7,8 @@ export type GradeLevel = 'ilkokul' | 'ortaokul';
 
 export type SubTopicId =
   | 'phonological-awareness' | 'letter-sound' | 'reading-aloud-coach' | 'reading-comprehension' | 'visual-processing' | 'vocabulary-morphology' | 'spelling-patterns' | 'working-memory-sequencing' // Dyslexia
-  | 'number-sense' | 'basic-arithmetic' | 'problem-solving' | 'math-symbols' | 'time-measurement' | 'spatial-reasoning' | 'estimation-skills' | 'fractions-decimals' | 'visual-number-representation' // Dyscalculia
-  | 'handwriting-legibility' | 'letter-formation' | 'writing-speed' | 'sentence-construction' | 'punctuation-grammar' | 'fine-motor-skills' | 'writing-planning' | 'creative-writing-prompts' | 'keyboarding-skills' | 'letter-form-recognition' // Dysgraphia
+  | 'number-sense' | 'basic-arithmetic' | 'problem-solving' | 'math-symbols' | 'time-measurement' | 'spatial-reasoning' | 'estimation-skills' | 'fractions-decimals' | 'visual-number-representation' | 'number-grouping-practice' // Dyscalculia
+  | 'handwriting-legibility' | 'letter-formation' | 'writing-speed' | 'sentence-construction' | 'punctuation-grammar' | 'fine-motor-skills' | 'writing-planning' | 'creative-writing-prompts' | 'keyboarding-skills' | 'letter-form-recognition' | 'picture-sequencing-storyteller' // Dysgraphia
   | 'interactive-story' // New dynamic activity type
   | 'auditory-dictation' // New for Dyslexia
   | 'visual-arithmetic' // New for Dyscalculia
@@ -22,6 +22,7 @@ export interface SubTopic {
     id: SubTopicId | 'review'; // 'review' is a virtual ID for review sessions
     title: string;
     description: string;
+    pedagogicalGoal: string;
 }
 
 export interface WordScrambleData {
@@ -130,6 +131,20 @@ export interface ReadingAloudData {
   paragraphs: string[];
 }
 
+// --- New Picture Sequencing Model ---
+export interface PictureSequencingProblem {
+  storyTitle: string;
+  // Gemini provides these
+  imagePrompts: string[];
+  // Service generates these
+  images: { id: number; url: string }[]; // Shuffled list of images
+  correctOrder: number[]; // Sequence of original IDs
+}
+export interface PictureSequencingData {
+  problems: PictureSequencingProblem[];
+}
+
+
 interface BaseActivity<T, U extends string> {
   title: string;
   instructions: string;
@@ -156,6 +171,7 @@ export type WordExplorerActivity = BaseActivity<WordExplorerData, 'word-explorer
 export type FiveWOneHStoryActivity = BaseActivity<FiveWOneHStoryData, 'five-w-one-h-story'>;
 export type SpatialRelationsActivity = BaseActivity<SpatialRelationsData, 'spatial-relations'>;
 export type ReadingAloudActivity = BaseActivity<ReadingAloudData, 'reading-aloud-coach'>;
+export type PictureSequencingActivity = BaseActivity<PictureSequencingData, 'picture-sequencing-storyteller'>;
 
 
-export type Activity = WordScrambleActivity | SimpleMathActivity | SentenceCompletionActivity | MultipleChoiceActivity | OrderingActivity | DragDropMatchActivity | FillInTheBlanksActivity | TrueFalseActivity | VisualMatchActivity | MatchingPairsActivity | SequencingEventsActivity | InteractiveStoryActivity | AuditoryDictationActivity | VisualArithmeticActivity | WordExplorerActivity | FiveWOneHStoryActivity | SpatialRelationsActivity | ReadingAloudActivity;
+export type Activity = WordScrambleActivity | SimpleMathActivity | SentenceCompletionActivity | MultipleChoiceActivity | OrderingActivity | DragDropMatchActivity | FillInTheBlanksActivity | TrueFalseActivity | VisualMatchActivity | MatchingPairsActivity | SequencingEventsActivity | InteractiveStoryActivity | AuditoryDictationActivity | VisualArithmeticActivity | WordExplorerActivity | FiveWOneHStoryActivity | SpatialRelationsActivity | ReadingAloudActivity | PictureSequencingActivity;

@@ -612,6 +612,39 @@ export const spatialRelationsSchema = {
     required: ['title', 'instructions', 'activityType', 'data'],
 };
 
+const pictureSequencingSchema = {
+    type: Type.OBJECT,
+    properties: {
+        title: { type: Type.STRING, description: 'A fun title for the activity in Turkish.' },
+        instructions: { type: Type.STRING, description: 'Simple instructions in Turkish (e.g., "Resimleri doğru sıraya dizerek hikayeyi oluştur.").' },
+        hint: { type: Type.STRING, description: 'A brief, encouraging tip in Turkish.' },
+        activityType: { type: Type.STRING, description: "Should be 'picture-sequencing-storyteller'." },
+        data: {
+            type: Type.OBJECT,
+            properties: {
+                problems: {
+                    type: Type.ARRAY,
+                    description: 'An array of 1 to 2 picture sequencing problem objects.',
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            storyTitle: { type: Type.STRING, description: "A simple title for the short story in Turkish (e.g., 'Kardan Adam Yapmak')." },
+                            imagePrompts: {
+                                type: Type.ARRAY,
+                                description: "An array of 4 simple, descriptive prompts for an image generation model to create a visual story sequence. The prompts should be in a logical, chronological order. Example: ['A child rolling a large snowball', 'The child placing a smaller snowball on top of the large one', 'The child adding a carrot for a nose and stones for eyes', 'A smiling snowman with a child next to it'].",
+                                items: { type: Type.STRING }
+                            },
+                        },
+                        required: ['storyTitle', 'imagePrompts'],
+                    },
+                },
+            },
+            required: ['problems'],
+        },
+    },
+    required: ['title', 'instructions', 'activityType', 'data'],
+};
+
 
 // --- Activity Configuration Map ---
 
@@ -679,6 +712,10 @@ export const ACTIVITY_CONFIGS: Record<Topic, { subtopics: Partial<Record<SubTopi
                 schema: visualArithmeticSchema,
                 description: "a 'Visual Arithmetic' activity for number sense. Provide 15-25 problems using emojis to represent simple addition or comparison concepts. For example, the 'visualQuestion' could be '🍎🍎🍎 + 🍎' and the 'answer' should be '4'. Keep numbers small (under 10)."
             },
+            'number-grouping-practice': {
+                schema: multipleChoiceSchema,
+                description: "a 'Number Grouping' multiple-choice activity with 25 questions. For each question, present a simple addition problem (e.g., '14 + 5'). The options should show different ways to group the numbers to solve it, with one being the correct strategy (e.g., '10 + 4 + 5'). The correct answer should be the string representing the correct grouping."
+            },
             'visual-arithmetic': {
                 schema: visualArithmeticSchema,
                 description: "a 'Visual Arithmetic' activity. Provide 15-25 problems using emojis to represent simple addition, subtraction or multiplication. For example, the 'visualQuestion' could be '🍎🍎🍎 + 🍎' and the 'answer' should be '4'. Keep numbers appropriate for the grade level."
@@ -727,6 +764,10 @@ export const ACTIVITY_CONFIGS: Record<Topic, { subtopics: Partial<Record<SubTopi
     },
     'disgrafi': {
         subtopics: {
+            'picture-sequencing-storyteller': {
+                schema: pictureSequencingSchema,
+                description: "a 'Picture Sequencing Storyteller' activity. Generate a simple story sequence with a clear title and 4 distinct, chronologically ordered image prompts. The prompts should describe simple actions that can be easily visualized."
+            },
             'punctuation-grammar': {
                 schema: trueFalseSchema,
                 description: "a 'Punctuation and Grammar' true/false activity with 25 problems. For each problem, create a simple Turkish sentence as the 'statement'. Some statements should have correct punctuation and grammar, and some should have a common error (e.g., missing capital letter, missing period). The 'isCorrect' field must be a boolean representing whether the statement is grammatically correct. Example statement: 'ali okula gitti.' (isCorrect: false). Another example: 'Ayşe, topu Ali'ye attı.' (isCorrect: true)."

@@ -8,7 +8,7 @@ import { TOPICS_DATA } from '../topics.data';
   providedIn: 'root'
 })
 export class GamificationService {
-    private readonly profileStorageKey = 'ogrenmeKoprusuStudentProfile';
+    private readonly profileStorageKey = 'oogEtkinlikUreticiStudentProfile';
 
     studentProfile: WritableSignal<StudentProfile>;
     dailyChallenge = signal<DailyChallenge | null>(null);

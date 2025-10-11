@@ -72,6 +72,94 @@
                 </div>
               }
             }
+            @case ('sentence-completion') {
+              @if (currentProblem(); as prompt) {
+                <div class="max-w-xl mx-auto">
+                  <p class="text-xl sm:text-2xl font-semibold text-[rgb(var(--c-text-primary))] mb-4 text-center">{{ prompt }}</p>
+                  <textarea #completionInput
+                            [value]="currentProblemState().userAnswer || ''"
+                            [readOnly]="currentProblemState().status !== 'unanswered'"
+                            rows="5"
+                            class="w-full text-lg p-3 border-2 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition bg-slate-50"
+                            placeholder="Cümleyi tamamla..."></textarea>
+                   
+                   @if(currentProblemState().status === 'unanswered') {
+                     <div class="text-center mt-4">
+                       <button (click)="handleAnswer(completionInput.value)"
+                               [disabled]="currentProblemState().isGeneratingSentenceFeedback"
+                               class="px-6 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition disabled:bg-slate-400">
+                         Gönder
+                       </button>
+                     </div>
+                   }
+                   
+                   @if (currentProblemState().isGeneratingSentenceFeedback) {
+                      <div class="mt-4 p-4 bg-slate-100 rounded-lg flex items-center justify-center gap-2 text-slate-600">
+                          <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          <span>Geri bildirim hazırlanıyor...</span>
+                      </div>
+                   }
+                   @if (currentProblemState().aiSentenceFeedback) {
+                      <div class="mt-4 p-4 bg-sky-50 border-l-4 border-sky-400 rounded-r-lg animate-fade-in">
+                          <div class="flex items-start gap-3">
+                              <span class="text-2xl">🦉</span>
+                              <div>
+                                  <h4 class="font-bold text-sky-800">Bilge Baykuş'tan Tavsiye</h4>
+                                  <p class="text-sky-700">{{ currentProblemState().aiSentenceFeedback }}</p>
+                              </div>
+                          </div>
+                      </div>
+                   }
+                </div>
+              }
+            }
+            @case ('matching-pairs') {
+              @if (currentProblem(); as data) {
+                <div class="max-w-3xl mx-auto">
+                  <div class="grid grid-cols-2 gap-x-4 sm:gap-x-8">
+                    <h3 class="text-lg font-bold text-center text-[rgb(var(--c-text-primary))] mb-4">{{ data.column1Title }}</h3>
+                    <h3 class="text-lg font-bold text-center text-[rgb(var(--c-text-primary))] mb-4">{{ data.column2Title }}</h3>
+                  </div>
+                  <div class="grid grid-cols-2 gap-x-4 sm:gap-x-8">
+                    <!-- Column 1 -->
+                    <div class="space-y-3">
+                      @for (item1 of shuffledColumn1(); track item1; let i = $index) {
+                        @let isPaired = !!currentProblemState().userAnswer[item1];
+                        <button (click)="selectMatchingItem(item1, i, 1)"
+                                [disabled]="isPaired && !isCheckingPairs()"
+                                class="w-full p-3 text-center rounded-lg border-2 transition-all duration-200 match-item"
+                                [class.selected-col1]="selectedItemCol1()?.item === item1"
+                                [class.paired]="isPaired && !isCheckingPairs()"
+                                [class.correct-pair]="isCheckingPairs() && isPairCorrect(item1)"
+                                [class.incorrect-pair]="isCheckingPairs() && !isPairCorrect(item1)">
+                          {{ item1 }}
+                        </button>
+                      }
+                    </div>
+                    <!-- Column 2 -->
+                    <div class="space-y-3">
+                      @for (item2 of shuffledColumn2(); track item2; let i = $index) {
+                        @let isPaired = Object.values(currentProblemState().userAnswer).includes(item2);
+                         <button (click)="selectMatchingItem(item2, i, 2)"
+                                [disabled]="isPaired && !isCheckingPairs()"
+                                class="w-full p-3 text-center rounded-lg border-2 transition-all duration-200 match-item"
+                                [class.paired]="isPaired && !isCheckingPairs()">
+                          {{ item2 }}
+                        </button>
+                      }
+                    </div>
+                  </div>
+                  @if (Object.keys(currentProblemState().userAnswer).length === data.pairs.length && currentProblemState().status === 'unanswered') {
+                    <div class="text-center mt-6">
+                      <button (click)="checkMatchingAnswers()" class="px-8 py-3 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600 transition">Cevapları Kontrol Et</button>
+                    </div>
+                  }
+                </div>
+              }
+            }
             @case ('multiple-choice') {
               @if (currentProblem(); as problem) {
                 <div>
@@ -162,6 +250,51 @@
                 </div>
               }
             }
+            @case ('picture-sequencing-storyteller') {
+              @if (currentProblem(); as problem) {
+                <div class="flex flex-col items-center">
+                  <h3 class="text-2xl font-bold text-center text-[rgb(var(--c-text-primary))] mb-4">{{problem.storyTitle}}</h3>
+                  
+                  <!-- Selectable Images -->
+                  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 w-full mb-6">
+                    @for(image of problem.images; track image.id) {
+                      @let isSelected = currentProblemState().userAnswer.includes(image.id);
+                      <button (click)="selectPicture(image.id)" [disabled]="isSelected" class="relative aspect-square rounded-lg overflow-hidden border-2 transition-transform transform hover:scale-105" [class.border-indigo-500]="isSelected" [class.border-transparent]="!isSelected">
+                        <img [src]="image.url" [alt]="'Hikaye resmi ' + image.id" class="w-full h-full object-cover">
+                        @if (isSelected) {
+                          <div class="absolute inset-0 bg-black/60 flex items-center justify-center">
+                              <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-white" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                              </svg>
+                          </div>
+                        }
+                      </button>
+                    }
+                  </div>
+
+                  <!-- User Sequence -->
+                  <div class="w-full p-4 bg-slate-100 rounded-lg">
+                    <p class="font-semibold text-slate-700 mb-2">Senin Sıralaman:</p>
+                    <div class="grid grid-cols-4 gap-2 min-h-[100px] border-2 border-dashed border-slate-300 rounded-lg p-2">
+                      @for(id of currentProblemState().userAnswer; track id; let i = $index) {
+                        <button (click)="removePictureFromSequence(i)" class="relative aspect-square rounded-md overflow-hidden group">
+                          <img [src]="getPictureUrl(id)" class="w-full h-full object-cover">
+                          <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                          </div>
+                        </button>
+                      }
+                    </div>
+                  </div>
+                  
+                   @if (currentProblemState().userAnswer.length === problem.images.length) {
+                      <button (click)="handleAnswer(currentProblemState().userAnswer)" class="mt-6 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-full transition-transform transform active:scale-95 hover:scale-105">
+                        Sıralamayı Kontrol Et
+                      </button>
+                    }
+                </div>
+              }
+            }
             @case ('true-false') {
               @if (currentProblem(); as problem) {
                 <div>
@@ -184,6 +317,45 @@
                         [disabled]="currentProblemState().status !== 'unanswered'"
                         class="text-center text-xl p-3 border-2 rounded-lg w-full max-w-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                         placeholder="Duyduğun kelimeyi yaz...">
+                </div>
+              }
+            }
+            @case ('reading-aloud-coach') {
+              @if (currentProblem(); as paragraph) {
+                <div class="text-center">
+                  <p class="text-xl leading-relaxed text-[rgb(var(--c-text-primary))] mb-6 text-left whitespace-pre-wrap p-4 bg-slate-50 rounded-lg border">{{ paragraph }}</p>
+                  
+                  <div class="my-4">
+                    @if (currentProblemState().status === 'unanswered') {
+                        @if (!speechRecognitionService.isListening()) {
+                          <button (click)="speechRecognitionService.start()" [disabled]="speechRecognitionService.isListening()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-full transition-transform transform hover:scale-105 disabled:opacity-50">
+                            Okumaya Başla 🎙️
+                          </button>
+                        } @else {
+                          <button (click)="speechRecognitionService.stop()" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-full transition-transform transform hover:scale-105 animate-pulse">
+                            Durdur ⏹️
+                          </button>
+                        }
+                    }
+                  </div>
+
+                  @if (speechRecognitionService.isListening()) {
+                    <p class="text-indigo-600 font-semibold animate-pulse">Dinliyorum...</p>
+                  }
+
+                  @if (speechRecognitionService.transcript() && currentProblemState().status === 'unanswered') {
+                    <div class="mt-4 p-4 bg-gray-100 rounded-lg">
+                      <p class="font-semibold text-gray-700">Söylediklerin:</p>
+                      <p class="text-gray-600 italic">"{{ speechRecognitionService.transcript() }}"</p>
+                    </div>
+                    <button (click)="handleAnswer(speechRecognitionService.transcript())" class="mt-4 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg">
+                      Onayla ve Devam Et
+                    </button>
+                  }
+                  
+                  @if (speechRecognitionService.error()) {
+                    <p class="text-red-600 mt-2">{{ speechRecognitionService.error() }}</p>
+                  }
                 </div>
               }
             }
@@ -250,38 +422,75 @@
               </div>
             }
           }
+
+          <!-- Feedback and Actions Footer -->
+          @if (!isCompleted() && !isInteractiveStory(act) && !isWordExplorer(act)) {
+            <div class="mt-6 space-y-4">
+              <!-- Hint Display -->
+              @if(currentProblemState().hint) {
+                <div class="p-3 bg-sky-100 border border-sky-300 text-sky-800 rounded-lg flex items-start gap-3 animate-fade-in">
+                    <span class="text-xl pt-0.5">💡</span>
+                    <p>{{ currentProblemState().hint }}</p>
+                </div>
+              }
+
+              <!-- Feedback Area -->
+              @if(currentProblemState().status !== 'unanswered') {
+                <div class="p-4 rounded-lg text-center animate-fade-in min-h-[56px] flex items-center justify-center" 
+                    [class]="currentProblemState().status === 'correct' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
+                  @if (currentProblemState().isGeneratingFeedback) {
+                      <div class="flex items-center justify-center gap-2 text-slate-600">
+                          <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          <span>Açıklama hazırlanıyor...</span>
+                      </div>
+                  } @else if (currentProblemState().feedbackText) {
+                      {{ currentProblemState().feedbackText }}
+                  }
+                </div>
+              }
+
+              <!-- Navigation -->
+              <div class="pt-2 text-center no-print flex items-center justify-center flex-wrap gap-4">
+                  <!-- Hint Button -->
+                  @if (currentProblemState().status === 'unanswered' && !isSentenceCompletion(act) && !isReadingAloudCoach(act) && !isMatchingPairs(act)) {
+                    <button (click)="requestHint()" 
+                            [disabled]="!!currentProblemState().hint || currentProblemState().isGeneratingHint"
+                            class="px-5 py-3 bg-amber-400 text-white font-semibold rounded-lg hover:bg-amber-500 transition disabled:bg-slate-300 disabled:cursor-not-allowed flex items-center gap-2">
+                        @if(currentProblemState().isGeneratingHint) {
+                            <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            <span>İpucu...</span>
+                        } @else {
+                            <span>İpucu İste 💡</span>
+                        }
+                    </button>
+                  }
+
+                  @if (currentProblemState()?.status !== 'unanswered' && (feedbackSettings().duration === 'continuous' || isSentenceCompletion(act) || isReadingAloudCoach(act) || isMatchingPairs(act))) {
+                    <button (click)="nextProblem()" class="px-8 py-3 bg-teal-500 text-white font-bold rounded-lg hover:bg-teal-600 transition">
+                      {{ currentProblemIndex() < totalProblems() - 1 ? 'Sonraki' : 'Bitir' }}
+                    </button>
+                  }
+              </div>
+            </div>
+          }
         </div>
       } @else {
         <!-- Completion Screen -->
         <div class="flex flex-col items-center justify-center text-center h-full">
           <div class="text-6xl mb-4">
-              {{ correctAnswersCount() / totalProblems() === 1 ? '🏆' : '🎉' }}
+              {{ correctAnswersCount() / totalProblems() >= 0.8 ? '🏆' : '🎉' }}
           </div>
           <h3 class="text-3xl font-bold text-[rgb(var(--c-text-primary))] mb-2">Tebrikler, etkinliği tamamladın!</h3>
           <p class="text-xl text-[rgb(var(--c-text-secondary))] mb-6">
-            {{ totalProblems() }} sorudan {{ correctAnswersCount() }} tanesini doğru cevapladın.
+            {{ totalProblems() }} denemeden {{ correctAnswersCount() }} tanesini doğru tamamladın.
           </p>
           <div class="flex gap-4 no-print">
             <button (click)="restartActivity()" class="px-6 py-3 bg-indigo-500 text-white font-semibold rounded-lg hover:bg-indigo-600 transition">Tekrar Oyna</button>
             <button (click)="handleRestartOrNext()" class="px-6 py-3 bg-slate-200 text-slate-700 font-semibold rounded-lg hover:bg-slate-300 transition">{{ isPracticeSession() ? 'Profilime Dön' : 'Yeni Etkinlik' }}</button>
           </div>
-        </div>
-      }
-
-      <!-- Feedback Area -->
-      @if(currentProblemState()?.feedbackText && feedbackSettings().duration === 'continuous' && currentProblemState().status !== 'unanswered') {
-        <div class="mt-6 p-4 rounded-lg text-center animate-fade-in" 
-            [class]="currentProblemState().status === 'correct' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
-          {{ currentProblemState()?.feedbackText }}
-        </div>
-      }
-      
-      <!-- Navigation -->
-      @if (!isCompleted() && currentProblemState()?.status !== 'unanswered' && feedbackSettings().duration === 'continuous' && !isInteractiveStory(act) && !isWordExplorer(act)) {
-        <div class="mt-8 text-center no-print">
-          <button (click)="nextProblem()" class="px-8 py-3 bg-teal-500 text-white font-bold rounded-lg hover:bg-teal-600 transition">
-            {{ currentProblemIndex() < totalProblems() - 1 ? 'Sonraki Soru' : 'Bitir' }}
-          </button>
         </div>
       }
     </div>

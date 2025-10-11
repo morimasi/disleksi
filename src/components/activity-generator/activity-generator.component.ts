@@ -40,7 +40,7 @@ export class ActivityGeneratorComponent {
     { id: 'animals', name: 'Hayvanlar', icon: '🐾' },
     { id: 'space', name: 'Uzay', icon: '🚀' },
     { id: 'nature', name: 'Doğa', icon: '🌳' },
-    { id: 'fairy-tale', name: 'Masallar', icon: ' castle' },
+    { id: 'fairy-tale', name: 'Masallar', icon: '🏰' },
   ];
 
   topicTitle = computed(() => {
