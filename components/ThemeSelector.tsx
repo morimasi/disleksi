@@ -1,11 +1,20 @@
 import React from 'react';
 import { styles } from '../styles';
+import { type Theme } from '../data/themes';
 
-export const ThemeSelector = ({ themes, activeThemeKey, onThemeChange, onClose }) => {
+// Fix: Add explicit types for component props and function parameters to resolve type inference errors.
+interface ThemeSelectorProps {
+    themes: { [key: string]: Theme };
+    activeThemeKey: string;
+    onThemeChange: (key: string) => void;
+    onClose: () => void;
+}
+
+export const ThemeSelector = ({ themes, activeThemeKey, onThemeChange, onClose }: ThemeSelectorProps) => {
     const lightThemes = Object.entries(themes).filter(([_, theme]) => theme.mode === 'light');
     const darkThemes = Object.entries(themes).filter(([_, theme]) => theme.mode === 'dark');
 
-    const renderThemeOption = (key, theme) => (
+    const renderThemeOption = (key: string, theme: Theme) => (
         <div
             key={key}
             onClick={() => onThemeChange(key)}
