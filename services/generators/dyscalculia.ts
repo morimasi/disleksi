@@ -62,7 +62,7 @@ export const generateNumberSenseActivity = (options = defaultOptions.numberSense
 
     if (activityType < 0.6) { // Count Objects
         const { maxNumber, objectType, arrangement } = options;
-        const num = Math.floor(Math.random() * maxNumber) + 1;
+        const num = Math.floor(Math.random() * Math.max(0, maxNumber || 0)) + 1;
         const itemsMap = { stars: '⭐', apples: '🍎', balloons: '🎈', circles: '🔵' };
         const item = itemsMap[objectType] || '⭐';
         

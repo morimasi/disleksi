@@ -39,14 +39,10 @@ export const DYSLEXIA_SETTINGS = {
                 label: 'Kafiye Seti',
                 type: 'select',
                 options: [
-                    { value: '0', label: 'Set 1 (el/tel)' },
-                    { value: '1', label: 'Set 2 (taş/kaş)' },
-                    { value: '2', label: 'Set 3 (yüz/güz)' },
-                    { value: '3', label: 'Set 4 (kale/lale)' },
-                    { value: '4', label: 'Set 5 (kapı/yapı)' },
-                    { value: '5', label: 'Set 6 (kutu/utu)' },
-                    { value: '6', label: 'Set 7 (para/yara)' },
-                    { value: '7', label: 'Set 8 (gece/hece)' },
+                    { value: 0, label: 'Set 1 (el/tel)' },
+                    { value: 1, label: 'Set 2 (taş/kaş)' },
+                    { value: 2, label: 'Set 3 (yüz/güz)' },
+                    { value: 3, label: 'Set 4 (kale/lale)' },
                 ]
             },
             {

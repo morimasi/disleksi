@@ -9,11 +9,15 @@ const renderControl = (control, settings, onSettingsChange) => {
 
     switch(type) {
         case 'select':
+            const isNumeric = typeof control.options[0]?.value === 'number';
             return (
                 <select 
                     id={id} 
-                    value={settings[id] || ''} 
-                    onChange={e => onSettingsChange(prev => ({ ...prev, [id]: e.target.value }))}
+                    value={settings[id] ?? ''} 
+                    onChange={e => {
+                        const value = isNumeric ? parseInt(e.target.value, 10) : e.target.value;
+                        onSettingsChange(prev => ({ ...prev, [id]: value }));
+                    }}
                     style={styles.settingInput}
                 >
                     {options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
