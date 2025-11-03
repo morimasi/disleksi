@@ -8,7 +8,7 @@ export const styles = {
     },
     appLayout: {
         display: 'grid',
-        gridTemplateColumns: '280px 1fr', // Sidebar and Main Content
+        gridTemplateColumns: '320px 1fr', // Sidebar and Main Content - Increased sidebar width
         flex: 1,
         overflow: 'hidden'
     },
@@ -173,15 +173,14 @@ export const styles = {
         overflowY: 'auto' as const,
         display: 'flex',
         flexDirection: 'column' as const,
-        gap: '1.5rem',
     },
     settingsHeader: {
         borderBottom: '1px solid var(--border-color)',
         paddingBottom: '1rem',
-        marginBottom: '0.5rem'
+        marginBottom: '1rem'
     },
     settingsTitle: {
-        fontSize: '1.1rem',
+        fontSize: '1.2rem',
         fontWeight: 600,
         color: 'var(--text-color)',
         margin: 0,
@@ -191,10 +190,26 @@ export const styles = {
         color: 'var(--light-text-color)',
         marginTop: '0.25rem'
     },
-    settingsGroup: {
+    settingsContent: {
         display: 'flex',
         flexDirection: 'column' as const,
-        gap: '1.5rem'
+        gap: '1.5rem',
+        flex: 1
+    },
+    settingsFieldset: {
+        border: '1px solid var(--border-color)',
+        borderRadius: 'var(--border-radius)',
+        padding: '1rem 1.2rem 1.2rem',
+        margin: 0,
+        display: 'flex',
+        flexDirection: 'column' as const,
+        gap: '1rem'
+    },
+    settingsLegend: {
+        padding: '0 0.5rem',
+        fontSize: '0.9rem',
+        fontWeight: 600,
+        color: 'var(--primary-color)',
     },
     settingControl: {
         display: 'flex',
@@ -205,52 +220,99 @@ export const styles = {
         fontSize: '0.9rem',
         fontWeight: 500,
         color: 'var(--text-color)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between'
     },
     settingInput: {
         width: '100%',
-        padding: '0.5rem 0.75rem',
+        padding: '0.6rem 0.8rem',
         fontSize: '0.9rem',
         border: '1px solid var(--border-color)',
-        borderRadius: '6px',
-        backgroundColor: 'var(--card-bg-color)',
+        borderRadius: '8px',
+        backgroundColor: 'var(--background-color)',
         color: 'var(--text-color)',
+        transition: 'border-color 0.2s, box-shadow 0.2s',
     },
     settingSlider: {
         width: '100%',
     },
+    tooltipIcon: {
+        cursor: 'help',
+        color: 'var(--light-text-color)',
+        fontSize: '1.1em',
+        position: 'relative' as const,
+    },
+    settingToggle: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '1rem',
+    },
+    toggleSwitch: {
+        position: 'relative' as const,
+        display: 'inline-block',
+        width: '44px',
+        height: '24px',
+    },
+    toggleSwitchInput: {
+        opacity: 0,
+        width: 0,
+        height: 0,
+    },
+    toggleSlider: {
+        position: 'absolute' as const,
+        cursor: 'pointer',
+        top: 0, left: 0, right: 0, bottom: 0,
+        backgroundColor: 'var(--border-color)',
+        transition: '.4s',
+        borderRadius: '24px',
+    },
+    toggleSliderBefore: {
+        position: 'absolute' as const,
+        content: '""',
+        height: '18px',
+        width: '18px',
+        left: '3px',
+        bottom: '3px',
+        backgroundColor: 'white',
+        transition: '.4s',
+        borderRadius: '50%',
+    },
     generationButtons: {
-        marginTop: 'auto',
+        marginTop: '1.5rem',
         paddingTop: '1.5rem',
         borderTop: '1px solid var(--border-color)',
         display: 'flex',
         flexDirection: 'column' as const,
-        gap: '0.75rem'
+        gap: '0.75rem',
+        flexShrink: 0,
     },
     generateButton: (color) => ({
         backgroundColor: color || 'var(--primary-color)',
         color: '#fff',
         border: 'none',
-        padding: '0.7rem',
+        padding: '0.8rem',
         borderRadius: '8px',
         cursor: 'pointer',
-        fontSize: '0.9rem',
+        fontSize: '0.95rem',
         fontWeight: 600,
-        transition: 'opacity 0.2s',
+        transition: 'opacity 0.2s, transform 0.1s',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         gap: '0.5rem',
     }),
     algorithmicButton: {
-        backgroundColor: '#95a5a6',
-        color: '#fff',
+        backgroundColor: 'var(--light-text-color)',
+        color: 'var(--card-bg-color)',
         border: 'none',
-        padding: '0.7rem',
+        padding: '0.8rem',
         borderRadius: '8px',
         cursor: 'pointer',
-        fontSize: '0.9rem',
+        fontSize: '0.95rem',
         fontWeight: 600,
-        transition: 'opacity 0.2s, background-color 0.2s',
+        transition: 'opacity 0.2s, background-color 0.2s, transform 0.1s',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

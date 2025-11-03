@@ -33,6 +33,16 @@ button[title]:disabled:hover::after {
     margin-bottom: 5px;
 }
 .savedItem:hover { background-color: #f8f9fa; }
+
+/* Drag and Drop Styles */
+.dragging {
+    opacity: 0.4;
+}
+.drag-over {
+    outline: 2px dashed var(--primary-color);
+    outline-offset: -2px;
+    background-color: rgba(52, 152, 219, 0.1);
+}
 `;
 document.head.appendChild(styleSheet);
 

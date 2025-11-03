@@ -115,6 +115,7 @@ export const generateAiPrompt = (selectedModule, settings, appearanceSettings) =
     4.  **Netlik ve Estetik:** Yüksek kontrast, büyük okunabilir yazı tipleri ve bol beyaz alan kullan. Çizimler için satır içi SVG'ler kullanarak net ve yazdırılabilir olmalarını sağla. Genel tasarım modern, dostça, profesyonel ve TAMAMLANMIŞ hissettirmelidir.
     5.  **Dil:** Tüm metinler Türkçe olmalıdır.
     6.  **Sayfa Ayırıcı:** Birden fazla sayfa oluşturursan, bunları MUTLAKA tam olarak \`<!-- PAGE_BREAK -->\` ile ayırmalısın.
+    7.  **Görsel Özelleştirme (YENİ KURAL):** SVG içindeki renkler için MUTLAKA CSS değişkenleri kullan. Örneğin, \`fill="var(--primary-color)"\` veya \`stroke="var(--secondary-color)"\`. Bu, görsellerin uygulama temasıyla birlikte değişmesini sağlar. Asla sabitlenmiş renk kodları (#ff0000 gibi) kullanma.
 
     **Son Komut:** "${selectedModule.name}" modülü için tüm kurallara uyarak ve görev listesini uygulayarak çalışma sayfasını oluştur.
     `;

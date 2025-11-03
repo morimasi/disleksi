@@ -25,10 +25,10 @@ export const generateFineMotorActivity = (options = defaultOptions.fineMotor) =>
         
         return {
             html: `
-            <div style="border: 1px solid #e0e0e0; border-radius: 10px; padding: 10px; background-color: #fdfdfd; text-align: center; height: 100%; display: flex; flex-direction: column; justify-content: center;">
-                <p style="font-size: 0.9em; font-weight: 500; color: #27ae60; margin-bottom: 10px;">${selectedTheme.title}</p>
+            <div style="border: 1px solid var(--border-color); border-radius: 10px; padding: 10px; background-color: var(--card-bg-color); text-align: center; height: 100%; display: flex; flex-direction: column; justify-content: center;">
+                <p style="font-size: 0.9em; font-weight: 500; color: var(--secondary-color); margin-bottom: 10px;">${selectedTheme.title}</p>
                 <svg width="100%" height="60" viewBox="0 0 300 60">
-                    <path d="${selectedPath}" stroke="#bdc3c7" stroke-width="3" fill="none" stroke-dasharray="6,6" stroke-linecap="round" />
+                    <path d="${selectedPath}" stroke="var(--light-text-color)" stroke-width="3" fill="none" stroke-dasharray="6,6" stroke-linecap="round" />
                      <text x="0" y="45" font-size="20">${selectedTheme.start}</text>
                      <text x="290" y="45" font-size="20">${selectedTheme.end}</text>
                 </svg>
@@ -46,13 +46,13 @@ export const generateFineMotorActivity = (options = defaultOptions.fineMotor) =>
 
         let dotsSvg = '';
         pointsArray.forEach((p, i) => {
-            dotsSvg += `<g><circle cx="${p[0]}" cy="${p[1]}" r="3" fill="black" /><text x="${p[0]}" y="${p[1] - 5}" text-anchor="middle" font-size="10">${i+1}</text></g>`;
+            dotsSvg += `<g><circle cx="${p[0]}" cy="${p[1]}" r="3" fill="var(--text-color)" /><text x="${p[0]}" y="${p[1] - 5}" text-anchor="middle" font-size="10" fill="var(--text-color)">${i+1}</text></g>`;
         });
 
         return {
             html: `
-            <div style="border: 1px solid #e0e0e0; border-radius: 10px; padding: 10px; background-color: #fdfdfd; text-align: center; height: 100%; display: flex; flex-direction: column; justify-content: center;">
-                <p style="font-size: 0.9em; font-weight: 500; color: #27ae60; margin-bottom: 10px;">${selectedShape.title}</p>
+            <div style="border: 1px solid var(--border-color); border-radius: 10px; padding: 10px; background-color: var(--card-bg-color); text-align: center; height: 100%; display: flex; flex-direction: column; justify-content: center;">
+                <p style="font-size: 0.9em; font-weight: 500; color: var(--secondary-color); margin-bottom: 10px;">${selectedShape.title}</p>
                 <svg width="100%" height="100" viewBox="0 0 100 100">
                     ${dotsSvg}
                 </svg>
@@ -75,20 +75,20 @@ export const generateLetterFormationActivity = (options = defaultOptions.letterF
         let content = '';
         switch(options.style) {
             case 'dotted':
-                content = `<p style="font-size: 4em; font-family: 'Comic Sans MS', cursive, sans-serif; color: #ccc; margin: 0; line-height:1; border-bottom: 2px dashed #bdc3c7;">${letter}</p>`;
+                content = `<p style="font-size: 4em; font-family: 'Comic Sans MS', cursive, sans-serif; color: var(--light-text-color); margin: 0; line-height:1; border-bottom: 2px dashed var(--light-text-color);">${letter}</p>`;
                 break;
             case 'arrows':
                 // Simple arrow simulation
-                content = `<p style="font-size: 4em; font-family: 'Comic Sans MS', cursive, sans-serif; color: #7f8c8d; margin: 0; line-height:1; border-bottom: 2px solid #bdc3c7; position:relative;">${letter}<span style="position: absolute; top: -10px; left: 5px; color: #e74c3c; font-size: 0.5em;">↓</span></p>`;
+                content = `<p style="font-size: 4em; font-family: 'Comic Sans MS', cursive, sans-serif; color: var(--light-text-color); margin: 0; line-height:1; border-bottom: 2px solid var(--light-text-color); position:relative;">${letter}<span style="position: absolute; top: -10px; left: 5px; color: var(--primary-color); font-size: 0.5em;">↓</span></p>`;
                 break;
             case 'simple':
             default:
-                 content = `<div style="width: 100%; height: 4em; border-bottom: 2px solid #bdc3c7;"></div>`;
+                 content = `<div style="width: 100%; height: 4em; border-bottom: 2px solid var(--light-text-color);"></div>`;
         }
 
         return {
             html: `
-            <div style="border: 1px solid #e0e0e0; border-radius: 10px; padding: 10px; background-color: #fdfdfd; text-align: center; height: 100%;">
+            <div style="border: 1px solid var(--border-color); border-radius: 10px; padding: 10px; background-color: var(--card-bg-color); text-align: center; height: 100%;">
                ${content}
             </div>`,
             layoutHint: { min: 8, max: 15 }
@@ -97,15 +97,15 @@ export const generateLetterFormationActivity = (options = defaultOptions.letterF
         const correct = `<span style="font-family: 'Comic Sans MS', cursive, sans-serif;">${letter}</span>`;
         const incorrects = [
             `<span style="transform: scaleX(-1); display: inline-block; font-family: 'Comic Sans MS', cursive, sans-serif;">${letter}</span>`, // Flipped
-            `<span style="text-decoration: line-through; color: #bdc3c7; font-family: 'Comic Sans MS', cursive, sans-serif;">${letter}</span>`, // Incomplete (simulated)
+            `<span style="text-decoration: line-through; color: var(--light-text-color); font-family: 'Comic Sans MS', cursive, sans-serif;">${letter}</span>`, // Incomplete (simulated)
             `<span style="transform: rotate(15deg); display: inline-block; font-family: 'Comic Sans MS', cursive, sans-serif;">${letter}</span>` // Tilted
         ];
         const options = [correct, ...incorrects].sort(() => Math.random() - 0.5);
 
         return {
             html: `
-            <div style="border: 1px solid #e0e0e0; border-radius: 10px; padding: 10px; background-color: #fdfdfd; text-align: center; height: 100%; display: flex; flex-direction: column; justify-content: center;">
-                <p style="font-size: 0.9em; font-weight: 500; color: #27ae60; margin-bottom: 10px;">Doğru yazılmış olan '${letter}' harfini daire içine al.</p>
+            <div style="border: 1px solid var(--border-color); border-radius: 10px; padding: 10px; background-color: var(--card-bg-color); text-align: center; height: 100%; display: flex; flex-direction: column; justify-content: center;">
+                <p style="font-size: 0.9em; font-weight: 500; color: var(--secondary-color); margin-bottom: 10px;">Doğru yazılmış olan '${letter}' harfini daire içine al.</p>
                 <div style="display: flex; justify-content: space-around; align-items: center; font-size: 3em;">
                     ${options.join('')}
                 </div>
@@ -128,9 +128,9 @@ export const generatePictureSequencingActivity = (options = {}) => {
         {
             title: 'Diş fırçalama adımlarını sırala.',
             steps: [
-                { svg: '<rect x="20" y="60" width="60" height="30" fill="#e0e0e0" /><rect x="25" y="10" width="10" height="50" fill="#3498db" /><circle cx="50" cy="75" r="10" fill="#3498db" />', label: 'Fırçaya macun sık' },
-                { svg: '<circle cx="30" cy="30" r="10" fill="white" stroke="black" /><circle cx="70" cy="30" r="10" fill="white" stroke="black"/><path d="M 20,50 Q 50,70 80,50" fill="none" stroke="black" />', label: 'Dişleri fırçala' },
-                { svg: '<path d="M20,80 C40,40 60,40 80,80" fill="#3498db" /><path d="M30,70 C40,50 60,50 70,70" fill="#3498db" />', label: 'Ağzı çalkala' }
+                { svg: '<rect x="20" y="60" width="60" height="30" fill="var(--light-text-color)" /><rect x="25" y="10" width="10" height="50" fill="var(--primary-color)" /><circle cx="50" cy="75" r="10" fill="var(--primary-color)" />', label: 'Fırçaya macun sık' },
+                { svg: '<circle cx="30" cy="30" r="10" fill="transparent" stroke="var(--text-color)" /><circle cx="70" cy="30" r="10" fill="transparent" stroke="var(--text-color)"/><path d="M 20,50 Q 50,70 80,50" fill="none" stroke="var(--text-color)" />', label: 'Dişleri fırçala' },
+                { svg: '<path d="M20,80 C40,40 60,40 80,80" fill="var(--primary-color)" /><path d="M30,70 C40,50 60,50 70,70" fill="var(--primary-color)" />', label: 'Ağzı çalkala' }
             ]
         },
         {
@@ -138,7 +138,7 @@ export const generatePictureSequencingActivity = (options = {}) => {
             steps: [
                 { svg: '<path d="M10,90 L90,90 L80,50 L20,50 Z" fill="#8b4513" /><rect x="25" y="40" width="50" height="10" fill="#a0522d" />', label: 'Saksıya toprak koy' },
                 { svg: '<circle cx="50" cy="30" r="10" fill="#d2691e" /><path d="M10,90 L90,90 L80,50 L20,50 Z" fill="#8b4513" /><rect x="25" y="40" width="50" height="10" fill="#a0522d" />', label: 'Tohumu ek' },
-                { svg: '<path d="M20,80 C30,60 10,40 25,20" stroke="#3498db" stroke-width="4" fill="none" /><path d="M10,90 L90,90 L80,50 L20,50 Z" fill="#8b4513" /><rect x="25" y="40" width="50" height="10" fill="#a0522d" />', label: 'Su ver' }
+                { svg: '<path d="M20,80 C30,60 10,40 25,20" stroke="var(--primary-color)" stroke-width="4" fill="none" /><path d="M10,90 L90,90 L80,50 L20,50 Z" fill="#8b4513" /><rect x="25" y="40" width="50" height="10" fill="#a0522d" />', label: 'Su ver' }
             ]
         }
     ];
@@ -147,15 +147,15 @@ export const generatePictureSequencingActivity = (options = {}) => {
     const shuffled = [...selectedScenario.steps].sort(() => Math.random() - 0.5);
     return {
         html: `
-        <div style="border: 1px solid #e0e0e0; border-radius: 10px; padding: 15px; background-color: #fdfdfd; text-align: center;">
+        <div style="border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; background-color: var(--card-bg-color); text-align: center;">
             <p style="font-size: 0.9em; margin-bottom: 10px;">${selectedScenario.title} (1, 2, 3)</p>
             <div style="display: flex; justify-content: space-around; align-items: flex-end; gap: 10px;">
                 ${shuffled.map(step => `
                     <div style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
-                        <div style="width: 60px; height: 60px; border: 1px solid #ccc; border-radius: 5px; display:flex; align-items:center; justify-content:center; background: #fafafa;">
+                        <div style="width: 60px; height: 60px; border: 1px solid var(--border-color); border-radius: 5px; display:flex; align-items:center; justify-content:center; background: var(--background-color);">
                           <svg width="50" height="50" viewBox="0 0 100 100">${step.svg}</svg>
                         </div>
-                        <div style="width: 30px; height: 30px; border: 2px solid #95a5a6; border-radius: 5px;"></div>
+                        <div style="width: 30px; height: 30px; border: 2px solid var(--light-text-color); border-radius: 5px;"></div>
                     </div>
                 `).join('')}
             </div>
@@ -177,12 +177,12 @@ export const generateSentenceBuildingActivity = (options = {}) => {
         const shuffled = [...selected].sort(() => Math.random() - 0.5);
         return {
             html: `
-            <div style="border: 1px solid #e0e0e0; border-radius: 10px; padding: 15px; background-color: #fdfdfd; text-align: center;">
+            <div style="border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; background-color: var(--card-bg-color); text-align: center;">
                 <p style="font-size: 0.9em; margin-bottom: 10px;">Kelimeleri sıralayarak anlamlı bir cümle kur.</p>
-                <div style="display: flex; gap: 10px; justify-content: center; padding: 10px; background-color: #f8f9fa; border-radius: 5px; margin-bottom: 15px;">
-                    ${shuffled.map(word => `<span style="border: 1px solid #ccc; padding: 5px 10px; border-radius: 5px; background: white;">${word}</span>`).join('')}
+                <div style="display: flex; gap: 10px; justify-content: center; padding: 10px; background-color: var(--background-color); border-radius: 5px; margin-bottom: 15px;">
+                    ${shuffled.map(word => `<span style="border: 1px solid var(--border-color); padding: 5px 10px; border-radius: 5px; background: var(--card-bg-color);">${word}</span>`).join('')}
                 </div>
-                <div style="width: 100%; border-bottom: 2px solid #34495e; min-height: 24px;"></div>
+                <div style="width: 100%; border-bottom: 2px solid var(--text-color); min-height: 24px;"></div>
             </div>`,
             layoutHint: { min: 3, max: 5 }
         };
@@ -196,10 +196,10 @@ export const generateSentenceBuildingActivity = (options = {}) => {
         const selected = sentenceStarts[Math.floor(Math.random() * sentenceStarts.length)];
         return {
             html: `
-            <div style="border: 1px solid #e0e0e0; border-radius: 10px; padding: 15px; background-color: #fdfdfd; text-align: center;">
+            <div style="border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; background-color: var(--card-bg-color); text-align: center;">
                 <p style="font-size: 0.9em; margin-bottom: 10px;">Cümlenin sonunu anlamlı bir şekilde tamamla.</p>
-                <div style="font-size: 1.2em; background-color: #f8f9fa; padding: 15px; border-radius: 5px;">
-                    <span>${selected}</span><span style="display: inline-block; width: 60%; border-bottom: 2px solid #34495e; min-height: 24px; vertical-align: bottom;"></span>
+                <div style="font-size: 1.2em; background-color: var(--background-color); padding: 15px; border-radius: 5px;">
+                    <span>${selected}</span><span style="display: inline-block; width: 60%; border-bottom: 2px solid var(--text-color); min-height: 24px; vertical-align: bottom;"></span>
                 </div>
             </div>`,
             layoutHint: { min: 2, max: 4 }
@@ -220,11 +220,11 @@ export const generatePunctuationActivity = (options = {}) => {
         const selected = sentences[Math.floor(Math.random() * sentences.length)];
         return {
             html: `
-            <div style="border: 1px solid #e0e0e0; border-radius: 10px; padding: 15px; background-color: #fdfdfd; text-align: center;">
+            <div style="border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; background-color: var(--card-bg-color); text-align: center;">
                  <p style="font-size: 0.9em; margin-bottom: 10px;">Cümlenin sonuna uygun işareti koy. (. / ?)</p>
-                 <div style="display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 1.2em; background-color: #f8f9fa; padding: 15px; border-radius: 5px;">
+                 <div style="display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 1.2em; background-color: var(--background-color); padding: 15px; border-radius: 5px;">
                     <span>${selected.text}</span>
-                    <div style="width: 25px; height: 25px; border: 2px solid #95a5a6; border-radius: 5px;"></div>
+                    <div style="width: 25px; height: 25px; border: 2px solid var(--light-text-color); border-radius: 5px;"></div>
                  </div>
             </div>`,
             layoutHint: { min: 2, max: 4 }
@@ -239,10 +239,10 @@ export const generatePunctuationActivity = (options = {}) => {
         const selected = sentences[Math.floor(Math.random() * sentences.length)];
          return {
             html: `
-            <div style="border: 1px solid #e0e0e0; border-radius: 10px; padding: 15px; background-color: #fdfdfd; text-align: center;">
+            <div style="border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; background-color: var(--card-bg-color); text-align: center;">
                  <p style="font-size: 0.9em; margin-bottom: 10px;">Cümleyi düzeltip yeniden yaz.</p>
-                 <p style="font-size: 1.2em; background-color: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 15px; color: #7f8c8d;">${selected.text}</p>
-                 <div style="width: 100%; border-bottom: 2px solid #34495e; min-height: 24px;"></div>
+                 <p style="font-size: 1.2em; background-color: var(--background-color); padding: 10px; border-radius: 5px; margin-bottom: 15px; color: var(--light-text-color);">${selected.text}</p>
+                 <div style="width: 100%; border-bottom: 2px solid var(--text-color); min-height: 24px;"></div>
             </div>`,
             layoutHint: { min: 2, max: 4 }
         };
@@ -253,26 +253,26 @@ export const generateCreativeWritingActivity = (options = {}) => {
     const prompts = [
         {
             title: 'Bu resim hakkında kısa bir hikaye yaz.',
-            svg: '<path d="M50,95 C20,95 20,70 20,70 L20,40 C20,10 50,10 50,10 C80,10 80,40 80,40 L80,70 C80,70 80,95 50,95 Z" fill="#a0522d" /><circle cx="65" cy="55" r="5" fill="#f1c40f" />' // Door
+            svg: '<path d="M50,95 C20,95 20,70 20,70 L20,40 C20,10 50,10 50,10 C80,10 80,40 80,40 L80,70 C80,70 80,95 50,95 Z" fill="#a0522d" /><circle cx="65" cy="55" r="5" fill="var(--secondary-color)" />' // Door
         },
         {
             title: 'Bu uzay gemisi nereye gidiyor? Anlat.',
-            svg: '<polygon points="50,10 70,50 60,50 60,80 40,80 40,50 30,50" fill="#7f8c8d" /><polygon points="50,70 60,90 40,90" fill="#f39c12" />' // Rocket
+            svg: '<polygon points="50,10 70,50 60,50 60,80 40,80 40,50 30,50" fill="var(--light-text-color)" /><polygon points="50,70 60,90 40,90" fill="var(--secondary-color)" />' // Rocket
         },
         {
             title: 'Sihirli ağacın içinde ne var? Hayal et ve yaz.',
-            svg: '<path d="M60,90 C40,90 30,70 40,50 S60,20 70,30 S90,50 80,70 S80,90 60,90" fill="#27ae60" /><rect x="25" y="70" width="30" height="20" fill="#8b4513" />' // Tree
+            svg: '<path d="M60,90 C40,90 30,70 40,50 S60,20 70,30 S90,50 80,70 S80,90 60,90" fill="var(--secondary-color)" /><rect x="25" y="70" width="30" height="20" fill="#8b4513" />' // Tree
         }
     ];
     const selected = prompts[Math.floor(Math.random() * prompts.length)];
     return {
         html: `
-        <div style="border: 1px solid #e0e0e0; border-radius: 10px; padding: 15px; background-color: #fdfdfd; text-align: center; height: 100%; display: flex; flex-direction: column;">
+        <div style="border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; background-color: var(--card-bg-color); text-align: center; height: 100%; display: flex; flex-direction: column;">
             <p style="font-size: 0.9em; font-weight: 500; margin-bottom: 10px;">${selected.title}</p>
             <div style="flex-shrink: 0; margin-bottom: 10px;">
                 <svg width="80" height="80" viewBox="0 0 100 100">${selected.svg}</svg>
             </div>
-            <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 12px; background-image: linear-gradient(to bottom, #95a5a6 1px, transparent 1px); background-size: 100% 24px; padding-top: 10px;">
+            <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 12px; background-image: linear-gradient(to bottom, var(--light-text-color) 1px, transparent 1px); background-size: 100% 24px; padding-top: 10px;">
                 
             </div>
         </div>`,

@@ -58,29 +58,32 @@ export const TopNavBar = ({ onModuleSelect, onShowSaved, onShowFeedback, savedCo
 
     const selectedCategoryKey = selectedModuleId ? Object.keys(MODULE_DATA).find(key => MODULE_DATA[key].modules.some(m => m.id === selectedModuleId)) : null;
 
+    // Hata Düzeltmesi: Uygulamanın çökmesine neden olan bozuk logo verisi kaldırıldı.
+    // Artık bileşen yalnızca metin başlığını gösterecek.
+    
     return (
-        <nav style={styles.topNav} ref={navRef} className="no-print">
-            <div style={styles.topNavBranding}>
-                <span style={{fontSize: '1.5rem'}}>🎓</span>
+        <nav style={styles.topNav} ref={navRef}>
+            <div style={{...styles.topNavBranding, cursor: 'pointer'}} onClick={() => window.location.reload()}>
                 <h1 style={styles.topNavTitle}>Öğrenme Köprüsü</h1>
             </div>
-
             <div style={styles.topNavTabs}>
                 {Object.entries(MODULE_DATA).map(([key, category]) => (
-                    <div key={key} style={{position: 'relative', height: '100%'}}>
-                        <button 
+                    <div key={key} style={{ position: 'relative', height: '100%' }}>
+                        <button
                             onClick={() => handleTabClick(key)}
                             style={{
                                 ...styles.categoryTab,
-                                ...(selectedCategoryKey === key ? styles.categoryTabActive : {})
+                                ...(selectedCategoryKey === key || openMenuKey === key ? styles.categoryTabActive : {}),
+                                borderBottom: openMenuKey === key ? `3px solid ${category.color || 'var(--primary-color)'}` : '3px solid transparent',
+                                transition: 'border-bottom 0.2s, color 0.2s',
                             }}
                         >
-                            {category.title}
+                            {category.icon} {category.title}
                         </button>
                         {openMenuKey === key && (
-                             <DropdownMenu 
-                                category={category} 
-                                onModuleSelect={onModuleSelect} 
+                            <DropdownMenu
+                                category={category}
+                                onModuleSelect={onModuleSelect}
                                 selectedModuleId={selectedModuleId}
                                 closeMenu={() => setOpenMenuKey(null)}
                             />
@@ -88,35 +91,35 @@ export const TopNavBar = ({ onModuleSelect, onShowSaved, onShowFeedback, savedCo
                     </div>
                 ))}
             </div>
-
             <div style={styles.topNavActions}>
-                 <button 
-                    onClick={onShowFeedback} 
-                    style={styles.topNavButton}
-                    onMouseEnter={e => e.currentTarget.style.backgroundColor = styles.topNavButtonHover.backgroundColor}
-                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                >
-                    Geri Bildirim
-                </button>
-                <button 
-                    onClick={onShowSaved} 
+                <button
+                    onClick={onShowSaved}
                     style={styles.topNavButton}
                     onMouseEnter={e => e.currentTarget.style.backgroundColor = styles.topNavButtonHover.backgroundColor}
                     onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
                     Kaydedilenler ({savedCount})
                 </button>
-                <div style={{position: 'relative'}}>
-                    <button 
-                        onClick={handleThemeButtonClick} 
+                <button
+                    onClick={onShowFeedback}
+                    style={styles.topNavButton}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = styles.topNavButtonHover.backgroundColor}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
+                    Geri Bildirim
+                </button>
+                <div style={{ position: 'relative' }}>
+                    <button
+                        onClick={handleThemeButtonClick}
                         style={styles.topNavButton}
+                        aria-label="Temayı değiştir"
                         onMouseEnter={e => e.currentTarget.style.backgroundColor = styles.topNavButtonHover.backgroundColor}
                         onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                     >
-                        🎨 Temalar
+                        🎨
                     </button>
                     {isThemeSelectorVisible && (
-                        <ThemeSelector 
+                        <ThemeSelector
                             themes={THEMES}
                             activeThemeKey={activeThemeKey}
                             onThemeChange={onThemeChange}

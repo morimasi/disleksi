@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { styles } from '../styles';
 import { WorkspaceToolbar } from './WorkspaceToolbar';
 
@@ -17,6 +17,90 @@ export const Workspace = ({
 }) => {
     
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
+    const pagesContainerRef = useRef<HTMLDivElement>(null);
+
+    // Effect for Drag-and-Drop functionality
+    useEffect(() => {
+        const container = pagesContainerRef.current;
+        if (!container) return;
+        
+        const controllers: AbortController[] = [];
+
+        if (appearanceSettings.layout === 'grid') {
+            const pages = container.querySelectorAll('.page-a4');
+            pages.forEach((page, pageIndex) => {
+                // Fix: Changed generic type usage to a type assertion to resolve TypeScript error.
+                const activityContainer = page.querySelector('[style*="display: grid"], [style*="display: flex"]') as HTMLElement;
+                if (!activityContainer) return;
+
+                const items = Array.from(activityContainer.children) as HTMLElement[];
+                items.forEach(item => {
+                    item.draggable = true;
+                    item.style.cursor = 'move';
+                });
+
+                let draggedItem: HTMLElement | null = null;
+                let dragOverItem: HTMLElement | null = null;
+
+                const controller = new AbortController();
+                controllers.push(controller);
+                
+                const cleanupDragState = () => {
+                    if (draggedItem) draggedItem.classList.remove('dragging');
+                    if (dragOverItem) dragOverItem.classList.remove('drag-over');
+                    draggedItem = null;
+                    dragOverItem = null;
+                }
+
+                activityContainer.addEventListener('dragstart', (e) => {
+                    const target = (e.target as HTMLElement).closest<HTMLElement>('[draggable="true"]');
+                    if (target) {
+                        draggedItem = target;
+                        setTimeout(() => { // timeout to allow DOM to update
+                           if(draggedItem) draggedItem.classList.add('dragging');
+                        }, 0);
+                    }
+                }, { signal: controller.signal });
+
+                activityContainer.addEventListener('dragend', cleanupDragState, { signal: controller.signal });
+
+                activityContainer.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                }, { signal: controller.signal });
+
+                activityContainer.addEventListener('dragenter', (e) => {
+                    const target = (e.target as HTMLElement).closest<HTMLElement>('[draggable="true"]');
+                    if (target && target !== draggedItem) {
+                        if (dragOverItem) dragOverItem.classList.remove('drag-over');
+                        dragOverItem = target;
+                        dragOverItem.classList.add('drag-over');
+                    }
+                }, { signal: controller.signal });
+
+
+                activityContainer.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    const target = (e.target as HTMLElement).closest<HTMLElement>('[draggable="true"]');
+                    if (draggedItem && target && target !== draggedItem) {
+                        const rect = target.getBoundingClientRect();
+                        const offset = e.clientY - rect.top;
+                        if (offset > rect.height / 2) {
+                            target.after(draggedItem);
+                        } else {
+                            target.before(draggedItem);
+                        }
+                        onContentChange((page as HTMLElement).innerHTML, pageIndex);
+                    }
+                    cleanupDragState();
+                }, { signal: controller.signal });
+            });
+        }
+
+        return () => {
+            controllers.forEach(c => c.abort());
+        };
+
+    }, [activityContent, appearanceSettings.layout, onContentChange]);
 
     const handlePrint = () => {
         window.print();
@@ -44,7 +128,7 @@ export const Workspace = ({
                 settings={appearanceSettings}
                 onSettingsChange={onAppearanceChange}
             />
-            <div className="printable-area" style={styles.worksheetContainer}>
+            <div ref={pagesContainerRef} className="printable-area" style={styles.worksheetContainer}>
                 {isLoading && (
                     <div style={styles.loaderContainer}>
                          <div style={styles.animatedLoader}>

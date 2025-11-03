@@ -27,7 +27,7 @@ export const AI_ACTIVITY_BLUEPRINTS: BlueprintLibrary = {
         {
             name: 'Eksik Harfi Tamamla',
             settings: ['pair'],
-            description: `Görsel bir nesne ve altında eksik harfli bir kelime içeren bir aktivite oluştur. Eksik harf ya '{targetLetter}' ya da '{distractorLetter}' olmalıdır. Örneğin, bir 'bebek' resmi ve altında ' _ebek' yazısı. Kullanıcı boşluğu doğru harfle doldurmalıdır. Kullanılacak harfler '{pair}' ayarından gelir.`
+            description: `Görsel bir nesne ve altında eksik harfli bir kelime içeren bir aktivite oluştur. Eksik harf ya da '{targetLetter}' ya da '{distractorLetter}' olmalıdır. Örneğin, bir 'bebek' resmi ve altında ' _ebek' yazısı. Kullanıcı boşluğu doğru harfle doldurmalıdır. Kullanılacak harfler '{pair}' ayarından gelir.`
         },
     ],
     'dyslexia-rhyming': [

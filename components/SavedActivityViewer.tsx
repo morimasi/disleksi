@@ -11,7 +11,7 @@ export const SavedActivityViewer = ({ activity, onBack, onDelete, onDownload, on
 
     return (
         <div style={styles.fullPageWrapper}>
-            <div style={styles.navigationHeader}>
+            <div style={styles.navigationHeader} className="no-print">
                 <button onClick={onBack} style={{...styles.backButton, position: 'relative', left: 0}}>&larr; Kaydedilenlere Dön</button>
                 <h2 style={styles.pageTitle}>{activity.module}</h2>
             </div>

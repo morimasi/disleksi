@@ -1,3 +1,6 @@
+
+
+
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { GoogleGenAI } from '@google/genai';
 import jsPDF from 'jspdf';
@@ -93,7 +96,16 @@ export const App = () => {
     const handleGenerateAlgorithmic = useCallback(() => {
         if (!selectedModule) return;
     
-        // 1. Find the category of the selected module
+        // 1. Find the generator for the specific selected module
+        const specificGenerator = ALGORITHMIC_GENERATORS[selectedModule.id];
+    
+        if (!specificGenerator || typeof specificGenerator !== 'function') {
+            setError('Bu modül için algoritmik üretici bulunamadı.');
+            setActivityContent([]);
+            return;
+        }
+    
+        // Still need category for the title
         const categoryKey = Object.keys(MODULE_DATA).find(key => 
             MODULE_DATA[key].modules.some(m => m.id === selectedModule.id)
         );
@@ -101,29 +113,15 @@ export const App = () => {
             setError('Modül kategorisi bulunamadı.');
             return;
         }
-        const categoryModules = MODULE_DATA[categoryKey].modules.map(m => m.id);
-    
-        // 2. Get all available, valid generators for this category
-        const availableGenerators = categoryModules
-            .map(id => ({ id, generator: ALGORITHMIC_GENERATORS[id] }))
-            .filter(item => item.generator && typeof item.generator === 'function');
-        
-        if (availableGenerators.length === 0) {
-            setError('Bu kategori için algoritmik üretici bulunamadı.');
-            setActivityContent([]);
-            return;
-        }
     
         try {
             const totalItemCount = moduleSettings.problemCount || 12; // Default to 12 activities
             
-            // 3. Generate a diverse list of activities
+            // 3. Generate a list of activities using only the specific generator
             const activitiesHtmlList = [];
             for (let i = 0; i < totalItemCount; i++) {
-                // Pick a random generator from the available ones for variety
-                const randomGenerator = availableGenerators[Math.floor(Math.random() * availableGenerators.length)];
-                // Generate content with current settings (or defaults if not applicable)
-                const generatedItem = randomGenerator.generator(moduleSettings);
+                // Generate content with current settings
+                const generatedItem = specificGenerator(moduleSettings);
                 if (generatedItem && generatedItem.html) {
                     activitiesHtmlList.push(generatedItem.html);
                 }
