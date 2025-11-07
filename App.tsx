@@ -1,6 +1,8 @@
 
 
 
+
+
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { GoogleGenAI } from '@google/genai';
 import jsPDF from 'jspdf';
@@ -191,7 +193,12 @@ export const App = () => {
         setError('');
         setActivityContent([]);
         
-        const prompt = generateAiPrompt(selectedModule, settings, appearanceSettings);
+        const cappedSettings = { ...settings };
+        if (typeof cappedSettings.density === 'number' && cappedSettings.density > 1.0) {
+            cappedSettings.density = 1.0;
+        }
+
+        const prompt = generateAiPrompt(selectedModule, cappedSettings, appearanceSettings);
 
         try {
             const stream = await ai.models.generateContentStream({

@@ -28,10 +28,15 @@ import {
 import {
     generateFineMotorActivity,
     generateLetterFormationActivity,
+    generateLetterFormRecognitionActivity,
+    generateLegibleWritingActivity,
     generatePictureSequencingActivity,
+    generateWritingSpeedActivity,
     generateSentenceBuildingActivity,
     generatePunctuationActivity,
+    generateWritingPlanningActivity,
     generateCreativeWritingActivity,
+    generateCommonStoryAdventureActivity,
 } from './dysgraphia';
 
 export const ALGORITHMIC_GENERATORS = {
@@ -63,15 +68,15 @@ export const ALGORITHMIC_GENERATORS = {
     // Dysgraphia
     'dysgraphia-fine-motor': generateFineMotorActivity,
     'dysgraphia-letter-formation': generateLetterFormationActivity,
-    'dysgraphia-letter-form-recognition': generateLetterDetectiveActivity, // Re-use
-    'dysgraphia-legible-writing': generateLetterFormationActivity, // Re-use
+    'dysgraphia-letter-form-recognition': generateLetterFormRecognitionActivity,
+    'dysgraphia-legible-writing': generateLegibleWritingActivity,
     'dysgraphia-picture-sequencing': generatePictureSequencingActivity,
-    'dysgraphia-writing-speed': generateFineMotorActivity, // Re-use
+    'dysgraphia-writing-speed': generateWritingSpeedActivity,
     'dysgraphia-sentence-building': generateSentenceBuildingActivity,
     'dysgraphia-punctuation': generatePunctuationActivity,
-    'dysgraphia-writing-planning': generatePictureSequencingActivity, // Re-use
+    'dysgraphia-writing-planning': generateWritingPlanningActivity,
     'dysgraphia-creative-writing': generateCreativeWritingActivity,
     
     // Common Module
-    'common-story-adventure': generatePictureSequencingActivity, // Re-use
+    'common-story-adventure': generateCommonStoryAdventureActivity,
 };

@@ -47,7 +47,7 @@ export const DYSLEXIA_SETTINGS = {
                         id: 'density',
                         label: 'Hedef Yoğunluğu',
                         type: 'slider',
-                        min: 0.2, max: 0.8, step: 0.1,
+                        min: 0.2, max: 2.0, step: 0.1,
                         tooltip: 'Izgaradaki doğru (hedef) harflerin oranını ayarlayın. Düşük yoğunluk, hedefi bulmayı zorlaştırır.'
                     },
                     {
